@@ -42,6 +42,18 @@ input::placeholder{color:#8399b8}
 .card.is-complete{border-color:#4fdab67a;box-shadow:0 9px 25px #0004,0 0 20px #36f0b51a}
 .card.has-mastery{border-color:#d8b65b7a}
 .card.has-mastery .art{background:radial-gradient(circle at 50% 43%,#5c4b55,#26334e 57%,#101b2e)}
+/* A gold celebration is reserved for families with EVERY variant mastered. */
+.card.all-mastered{border:2px solid #ffdc67;background:linear-gradient(145deg,#594014,#322610 46%,#201c20);box-shadow:0 0 0 1px #ffe88b55,0 0 25px #f8c44355,0 12px 30px #0007}
+.card.all-mastered .art,.card.all-mastered .art:has(img.low-res){background:radial-gradient(circle at 50% 42%,#a97824,#6b481a 55%,#30230f)}
+.card.all-mastered .card-body{background:linear-gradient(145deg,#5b4119,#332711 60%,#251f19)}
+.card.all-mastered .card-name,.card.all-mastered .count{color:#ffe9a0}
+.card.all-mastered .mini div{background:linear-gradient(90deg,#b98521,#fff1a1,#dba938)}
+.card.all-mastered .view{background:#77551e;border-color:#e8b950;color:#fff1c2}
+.card.all-mastered::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 24%,#fff5bb19 43%,#fff4b644 50%,#fff5bb19 57%,transparent 76%);transform:translateX(-130%);animation:masterShine 4s ease-in-out infinite}
+@keyframes masterShine{0%,18%{transform:translateX(-130%)}52%,100%{transform:translateX(130%)}}
+.full-mastery-banner{position:absolute;top:12px;left:0;right:0;z-index:2;text-align:center;padding:7px 3px;font-size:11px;font-weight:950;letter-spacing:1px;color:#2b1b00;background:linear-gradient(90deg,#c48b20,#fff0a4,#e4b23c);box-shadow:0 3px 12px #0006}
+@media(prefers-reduced-motion:reduce){.card.all-mastered::after{animation:none;display:none}}
+
 .card-status{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}
 .status-pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900;letter-spacing:.15px;border:1px solid #536b87;background:#243850;color:#bcd2e9}
 .status-pill.owned{border-color:#47cfa77a;background:#173f39;color:#9bffe0}
@@ -286,10 +298,12 @@ function render(){
  for(const f of list){
  const n=amount(f),total=f.variants.length;
  const card=document.createElement("article");
- card.className="card"+(n===total?" is-complete":"")+(f.variants.some(isMastered)?" has-mastery":"");
+ const allMastered=total>0&&f.variants.every(isMastered);
+ card.className="card"+(n===total?" is-complete":"")+(f.variants.some(isMastered)?" has-mastery":"")+(allMastered?" all-mastered":"");
  const art=document.createElement("div");
  art.className="art";
  if(f.image)art.append(makeImage(f.image,f.name));
+ if(allMastered){const banner=document.createElement("div");banner.className="full-mastery-banner";banner.textContent="★ FULLY MASTERED ★";art.append(banner);}
  const body=document.createElement("div");
  body.className="card-body";
  const title=document.createElement("div");
