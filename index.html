@@ -36,6 +36,19 @@ input::placeholder{color:#8399b8}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
 .card{background:linear-gradient(180deg,#1c2a43,#131f32);border:1px solid var(--border);border-radius:19px;overflow:hidden;cursor:pointer;box-shadow:0 9px 25px #0004;transition:transform .16s,border-color .16s}
 .card:active{transform:scale(.975);border-color:#62dfff}
+.card{position:relative;isolation:isolate}
+.card::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;box-shadow:inset 0 0 0 1px rgba(110,225,255,.08)}
+.card:hover{border-color:#67dfff;box-shadow:0 12px 30px #0006,0 0 18px #39bfff24}
+.card.is-complete{border-color:#4fdab67a;box-shadow:0 9px 25px #0004,0 0 20px #36f0b51a}
+.card.has-mastery{border-color:#d8b65b7a}
+.card.has-mastery .art{background:radial-gradient(circle at 50% 43%,#5c4b55,#26334e 57%,#101b2e)}
+.card-status{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}
+.status-pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:5px 9px;font-size:10px;font-weight:900;letter-spacing:.15px;border:1px solid #536b87;background:#243850;color:#bcd2e9}
+.status-pill.owned{border-color:#47cfa77a;background:#173f39;color:#9bffe0}
+.status-pill.missing{border-color:#647995;background:#27354b;color:#c3d2e7}
+.status-pill.mastered{border-color:#e7be6380;background:#47391f;color:#ffe4a0}
+.card .card-body{position:relative}
+
 .art{height:clamp(145px,43vw,235px);background:radial-gradient(circle at 50% 43%,#385779,#192d48 57%,#101b2e);display:flex;align-items:center;justify-content:center;padding:9px}
 .art img{display:block;width:auto;height:auto;max-width:88%;max-height:88%;object-fit:contain;image-rendering:auto;filter:drop-shadow(0 12px 16px #0006)}
 .art img.low-res,.detail-art img.low-res{image-rendering:auto;max-width:min(75%,190px);max-height:78%}
@@ -267,7 +280,7 @@ function render(){
  for(const f of list){
  const n=amount(f),total=f.variants.length;
  const card=document.createElement("article");
- card.className="card";
+ card.className="card"+(n===total?" is-complete":"")+(f.variants.some(isMastered)?" has-mastery":"");
  const art=document.createElement("div");
  art.className="art";
  if(f.image)art.append(makeImage(f.image,f.name));
@@ -282,6 +295,15 @@ function render(){
  const sub=document.createElement("div");
  sub.className="small";
  sub.textContent=n===total?"✓ Complete":"Rarities collected";
+ const badges=document.createElement("div");
+ badges.className="card-status";
+ const ownedBadge=document.createElement("span");
+ ownedBadge.className="status-pill "+(n?"owned":"missing");
+ ownedBadge.textContent=n?"✓ Owned "+n:"○ Missing";
+ badges.append(ownedBadge);
+ if(n<total&&n>0){const missingBadge=document.createElement("span");missingBadge.className="status-pill missing";missingBadge.textContent="○ Missing "+(total-n);badges.append(missingBadge);}
+ const masteredCount=f.variants.filter(isMastered).length;
+ if(masteredCount){const masteredBadge=document.createElement("span");masteredBadge.className="status-pill mastered";masteredBadge.textContent="★ Mastered "+masteredCount;badges.append(masteredBadge);}
  const mastery=document.createElement("div");
  mastery.className="mastered-tag";
  mastery.textContent="★ "+f.variants.filter(isMastered).length+" mastered";
@@ -297,7 +319,7 @@ function render(){
  const button=document.createElement("button");
  button.className="view";
  button.textContent="Explore variants →";
- body.append(title,count,sub,mastery,levelSummary,mini,button);
+ body.append(title,badges,count,sub,mastery,levelSummary,mini,button);
  card.append(art,body);
  card.onclick=()=>openFamily(f);
  $("grid").append(card);
