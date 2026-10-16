@@ -61,6 +61,14 @@ input::placeholder{color:#8399b8}
 .master-btn{display:block;margin-top:9px!important;padding:8px 10px!important;background:#283b56!important;color:#d6e5f7!important;border:1px solid #526782!important}
 .master-btn.is-mastered{background:linear-gradient(135deg,#725522,#a27a2c)!important;color:#fff1b4!important;border-color:#e1b75a!important}
 .level-summary{display:block;margin-top:5px;font-size:11px;color:#aac4dc}
+.variant-level{display:inline-block;margin-top:8px;padding:5px 9px;background:#284666;border:1px solid #42698c;border-radius:8px;color:#a9edff;font-size:12px;font-weight:850}
+.sync-wrap{display:flex;gap:10px;align-items:center;margin:0 0 18px}
+#syncButton{flex:1;border:1px solid #5ad6fa;background:linear-gradient(130deg,#56e4ff,#3baff4);color:#061628;font-weight:900;border-radius:14px;padding:14px 16px;font-size:14px}
+#syncButton:disabled{opacity:.65}
+#syncStatus{font-size:11px;color:#b7c8e3;max-width:170px}
+#syncTrack{display:none;position:fixed;left:0;right:0;bottom:40px;z-index:30;pointer-events:none;height:75px;overflow:hidden}
+#runner{position:absolute;left:0;bottom:5px;width:62px;height:62px;object-fit:contain;animation:runSprite 2.1s linear infinite;filter:drop-shadow(0 5px 8px #0008)}
+@keyframes runSprite{0%{transform:translateX(-80px) rotate(-12deg)}50%{transform:translateX(50vw) rotate(12deg)}100%{transform:translateX(calc(100vw + 80px)) rotate(-12deg)}}
 .message{text-align:center;color:#b7c8e3;padding:20px 0}
 @media(min-width:640px){header{padding-left:max(24px,calc((100vw - 740px)/2))}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -73,6 +81,7 @@ input::placeholder{color:#8399b8}
 <p>YOUR COLLECTION · EVERY VARIANT · EVERY SEASON</p>
 </header>
 <main>
+<div class="sync-wrap"><button id="syncButton" type="button">↻ Refresh Sprites</button><span id="syncStatus" role="status" aria-live="polite">Account sync not connected</span></div>
 <div class="season-label">SPRITE SEASON</div>
 <select id="seasonSelect" aria-label="Choose Sprite season"><option value="all">All seasons</option></select>
 <div class="panel">
@@ -90,12 +99,14 @@ input::placeholder{color:#8399b8}
 <div id="message" class="message">Loading Sprites...</div>
 <div id="grid" class="grid"></div>
 </main>
+<div id="syncTrack" aria-hidden="true"><img id="runner" alt=""></div>
 <section id="detail">
 <button class="back" id="back">← Back to Sprites</button>
 <div id="detailContent"></div>
 </section>
 <script>
 const API="https://prod.fn-api.cc/v1/sprites";
+let refreshing=false;
 let families=[],filter="all",selected=null,season="all";
 let saved={};
 let mastered={};
@@ -289,6 +300,10 @@ function showFamily(){
  name.className="variant-name";
  name.textContent=v.name;
  info.append(name);
+ const levelBadge=document.createElement("div");
+ levelBadge.className="variant-level";
+ levelBadge.textContent=owned(v)?"LVL "+saved[v.id]:"LVL — · Missing";
+ info.append(levelBadge);
  if(owned(v)){
  const levels=document.createElement("div");
  levels.className="level-row";
@@ -345,20 +360,49 @@ document.querySelectorAll("[data-filter]").forEach(b=>{
  render();
  };
 });
-fetch(API)
-.then(r=>{
- if(!r.ok)throw Error("API error");
- return r.json();
-})
-.then(data=>{
- families=prepare(data);
- setupSeasons();
- if(!families.length)throw Error("No Sprite data");
- render();
-})
-.catch(()=>{
- $("message").textContent="Could not load Sprite data. Please try refreshing.";
-});
+async function refreshSprites(isManual=false){
+ if(refreshing)return;
+ refreshing=true;
+ const button=$("syncButton");
+ button.disabled=true;
+ button.textContent="Refreshing…";
+ const runner=$("runner");
+ const sample=families.flatMap(f=>f.variants).find(v=>v.image);
+ if(sample)runner.src=sample.image;
+ $("syncTrack").style.display=isManual?"block":"none";
+ $("syncStatus").textContent="Checking Sprite catalog…";
+ const start=Date.now();
+ try{
+  const response=await fetch(API+"?refresh="+Date.now(),{cache:"no-store"});
+  if(!response.ok)throw Error("Catalog request failed");
+  const data=await response.json();
+  const updated=prepare(data);
+  if(!updated.length)throw Error("No Sprites returned");
+  families=updated;
+  const previousSeason=season;
+  setupSeasons();
+  if([...$("seasonSelect").options].some(o=>o.value===previousSeason)){
+   season=previousSeason;$("seasonSelect").value=season;
+  }
+  render();
+  if(selected){
+   const matching=families.find(f=>f.name===selected.name&&f.season===selected.season);
+   if(matching){selected=matching;showFamily();}
+  }
+  if(isManual)await new Promise(resolve=>setTimeout(resolve,Math.max(0,2100-(Date.now()-start))));
+  $("syncStatus").textContent="✓ Sprite catalog updated · Account not connected";
+ }catch(error){
+  $("syncStatus").textContent="Could not refresh Sprites. Try again.";
+  if(!families.length)$("message").textContent="Could not load Sprite data. Please try refreshing.";
+ }finally{
+  $("syncTrack").style.display="none";
+  button.disabled=false;
+  button.textContent="↻ Refresh Sprites";
+  refreshing=false;
+ }
+}
+$("syncButton").onclick=()=>refreshSprites(true);
+refreshSprites(false);
 </script>
 </body>
 </html>
