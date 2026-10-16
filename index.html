@@ -191,6 +191,14 @@ input::placeholder{color:#8399b8}
  .grid .card .view{font-size:10px!important;padding:9px 3px!important}
  .grid .card .count{font-size:clamp(20px,5vw,25px)!important}
 }
+.epic-connect{border:1px solid #52688b;background:linear-gradient(135deg,#1d2944,#121c30);border-radius:18px;padding:18px;margin-bottom:19px;box-shadow:0 8px 24px #0003}
+.epic-connect-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.epic-connect h2{font-size:19px;margin:5px 0 0;line-height:1.2}
+.epic-eyebrow{font-size:10px;letter-spacing:1.4px;font-weight:900;color:#88dfff}
+.epic-pending{font-size:10px;font-weight:850;color:#f6d591;background:#49391e;border:1px solid #95743b;border-radius:99px;padding:6px 8px;white-space:nowrap}
+.epic-connect p{font-size:12px;line-height:1.6;color:#b9cbe5;margin:12px 0}
+.epic-connect button{width:100%;background:#343f53;color:#aebcd0;border:1px solid #536179;border-radius:12px;padding:13px;font-size:14px;font-weight:850;cursor:not-allowed}
+.epic-connect .epic-connect-note{font-size:11px;margin-bottom:0;color:#e4c995}
 </style>
 </head>
 <body>
@@ -206,6 +214,13 @@ input::placeholder{color:#8399b8}
  
 </header>
 <main id="top">
+<section class="epic-connect" aria-labelledby="epicConnectTitle">
+ <div class="epic-connect-head"><div><span class="epic-eyebrow">ACCOUNT CONNECTION</span><h2 id="epicConnectTitle">Connect Epic Games</h2></div><span class="epic-pending">Setup needed</span></div>
+ <p>Sign in with Epic to connect your account when authentication is configured. Your Fortnite Sprite collection cannot be imported yet; keep tracking manually for now.</p>
+ <button id="epicConnectButton" type="button" disabled>Connect with Epic Games</button>
+ <p class="epic-connect-note" id="epicConnectNote" role="status">Epic sign-in is not configured yet. No account is connected.</p>
+</section>
+
 <div class="sync-wrap"><button id="syncButton" type="button">↻ Refresh Sprites</button><span id="syncStatus" role="status" aria-live="polite">Account sync not connected</span></div>
 <div id="newAlert" class="new-alert" role="status" aria-live="polite"><span id="newAlertText"></span><button type="button" id="showNewButton">View new</button></div>
 <div class="season-label">SPRITE SEASON</div>
