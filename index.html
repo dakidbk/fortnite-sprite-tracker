@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fortnite Sprite Tracker</title>
+<title>Fortnite Sprite Tracker — Families</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#090f20;color:white;font-family:Arial,sans-serif}
@@ -49,7 +49,7 @@ input{width:100%;padding:14px;background:#1b2945;border:1px solid #455877;border
 <body>
 <header>
 <h1>✦ SPRITE TRACKER</h1>
-<p>Collect every Sprite rarity</p>
+<p>One card per Sprite family · Tap to see variants</p>
 </header>
 <main>
 <div class="panel">
@@ -91,10 +91,12 @@ function store(){
  localStorage.setItem("mySprites",JSON.stringify(saved));
 }
 function familyName(s){
- const name=String(s.name||s.displayName||s.id||"Sprite").replace(/\\s+Sprite$/i,"").trim();
- // These are cosmetic styles of the same Llama Sprite, not separate families.
- if(/llama/i.test(name))return "Llama";
- return name;
+ const full=String(s.name||s.displayName||s.id||"Sprite").trim();
+ const stem=full.replace(/\s+Sprite$/i,"").trim();
+ // Variants commonly have a style prefix, e.g. Gummy Llama, Galaxy Llama.
+ // Use the last family word so they all appear under Llama Sprite.
+ const words=stem.split(/\s+/);
+ return words[words.length-1]||stem;
 }
 function getList(data){
  if(Array.isArray(data))return data;
