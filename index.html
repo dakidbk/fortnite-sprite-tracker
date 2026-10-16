@@ -207,7 +207,7 @@ function setupSeasons(){
  }
  const known=names.filter(n=>n!=="Season unknown");
  // Prefer a known season when one exists, to avoid mixing older and newer Sprites.
- season=known[0]||names[0]||"all";
+ season="all";
  select.value=season;
 }
 function owned(v){return !!saved[v.id]}
@@ -363,7 +363,7 @@ $("back").onclick=()=>{
  selected=null;
 };
 $("search").oninput=render;
-$("sortSelect").onchange=e=>{sortOrder=e.target.value;localStorage.setItem("spriteSortOrder",sortOrder);render();};
+$("sortSelect").onchange=e=>{sortOrder=e.target.value;localStorage.setItem("spriteSortOrder",sortOrder);season="all";$("seasonSelect").value="all";render();window.scrollTo({top:0,behavior:"smooth"});};
 $("seasonSelect").onchange=e=>{season=e.target.value;render();};
 document.querySelectorAll("[data-filter]").forEach(b=>{
  b.onclick=()=>{
