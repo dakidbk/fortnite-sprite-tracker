@@ -17,6 +17,7 @@ h1::first-letter{color:var(--accent)}
 header p{position:relative;z-index:1;color:#a9bed8;font-size:13px;margin:12px 0 0;letter-spacing:.25px}
 main{max-width:780px;margin:auto;padding:22px 16px 64px}
 .season-label{font-size:11px;letter-spacing:1.7px;color:#80dff6;margin:0 0 10px;font-weight:850}
+#sortSelect{appearance:none;width:100%;padding:14px 16px;margin:0 0 18px;background:#17243a;border:1px solid #365572;border-radius:14px;color:white;font-size:14px;font-weight:800}
 #seasonSelect{appearance:none;width:100%;padding:17px 45px 17px 17px;margin-bottom:20px;background:linear-gradient(145deg,#1b2d4a,#132138);border:1px solid #365572;border-radius:16px;color:white;font-size:15px;font-weight:800;box-shadow:0 8px 22px #0003}
 .panel{position:relative;overflow:hidden;background:linear-gradient(130deg,#1d3657,#142238 80%);border:1px solid rgba(119,206,255,.25);border-radius:23px;padding:23px;margin-bottom:22px;box-shadow:0 12px 36px #0004}
 .panel:before{content:"";position:absolute;top:-90px;right:-70px;width:210px;height:210px;border-radius:50%;background:#4ddaff;filter:blur(95px);opacity:.14}
@@ -84,6 +85,8 @@ input::placeholder{color:#8399b8}
 <div class="sync-wrap"><button id="syncButton" type="button">↻ Refresh Sprites</button><span id="syncStatus" role="status" aria-live="polite">Account sync not connected</span></div>
 <div class="season-label">SPRITE SEASON</div>
 <select id="seasonSelect" aria-label="Choose Sprite season"><option value="all">All seasons</option></select>
+<label class="season-label" for="sortSelect" style="display:block">SORT SPRITES</label>
+<select id="sortSelect" aria-label="Sort Sprites by season"><option value="newest">Newest → Oldest</option><option value="oldest">Oldest → Newest</option></select>
 <div class="panel">
 <div>My Collection</div>
 <div class="big" id="total">0 / 0</div>
@@ -109,6 +112,7 @@ input::placeholder{color:#8399b8}
 const API="https://prod.fn-api.cc/v1/sprites";
 let refreshing=false;
 let families=[],filter="all",selected=null,season="all";
+let sortOrder=localStorage.getItem("spriteSortOrder")==="oldest"?"oldest":"newest";
 let saved={};
 let mastered={};
 try{mastered=JSON.parse(localStorage.getItem("masteredSprites")||"{}")}catch(e){}
@@ -116,6 +120,13 @@ try{
  saved=JSON.parse(localStorage.getItem("mySprites")||"{}");
 }catch(e){}
 const $=id=>document.getElementById(id);
+$("sortSelect").value=sortOrder;
+function compareSeasons(a,b){
+ if(a==="Season unknown")return 1;
+ if(b==="Season unknown")return -1;
+ const comparison=a.localeCompare(b,undefined,{numeric:true,sensitivity:"base"});
+ return sortOrder==="newest"?-comparison:comparison;
+}
 const imageOf=s=>{
  const choices=[
  s.image,s.icon,s.artwork,s.displayImage,
@@ -229,7 +240,7 @@ function render(){
  (filter==="all"||
  (filter==="owned"&&n>0)||
  (filter==="missing"&&n<total));
- });
+ }).sort((a,b)=>compareSeasons(a.season,b.season)||a.name.localeCompare(b.name));
  $("grid").replaceChildren();
  $("message").textContent=list.length?"":"No Sprite families found.";
  for(const f of list){
@@ -352,6 +363,7 @@ $("back").onclick=()=>{
  selected=null;
 };
 $("search").oninput=render;
+$("sortSelect").onchange=e=>{sortOrder=e.target.value;localStorage.setItem("spriteSortOrder",sortOrder);render();};
 $("seasonSelect").onchange=e=>{season=e.target.value;render();};
 document.querySelectorAll("[data-filter]").forEach(b=>{
  b.onclick=()=>{
