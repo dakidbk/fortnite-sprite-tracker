@@ -107,6 +107,15 @@ input::placeholder{color:#8399b8}
 @media(min-width:640px){header{padding-left:max(24px,calc((100vw - 740px)/2))}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 
+.site-footer{margin:50px 0 0;padding:26px 20px 30px;border:1px solid #304866;border-radius:20px 20px 0 0;background:linear-gradient(160deg,#182b46,#0e1a2c);color:#a9bfd8;font-size:13px}
+.footer-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:25px;text-align:left}
+.site-footer h3{color:#7deaff;font-size:15px;margin:0 0 13px}
+.site-footer p{line-height:1.6;margin:0 0 9px}
+.site-footer a{display:block;color:#d7ecff;text-decoration:none;margin:0 0 12px;font-weight:700}
+.site-footer a:hover{text-decoration:underline;color:#81edff}
+.site-footer .footer-note{color:#8ea7c5;font-size:12px}
+.footer-bottom{border-top:1px solid #344962;margin-top:22px;padding-top:17px;text-align:center;font-size:11px;line-height:1.6;color:#8fa7c3}
+@media(max-width:580px){.footer-grid{grid-template-columns:1fr;gap:20px}.site-footer{padding:23px 18px 28px}}
 </style>
 </head>
 <body>
@@ -114,7 +123,7 @@ input::placeholder{color:#8399b8}
 <h1>✦ SPRITE TRACKER</h1>
 <p>YOUR COLLECTION · EVERY VARIANT · EVERY SEASON</p>
 </header>
-<main>
+<main id="top">
 <div class="sync-wrap"><button id="syncButton" type="button">↻ Refresh Sprites</button><span id="syncStatus" role="status" aria-live="polite">Account sync not connected</span></div>
 <div class="season-label">SPRITE SEASON</div>
 <select id="seasonSelect" aria-label="Choose Sprite season"><option value="all">All seasons</option></select>
@@ -134,7 +143,14 @@ input::placeholder{color:#8399b8}
 </div>
 <div id="message" class="message">Loading Sprites...</div>
 <div id="grid" class="grid"></div>
-<footer style="text-align:center;padding:4px 18px 30px;color:#9caecb;font-size:12px"><a href="./privacy.html" style="color:#71e8ff">Privacy Policy</a> · Independent fan-made tracker, not affiliated with Epic Games</footer>
+<footer class="site-footer">
+ <div class="footer-grid">
+  <section><h3>✦ Sprite Tracker</h3><p>A fan-made home for tracking Fortnite Sprite families, variants, and mastery progress.</p><p class="footer-note">Your collection is saved on this device. Epic account collection sync is not available yet.</p></section>
+  <section><h3>Quick Links</h3><a href="#top">↑ Back to top</a><a href="./privacy.html">Privacy Policy</a><a href="https://github.com/dakidbk/fortnite-sprite-tracker" target="_blank" rel="noopener noreferrer">Project on GitHub ↗</a></section>
+  <section><h3>Contact &amp; Support</h3><a href="mailto:spritetracker247@gmail.com">✉ Email Sprite Tracker</a><a href="https://github.com/dakidbk/fortnite-sprite-tracker/issues" target="_blank" rel="noopener noreferrer">Report a problem ↗</a><p>Never send Epic passwords or account tokens.</p></section>
+ </div>
+ <div class="footer-bottom">© 2026 Sprite Tracker · Unofficial fan-made project. Not affiliated with or endorsed by Epic Games.</div>
+</footer>
 </main>
 <div id="loadingScreen" role="status" aria-live="polite" aria-label="Refreshing Sprite catalog"><div class="loading-symbol" aria-hidden="true">✦</div><div class="loading-title">Refreshing Sprites</div><div class="loading-description">Loading the latest Sprite collection…</div><div class="loading-track" aria-hidden="true"></div></div>
 <section id="detail">
