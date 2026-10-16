@@ -6,52 +6,67 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Fortnite Sprite Tracker — Families</title>
 <style>
+:root{color-scheme:dark;--bg:#080d19;--surface:#121d31;--surface2:#1b2941;--border:rgba(166,205,255,.14);--text:#f5f9ff;--muted:#9caecb;--accent:#60e3ff}
 *{box-sizing:border-box}
-body{margin:0;background:#090f20;color:white;font-family:Arial,sans-serif}
-header{text-align:center;padding:24px 12px;background:#17213b}
-h1{font-size:27px;color:#5ad9ff;margin:0}
-header p{color:#aebdd7;font-size:13px}
-main{max-width:750px;margin:auto;padding:16px}
-.panel{background:#1b2945;border-radius:18px;padding:20px;margin-bottom:16px}
-.big{font-size:34px;font-weight:800;color:#5ad9ff;margin:8px 0}
-.bar{height:9px;background:#34445e;border-radius:20px;overflow:hidden}
-.bar div{height:100%;background:#5ad9ff;width:0}
-input{width:100%;padding:14px;background:#1b2945;border:1px solid #455877;border-radius:12px;color:white;font-size:16px;margin-bottom:14px}
-.season-label{font-size:13px;color:#b7c8e3;margin:0 0 8px;font-weight:bold}
-#seasonSelect{width:100%;padding:13px 12px;margin-bottom:16px;background:#1b2945;border:1px solid #455877;border-radius:12px;color:white;font-size:16px}
-.filters{display:flex;gap:8px;margin-bottom:20px}
-.filters button{flex:1;background:#1b2945;border:1px solid #455877;color:white;padding:12px 4px;border-radius:10px}
-.filters .active{background:#5ad9ff;color:#091323;font-weight:bold}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.card{background:#1b2945;border:1px solid #354766;border-radius:15px;overflow:hidden;cursor:pointer}
-.art{height:160px;background:radial-gradient(circle,#385981,#101a2e);display:flex;align-items:center;justify-content:center}
-.art img{width:100%;height:100%;object-fit:contain}
-.card-body{padding:12px}
-.card-name{font-size:15px;font-weight:800;min-height:36px}
-.count{font-size:23px;font-weight:800;color:#5ad9ff;margin:8px 0}
-.small{font-size:12px;color:#b7c8e3}
-.mini{height:6px;background:#34445e;border-radius:10px;overflow:hidden;margin:10px 0}
-.mini div{height:100%;background:#5ad9ff}
-.view{width:100%;border:0;border-radius:9px;background:#334a6a;color:white;padding:11px;margin-top:8px;font-weight:bold}
-#detail{display:none;position:fixed;inset:0;background:#090f20;z-index:10;overflow-y:auto;padding:18px}
-.back{background:#263b5a;color:white;border:0;padding:12px 18px;border-radius:10px;margin-bottom:20px}
-.detail-art{height:170px;display:flex;align-items:center;justify-content:center;background:#1b2945;border-radius:15px}
-.detail-art img{height:100%;max-width:100%;object-fit:contain}
-.variant{display:flex;align-items:center;gap:12px;background:#1b2945;padding:12px;border-radius:12px;margin:10px 0}
-.variant img{width:64px;height:64px;object-fit:contain}
+html{scroll-behavior:smooth}
+body{margin:0;min-height:100vh;background:radial-gradient(ellipse 120% 400px at 50% -80px,#1b3c64 0%,transparent 75%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+header{position:relative;overflow:hidden;text-align:left;padding:36px 20px 28px;background:linear-gradient(130deg,#172b49 0%,#0d1628 72%);border-bottom:1px solid var(--border)}
+header:after{content:"✦";position:absolute;right:-5px;top:-20px;font-size:170px;color:rgba(95,226,255,.065);pointer-events:none}
+h1{position:relative;z-index:1;font-size:clamp(26px,7vw,40px);font-weight:950;letter-spacing:-1.5px;color:#f7fcff;margin:0;line-height:1.05}
+h1::first-letter{color:var(--accent)}
+header p{position:relative;z-index:1;color:#a9bed8;font-size:13px;margin:12px 0 0;letter-spacing:.25px}
+main{max-width:780px;margin:auto;padding:22px 16px 64px}
+.season-label{font-size:11px;letter-spacing:1.7px;color:#80dff6;margin:0 0 10px;font-weight:850}
+#seasonSelect{appearance:none;width:100%;padding:17px 45px 17px 17px;margin-bottom:20px;background:linear-gradient(145deg,#1b2d4a,#132138);border:1px solid #365572;border-radius:16px;color:white;font-size:15px;font-weight:800;box-shadow:0 8px 22px #0003}
+.panel{position:relative;overflow:hidden;background:linear-gradient(130deg,#1d3657,#142238 80%);border:1px solid rgba(119,206,255,.25);border-radius:23px;padding:23px;margin-bottom:22px;box-shadow:0 12px 36px #0004}
+.panel:before{content:"";position:absolute;top:-90px;right:-70px;width:210px;height:210px;border-radius:50%;background:#4ddaff;filter:blur(95px);opacity:.14}
+.panel>div:first-child{font-size:13px;color:#c5d8ef;font-weight:750;letter-spacing:.5px}
+.big{font-size:clamp(38px,11vw,52px);letter-spacing:-2px;font-weight:950;color:#71e8ff;margin:8px 0 18px;font-variant-numeric:tabular-nums}
+.bar{height:10px;background:#33445f;border-radius:20px;overflow:hidden}
+.bar div{height:100%;background:linear-gradient(90deg,#4bb7ff,#70f3ed);width:0;box-shadow:0 0 18px #4be8ff80;transition:width .25s}
+.small{font-size:12px;color:var(--muted)}
+.panel .small{margin:13px 0 0}
+input{width:100%;padding:16px 17px;background:#17243a;border:1px solid #344963;border-radius:15px;color:white;font-size:16px;margin-bottom:15px;outline:none}
+input:focus{border-color:#64dffb;box-shadow:0 0 0 3px #60e3ff1a}
+input::placeholder{color:#8399b8}
+.filters{display:flex;gap:9px;margin-bottom:25px;padding:4px;border:1px solid #253650;background:#111d30;border-radius:16px}
+.filters button{flex:1;min-width:0;background:transparent;border:0;color:#aebed7;padding:13px 4px;border-radius:12px;font-weight:750;font-size:13px}
+.filters .active{background:linear-gradient(135deg,#65e6ff,#49bfff);color:#061424;box-shadow:0 5px 16px #00bbff35}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.card{background:linear-gradient(180deg,#1c2a43,#131f32);border:1px solid var(--border);border-radius:19px;overflow:hidden;cursor:pointer;box-shadow:0 9px 25px #0004;transition:transform .16s,border-color .16s}
+.card:active{transform:scale(.975);border-color:#62dfff}
+.art{height:clamp(145px,43vw,235px);background:radial-gradient(circle at 50% 43%,#385779,#192d48 57%,#101b2e);display:flex;align-items:center;justify-content:center;padding:9px}
+.art img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 12px 16px #0006)}
+.card-body{padding:14px 13px 15px}
+.card-name{font-size:15px;line-height:1.25;font-weight:850;min-height:38px;letter-spacing:-.3px}
+.count{font-size:26px;font-weight:950;letter-spacing:-.7px;color:#71e8ff;margin:10px 0 4px;font-variant-numeric:tabular-nums}
+.mini{height:6px;background:#33435a;border-radius:10px;overflow:hidden;margin:12px 0}
+.mini div{height:100%;background:linear-gradient(90deg,#4abfff,#77f2e6);border-radius:10px}
+.view{width:100%;border:1px solid #3e627e;border-radius:11px;background:#253e5c;color:#e6f9ff;padding:12px 6px;margin-top:4px;font-size:12px;font-weight:850}
+#detail{display:none;position:fixed;inset:0;background:radial-gradient(circle at top,#1a3454,#080d19 60%);z-index:10;overflow-y:auto;padding:20px 16px 55px}
+#detailContent{max-width:680px;margin:auto}
+#detailContent h2{font-size:25px;letter-spacing:-.7px}
+.back{background:#1e334e;color:#eaf7ff;border:1px solid #42607e;padding:13px 17px;border-radius:13px;margin-bottom:22px;font-weight:800}
+.detail-art{height:210px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#35587a,#14223a 70%);border:1px solid var(--border);border-radius:20px;margin-bottom:20px}
+.detail-art img{height:95%;max-width:100%;object-fit:contain;filter:drop-shadow(0 14px 20px #0006)}
+.variant{display:flex;align-items:center;gap:11px;background:#17263e;border:1px solid var(--border);padding:12px;border-radius:15px;margin:10px 0}
+.variant img{width:63px;height:69px;object-fit:contain;background:#253d5b;border-radius:11px}
 .variant-info{flex:1;min-width:0}
-.variant-name{font-weight:bold;font-size:14px}
-.variant button{border:0;background:#5ad9ff;color:#091323;border-radius:9px;padding:10px;font-weight:bold}
-.variant button.owned{background:#315b4c;color:#a5ffce}
-.level-row{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:13px}
-.level-row button{padding:5px 10px;background:#344b69;color:white}
-.message{text-align:center;color:#b7c8e3;padding:25px}
+.variant-name{font-weight:850;font-size:13px;overflow-wrap:anywhere}
+.variant button{border:0;background:#66e4ff;color:#091728;border-radius:10px;padding:10px;font-weight:850;font-size:12px}
+.variant button.owned{background:#22574e;color:#a3ffe1}
+.level-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px}
+.level-row button{padding:5px 10px;background:#334f6d;color:white}
+.message{text-align:center;color:#b7c8e3;padding:20px 0}
+@media(min-width:640px){header{padding-left:max(24px,calc((100vw - 740px)/2))}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
 </style>
 </head>
 <body>
 <header>
 <h1>✦ SPRITE TRACKER</h1>
-<p>One card per Sprite family · Tap to see variants</p>
+<p>YOUR COLLECTION · EVERY VARIANT · EVERY SEASON</p>
 </header>
 <main>
 <div class="season-label">SPRITE SEASON</div>
@@ -222,7 +237,7 @@ function render(){
  mini.append(fill);
  const button=document.createElement("button");
  button.className="view";
- button.textContent="View Rarities →";
+ button.textContent="Explore variants →";
  body.append(title,count,sub,mini,button);
  card.append(art,body);
  card.onclick=()=>openFamily(f);
