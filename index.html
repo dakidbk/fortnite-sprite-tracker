@@ -57,6 +57,10 @@ input::placeholder{color:#8399b8}
 .variant button.owned{background:#22574e;color:#a3ffe1}
 .level-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px}
 .level-row button{padding:5px 10px;background:#334f6d;color:white}
+.mastered-tag{display:inline-block;margin:7px 0 2px;color:#f8d988;font-size:11px;font-weight:850;letter-spacing:.2px}
+.master-btn{display:block;margin-top:9px!important;padding:8px 10px!important;background:#283b56!important;color:#d6e5f7!important;border:1px solid #526782!important}
+.master-btn.is-mastered{background:linear-gradient(135deg,#725522,#a27a2c)!important;color:#fff1b4!important;border-color:#e1b75a!important}
+.level-summary{display:block;margin-top:5px;font-size:11px;color:#aac4dc}
 .message{text-align:center;color:#b7c8e3;padding:20px 0}
 @media(min-width:640px){header{padding-left:max(24px,calc((100vw - 740px)/2))}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -94,6 +98,8 @@ input::placeholder{color:#8399b8}
 const API="https://prod.fn-api.cc/v1/sprites";
 let families=[],filter="all",selected=null,season="all";
 let saved={};
+let mastered={};
+try{mastered=JSON.parse(localStorage.getItem("masteredSprites")||"{}")}catch(e){}
 try{
  saved=JSON.parse(localStorage.getItem("mySprites")||"{}");
 }catch(e){}
@@ -182,6 +188,8 @@ function setupSeasons(){
  select.value=season;
 }
 function owned(v){return !!saved[v.id]}
+function isMastered(v){return owned(v)&&!!mastered[v.id]}
+function saveMastery(){localStorage.setItem("masteredSprites",JSON.stringify(mastered))}
 function amount(f){return f.variants.filter(owned).length}
 function totals(){
  const visibleFamilies=families.filter(f=>season==="all"||f.season===season);
@@ -230,6 +238,13 @@ function render(){
  const sub=document.createElement("div");
  sub.className="small";
  sub.textContent=n===total?"✓ Complete":"Rarities collected";
+ const mastery=document.createElement("div");
+ mastery.className="mastered-tag";
+ mastery.textContent="★ "+f.variants.filter(isMastered).length+" mastered";
+ const highest=f.variants.filter(owned).reduce((m,v)=>Math.max(m,Number(saved[v.id])||0),0);
+ const levelSummary=document.createElement("span");
+ levelSummary.className="level-summary";
+ levelSummary.textContent=highest?"Highest level: "+highest:"No levels recorded";
  const mini=document.createElement("div");
  mini.className="mini";
  const fill=document.createElement("div");
@@ -238,7 +253,7 @@ function render(){
  const button=document.createElement("button");
  button.className="view";
  button.textContent="Explore variants →";
- body.append(title,count,sub,mini,button);
+ body.append(title,count,sub,mastery,levelSummary,mini,button);
  card.append(art,body);
  card.onclick=()=>openFamily(f);
  $("grid").append(card);
@@ -293,12 +308,21 @@ function showFamily(){
  };
  levels.append(minus,label,plus);
  info.append(levels);
+ const masterButton=document.createElement("button");
+ masterButton.className="master-btn"+(isMastered(v)?" is-mastered":"");
+ masterButton.textContent=isMastered(v)?"★ Mastered":"☆ Mark Mastered";
+ masterButton.onclick=()=>{
+ if(isMastered(v))delete mastered[v.id];
+ else mastered[v.id]=true;
+ saveMastery();showFamily();render();
+ };
+ info.append(masterButton);
  }
  const button=document.createElement("button");
  button.className=owned(v)?"owned":"";
  button.textContent=owned(v)?"✓ Owned":"+ Add";
  button.onclick=()=>{
- if(owned(v))delete saved[v.id];
+ if(owned(v)){delete saved[v.id];delete mastered[v.id];saveMastery();}
  else saved[v.id]=1;
  store();showFamily();render();
  };
