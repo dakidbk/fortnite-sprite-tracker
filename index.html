@@ -82,9 +82,15 @@ input::placeholder{color:#8399b8}
 #syncButton{flex:1;border:1px solid #5ad6fa;background:linear-gradient(130deg,#56e4ff,#3baff4);color:#061628;font-weight:900;border-radius:14px;padding:14px 16px;font-size:14px}
 #syncButton:disabled{opacity:.65}
 #syncStatus{font-size:11px;color:#b7c8e3;max-width:170px}
-#syncTrack{display:none;position:fixed;left:0;right:0;bottom:40px;z-index:30;pointer-events:none;height:75px;overflow:hidden}
-#runner{position:absolute;left:0;bottom:5px;width:62px;height:62px;object-fit:contain;animation:runSprite 2.1s linear infinite;filter:drop-shadow(0 5px 8px #0008)}
-@keyframes runSprite{0%{transform:translateX(-80px) rotate(-12deg)}50%{transform:translateX(50vw) rotate(12deg)}100%{transform:translateX(calc(100vw + 80px)) rotate(-12deg)}}
+#loadingScreen{display:none;position:fixed;inset:0;z-index:100;background:#080d19;align-items:center;justify-content:center;flex-direction:column;gap:18px;text-align:center;padding:24px}
+#loadingScreen.visible{display:flex}
+.loading-symbol{font-size:52px;color:#6ce9ff;animation:loadingPulse 1.2s ease-in-out infinite}
+.loading-title{font-size:clamp(22px,6vw,32px);font-weight:950;letter-spacing:-.7px}
+.loading-description{font-size:13px;color:#aec4df}
+.loading-track{width:min(270px,75vw);height:8px;background:#263c55;border-radius:999px;overflow:hidden}
+.loading-track:after{content:"";display:block;width:40%;height:100%;border-radius:999px;background:linear-gradient(90deg,#45baff,#78f3e6);animation:loadingSlide 1.15s ease-in-out infinite alternate}
+@keyframes loadingSlide{from{transform:translateX(0)}to{transform:translateX(150%)}}
+@keyframes loadingPulse{50%{opacity:.55;transform:scale(.9)}}
 .message{text-align:center;color:#b7c8e3;padding:20px 0}
 @media(min-width:640px){header{padding-left:max(24px,calc((100vw - 740px)/2))}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -118,7 +124,7 @@ input::placeholder{color:#8399b8}
 <div id="grid" class="grid"></div>
 <footer style="text-align:center;padding:4px 18px 30px;color:#9caecb;font-size:12px"><a href="./privacy.html" style="color:#71e8ff">Privacy Policy</a> · Independent fan-made tracker, not affiliated with Epic Games</footer>
 </main>
-<div id="syncTrack" aria-hidden="true"><img id="runner" alt=""></div>
+<div id="loadingScreen" role="status" aria-live="polite" aria-label="Refreshing Sprite catalog"><div class="loading-symbol" aria-hidden="true">✦</div><div class="loading-title">Refreshing Sprites</div><div class="loading-description">Loading the latest Sprite collection…</div><div class="loading-track" aria-hidden="true"></div></div>
 <section id="detail">
 <button class="back" id="back">← Back to Sprites</button>
 <div id="detailContent"></div>
@@ -422,10 +428,7 @@ async function refreshSprites(isManual=false){
  const button=$("syncButton");
  button.disabled=true;
  button.textContent="Refreshing…";
- const runner=$("runner");
- const sample=families.flatMap(f=>f.variants).find(v=>v.image);
- if(sample)runner.src=sample.image;
- $("syncTrack").style.display=isManual?"block":"none";
+ if(isManual){$("loadingScreen").classList.add("visible");document.body.style.overflow="hidden";}
  $("syncStatus").textContent="Checking Sprite catalog…";
  const start=Date.now();
  try{
@@ -451,7 +454,7 @@ async function refreshSprites(isManual=false){
   $("syncStatus").textContent="Could not refresh Sprites. Try again.";
   if(!families.length)$("message").textContent="Could not load Sprite data. Please try refreshing.";
  }finally{
-  $("syncTrack").style.display="none";
+  if(isManual){$("loadingScreen").classList.remove("visible");document.body.style.overflow=selected?"hidden":"";}
   button.disabled=false;
   button.textContent="↻ Refresh Sprites";
   refreshing=false;
