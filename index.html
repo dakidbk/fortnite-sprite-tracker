@@ -86,7 +86,7 @@ input::placeholder{color:#8399b8}
 <div class="season-label">SPRITE SEASON</div>
 <select id="seasonSelect" aria-label="Choose Sprite season"><option value="all">All seasons</option></select>
 <label class="season-label" for="sortSelect" style="display:block">SORT SPRITES</label>
-<select id="sortSelect" aria-label="Sort Sprites by season"><option value="newest">Newest → Oldest</option><option value="oldest">Oldest → Newest</option></select>
+<select id="sortSelect" aria-label="Sort Sprites by newest additions"><option value="newest">Newest → Oldest</option><option value="oldest">Oldest → Newest</option></select>
 <div class="panel">
 <div>My Collection</div>
 <div class="big" id="total">0 / 0</div>
@@ -121,6 +121,15 @@ try{
 }catch(e){}
 const $=id=>document.getElementById(id);
 $("sortSelect").value=sortOrder;
+function releaseTime(s){
+ for(const value of [s.releaseDate,s.releasedAt,s.introducedAt,s.addedAt,s.createdAt,s.dateAdded,s.firstSeen]){
+  if(typeof value==="number"&&value>0)return value<1e11?value*1000:value;
+  if(typeof value==="string"&&/^\d{4}-\d{2}-\d{2}/.test(value)){
+   const t=Date.parse(value);if(Number.isFinite(t))return t;
+  }
+ }
+ return 0;
+}
 function compareSeasons(a,b){
  if(a==="Season unknown")return 1;
  if(b==="Season unknown")return -1;
@@ -178,9 +187,10 @@ function prepare(data){
    const key=seasonName+"::"+base.toLowerCase();
    if(!map.has(key))map.set(key,{
     name:base+" Sprite",season:seasonName,
-    image:imageOf(s)||imageOf(v),variants:[]
+    image:imageOf(s)||imageOf(v),variants:[],release:0,position:map.size
    });
    const family=map.get(key);
+   family.release=Math.max(family.release,releaseTime(v),releaseTime(s));
    const id=String(v.id||v.mappingId||s.id||s.mappingId||key+"-"+i);
    const variantName=String(v.displayName||v.name||s.displayName||s.name||("Variant "+(i+1)));
    if(family.variants.some(item=>item.id===id))return;
@@ -240,7 +250,14 @@ function render(){
  (filter==="all"||
  (filter==="owned"&&n>0)||
  (filter==="missing"&&n<total));
- }).sort((a,b)=>compareSeasons(a.season,b.season)||a.name.localeCompare(b.name));
+ }).sort((a,b)=>{
+  const direction=sortOrder==="newest"?-1:1;
+  if(a.release&&b.release&&a.release!==b.release)return direction*(a.release-b.release);
+  const seasonOrder=compareSeasons(a.season,b.season);
+  if(seasonOrder)return seasonOrder;
+  if(a.release!==b.release)return a.release? -1:1;
+  return direction*(a.position-b.position);
+ });
  $("grid").replaceChildren();
  $("message").textContent=list.length?"":"No Sprite families found.";
  for(const f of list){
