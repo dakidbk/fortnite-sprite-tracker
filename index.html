@@ -91,9 +91,10 @@ function store(){
  localStorage.setItem("mySprites",JSON.stringify(saved));
 }
 function familyName(s){
- return String(s.name||s.displayName||s.id||"Sprite")
- .replace(/\s+Sprite$/i,"")
- .trim();
+ const name=String(s.name||s.displayName||s.id||"Sprite").replace(/\\s+Sprite$/i,"").trim();
+ // These are cosmetic styles of the same Llama Sprite, not separate families.
+ if(/llama/i.test(name))return "Llama";
+ return name;
 }
 function getList(data){
  if(Array.isArray(data))return data;
@@ -103,30 +104,21 @@ function getList(data){
  return [];
 }
 function prepare(data){
- const raw=getList(data);
  const map=new Map();
- for(const s of raw){
+ for(const s of getList(data)){
  const base=familyName(s);
- const key=String(s.id||s.mappingId||base);
+ const key=base.toLowerCase();
  const variants=Array.isArray(s.variants)&&s.variants.length?s.variants:[s];
  if(!map.has(key)){
- map.set(key,{
- name:base+" Sprite",
- image:imageOf(s)||imageOf(variants[0]),
- variants:[]
- });
+ map.set(key,{name:base+" Sprite",image:imageOf(s)||imageOf(variants[0]),variants:[]});
  }
  const family=map.get(key);
  variants.forEach((v,i)=>{
- const id=String(v.id||v.mappingId||key+"-"+i);
- const rarity=v.rarity?.displayValue||
- v.rarity?.name||v.rarity||
- v.displayName||v.name||("Variant "+(i+1));
- family.variants.push({
- id,
- name:String(rarity),
- image:imageOf(v)||imageOf(s)
- });
+ const id=String(v.id||v.mappingId||s.id||s.mappingId||key+"-"+i);
+ // Keep the visible variant name (e.g. Gummy Llama Sprite).
+ const variantName=String(v.displayName||v.name||s.displayName||s.name||("Variant "+(i+1)));
+ if(family.variants.some(item=>item.id===id))return;
+ family.variants.push({id,name:variantName,image:imageOf(v)||imageOf(s)});
  });
  }
  return [...map.values()];
