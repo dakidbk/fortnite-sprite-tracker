@@ -11,7 +11,7 @@
 html{scroll-behavior:smooth}
 body{margin:0;min-height:100vh;background:radial-gradient(ellipse 120% 400px at 50% -80px,#1b3c64 0%,transparent 75%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased}
 header{position:relative;overflow:hidden;text-align:left;padding:36px 20px 28px;background:linear-gradient(130deg,#172b49 0%,#0d1628 72%);border-bottom:1px solid var(--border)}
-header:after{content:"✦";position:absolute;right:-5px;top:-20px;font-size:170px;color:rgba(95,226,255,.065);pointer-events:none}
+
 h1{position:relative;z-index:1;font-size:clamp(26px,7vw,40px);font-weight:950;letter-spacing:-1.5px;color:#f7fcff;margin:0;line-height:1.05}
 h1::first-letter{color:var(--accent)}
 header p{position:relative;z-index:1;color:#a9bed8;font-size:13px;margin:12px 0 0;letter-spacing:.25px}
@@ -140,7 +140,7 @@ input::placeholder{color:#8399b8}
 .hero-code button{cursor:pointer;border:0;border-radius:9px;background:#b5ff6e;color:#12200b;padding:12px;font-size:11px;font-weight:950;white-space:nowrap}
 .hero-code button:focus-visible{outline:3px solid white;outline-offset:3px}
 .hero-small{margin-top:10px;color:#d3c8e0;font-size:10px;line-height:1.5}
-@media(max-width:420px){.season-hero{padding:25px 17px 25px;min-height:0}.hero-code{max-width:100%}.season-hero:after{font-size:200px;right:-45px;top:0}}
+@media(max-width:420px){.season-hero{padding:25px 17px 25px;min-height:0}.hero-code{max-width:100%}}
 @media(prefers-reduced-motion:reduce){.hero-code button{transition:none}}
 </style>
 </head>
@@ -179,14 +179,14 @@ input::placeholder{color:#8399b8}
 <div id="grid" class="grid"></div>
 <footer class="site-footer">
  <div class="footer-grid">
-  <section><h3>✦ Sprite Tracker</h3><p>A fan-made home for tracking Fortnite Sprite families, variants, and mastery progress.</p><p class="footer-note">Your collection is saved on this device. Epic account collection sync is not available yet.</p></section>
+  <section><h3>Sprite Tracker</h3><p>A fan-made home for tracking Fortnite Sprite families, variants, and mastery progress.</p><p class="footer-note">Your collection is saved on this device. Epic account collection sync is not available yet.</p></section>
   <section><h3>Quick Links</h3><a href="#top">↑ Back to top</a><a href="./privacy.html">Privacy Policy</a><a href="https://github.com/dakidbk/fortnite-sprite-tracker" target="_blank" rel="noopener noreferrer">Project on GitHub ↗</a></section>
   <section><h3>💬 Feedback &amp; Suggestions</h3><p>Have an idea for Sprite Tracker or found something broken? We’d love to hear it!</p><a class="feedback-action" href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Feature%20Suggestion">💡 Suggest a Feature ↗</a><a class="feedback-action" href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Bug%20Report">🐛 Report a Bug ↗</a><a href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Feedback">✉ Email Feedback</a><p class="footer-note">These buttons open your email app. Never share Epic passwords, tokens, or private account details.</p></section>
  </div>
  <div class="footer-bottom">© 2026 Sprite Tracker · Created by <a href="https://github.com/dakidbk" target="_blank" rel="noopener noreferrer" style="display:inline;color:#81edff">dakidbk</a> · Independent, non-commercial fan project.<p>Portions of the materials used are trademarks and/or copyrighted works of Epic Games, Inc. All rights reserved by Epic. This material is not official and is not endorsed by Epic.</p></div>
 </footer>
 </main>
-<div id="loadingScreen" role="status" aria-live="polite" aria-label="Refreshing Sprite catalog"><div class="loading-symbol" aria-hidden="true">✦</div><div class="loading-title">Refreshing Sprites</div><div class="loading-description">Loading the latest Sprite collection…</div><div class="loading-track" aria-hidden="true"></div></div>
+<div id="loadingScreen" role="status" aria-live="polite" aria-label="Refreshing Sprite catalog"><div class="loading-symbol" aria-hidden="true">🎮</div><div class="loading-title">Refreshing Sprites</div><div class="loading-description">Loading the latest Sprite collection…</div><div class="loading-track" aria-hidden="true"></div></div>
 <section id="detail">
 <button class="back" id="back">← Back to Sprites</button>
 <div id="detailContent"></div>
@@ -294,7 +294,7 @@ function updateNewSpriteAlerts(list){
  try{localStorage.setItem(catalogStorageKey,JSON.stringify(ids));}catch(e){}
  const count=newSpriteIds.size;
  $("newAlert").classList.toggle("visible",count>0);
- $("newAlertText").textContent=count?("✦ "+count+" new Sprite variant"+(count===1?"":"s")+" found!"):"";
+ $("newAlertText").textContent=count?("NEW: "+count+" new Sprite variant"+(count===1?"":"s")+" found!"):"";
  if(!count)showNewOnly=false;
 }
 function setupSeasons(){
@@ -372,7 +372,7 @@ function render(){
  art.className="art";
  if(f.image)art.append(makeImage(f.image,f.name));
  if(allMastered){const banner=document.createElement("div");banner.className="full-mastery-banner";banner.textContent="★ FULLY MASTERED ★";art.append(banner);}
- if(isNew){const badge=document.createElement("span");badge.className="new-sprite-badge";badge.textContent="✦ NEW";art.append(badge);}
+ if(isNew){const badge=document.createElement("span");badge.className="new-sprite-badge";badge.textContent="NEW";art.append(badge);}
  const body=document.createElement("div");
  body.className="card-body";
  const title=document.createElement("div");
