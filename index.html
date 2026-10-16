@@ -123,12 +123,38 @@ input::placeholder{color:#8399b8}
 .new-sprite-badge{position:absolute;top:11px;right:11px;z-index:3;background:linear-gradient(130deg,#8effe2,#4ad4fa);color:#072536;padding:6px 10px;border-radius:9px;font-size:11px;font-weight:950;box-shadow:0 4px 14px #0006}
 .site-footer .feedback-action{display:block;border:1px solid #4f98ac;border-radius:11px;padding:11px 13px;background:#1a3c50;color:#aaf8ff;text-align:center;transition:background .2s ease,transform .2s ease}
 .site-footer .feedback-action:hover{background:#23566a;transform:translateY(-1px);text-decoration:none}
+
+.season-hero{isolation:isolate;min-height:285px;padding:32px max(20px,calc((100vw - 744px)/2)) 28px;background:radial-gradient(ellipse at 90% 15%,#7a3fa87d,transparent 45%),radial-gradient(ellipse at 5% 100%,#23dd9852,transparent 42%),linear-gradient(115deg,#170d30 5%,#251440 48%,#091b25);border-bottom:3px solid #a2ff59}
+.season-hero:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(125deg,transparent 0,transparent 54px,#cda5ff0b 55px,#cda5ff0b 56px);pointer-events:none}
+.season-hero:after{content:"✦";position:absolute;right:2%;top:-65px;font-size:290px;color:#b0ff6420;pointer-events:none;transform:rotate(-18deg)}
+.hero-content{position:relative;z-index:2;max-width:760px;margin:auto}
+.hero-kicker{display:inline-flex;align-items:center;gap:8px;border:1px solid #b5ff8270;background:#132b2b99;border-radius:30px;padding:7px 12px;color:#c7ff9d;font-size:10px;font-weight:900;letter-spacing:1.2px}
+.hero-live-dot{width:7px;height:7px;border-radius:50%;background:#adff61;box-shadow:0 0 12px #b1ff62}
+.hero-event{margin:15px 0 8px;color:#d9aaff;font-size:12px;font-weight:950;letter-spacing:2px}
+.season-hero h1{font-size:clamp(38px,10vw,66px);line-height:.9;letter-spacing:-2.6px;text-shadow:0 5px 22px #09051b}
+.season-hero h1::first-letter{color:#b9ff65}
+.season-hero p{color:#e5d8ff;font-size:11px;font-weight:800;letter-spacing:1.1px;margin:14px 0 20px}
+.hero-code{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:390px;padding:12px 13px 12px 16px;border:1px solid #a9ff70;border-radius:14px;background:#091922c9;box-shadow:0 0 25px #b4ff561b}
+.hero-code-label{display:block;color:#c8d4c4;font-size:9px;font-weight:850;letter-spacing:1.4px;margin-bottom:3px}
+.hero-code strong{display:block;font-size:22px;color:#d5ff93;letter-spacing:2px}
+.hero-code button{cursor:pointer;border:0;border-radius:9px;background:#b5ff6e;color:#12200b;padding:12px;font-size:11px;font-weight:950;white-space:nowrap}
+.hero-code button:focus-visible{outline:3px solid white;outline-offset:3px}
+.hero-small{margin-top:10px;color:#d3c8e0;font-size:10px;line-height:1.5}
+@media(max-width:420px){.season-hero{padding:25px 17px 25px;min-height:0}.hero-code{max-width:100%}.season-hero:after{font-size:200px;right:-45px;top:0}}
+@media(prefers-reduced-motion:reduce){.hero-code button{transition:none}}
 </style>
 </head>
 <body>
-<header>
-<h1>✦ SPRITE TRACKER</h1>
-<p>YOUR COLLECTION · EVERY VARIANT · EVERY SEASON</p>
+<header class="season-hero">
+ <div class="hero-content">
+  <div class="hero-kicker"><span class="hero-live-dot"></span> CHAPTER 7 · SEASON 4 · OVERRIDE</div>
+  <div class="hero-event">🎃 FORTNITEMARES 2026</div>
+  <h1>✦ SPRITE<br>TRACKER</h1>
+  <p>COLLECT THE SPRITES. MASTER EVERY VARIANT.</p>
+  <div class="hero-code"><div><span class="hero-code-label">SUPPORT THE CREATOR</span><strong>DAKIDBK</strong></div><button type="button" id="copyCreatorCode" aria-label="Copy creator code DAKIDBK">⧉ COPY CODE</button></div>
+  <div class="hero-small">Optional Fortnite creator code · Unofficial fan site · No in-game rewards for using this code</div>
+ </div>
+ <div class="hero-decoration" aria-hidden="true">✦</div>
 </header>
 <main id="top">
 <div class="sync-wrap"><button id="syncButton" type="button">↻ Refresh Sprites</button><span id="syncStatus" role="status" aria-live="polite">Account sync not connected</span></div>
@@ -166,6 +192,7 @@ input::placeholder{color:#8399b8}
 <div id="detailContent"></div>
 </section>
 <script>
+document.getElementById("copyCreatorCode").addEventListener("click",async()=>{const button=document.getElementById("copyCreatorCode");try{await navigator.clipboard.writeText("DAKIDBK");button.textContent="✓ COPIED!";}catch(e){button.textContent="CODE: DAKIDBK";}setTimeout(()=>button.textContent="⧉ COPY CODE",2500);});
 const API="https://prod.fn-api.cc/v1/sprites";
 let refreshing=false;
 let families=[],filter="all",selected=null,season="all";
