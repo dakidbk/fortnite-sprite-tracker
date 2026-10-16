@@ -17,6 +17,8 @@ main{max-width:750px;margin:auto;padding:16px}
 .bar{height:9px;background:#34445e;border-radius:20px;overflow:hidden}
 .bar div{height:100%;background:#5ad9ff;width:0}
 input{width:100%;padding:14px;background:#1b2945;border:1px solid #455877;border-radius:12px;color:white;font-size:16px;margin-bottom:14px}
+.season-label{font-size:13px;color:#b7c8e3;margin:0 0 8px;font-weight:bold}
+#seasonSelect{width:100%;padding:13px 12px;margin-bottom:16px;background:#1b2945;border:1px solid #455877;border-radius:12px;color:white;font-size:16px}
 .filters{display:flex;gap:8px;margin-bottom:20px}
 .filters button{flex:1;background:#1b2945;border:1px solid #455877;color:white;padding:12px 4px;border-radius:10px}
 .filters .active{background:#5ad9ff;color:#091323;font-weight:bold}
@@ -52,6 +54,8 @@ input{width:100%;padding:14px;background:#1b2945;border:1px solid #455877;border
 <p>One card per Sprite family · Tap to see variants</p>
 </header>
 <main>
+<div class="season-label">SPRITE SEASON</div>
+<select id="seasonSelect" aria-label="Choose Sprite season"><option value="all">All seasons</option></select>
 <div class="panel">
 <div>My Collection</div>
 <div class="big" id="total">0 / 0</div>
@@ -73,7 +77,7 @@ input{width:100%;padding:14px;background:#1b2945;border:1px solid #455877;border
 </section>
 <script>
 const API="https://prod.fn-api.cc/v1/sprites";
-let families=[],filter="all",selected=null;
+let families=[],filter="all",selected=null,season="all";
 let saved={};
 try{
  saved=JSON.parse(localStorage.getItem("mySprites")||"{}");
@@ -105,35 +109,73 @@ function getList(data){
  }
  return [];
 }
+function seasonOf(s,v){
+ // Never infer a season from a Sprite's name or current calendar date.
+ const values=[v.season,s.season,v.introduction?.season,s.introduction?.season,
+ v.introduced?.season,s.introduced?.season,v.releaseSeason,s.releaseSeason,
+ v.battlePassSeason,s.battlePassSeason,v.chapterSeason,s.chapterSeason];
+ for(const value of values){
+  if(value===null||value===undefined||value==="")continue;
+  if(typeof value==="object"){
+   const name=value.displayName||value.name||value.label||value.id;
+   if(name)return String(name);
+  }else if(typeof value==="string"||typeof value==="number")return String(value);
+ }
+ return "Season unknown";
+}
 function prepare(data){
  const map=new Map();
  for(const s of getList(data)){
- const base=familyName(s);
- const key=base.toLowerCase();
- const variants=Array.isArray(s.variants)&&s.variants.length?s.variants:[s];
- if(!map.has(key)){
- map.set(key,{name:base+" Sprite",image:imageOf(s)||imageOf(variants[0]),variants:[]});
- }
- const family=map.get(key);
- variants.forEach((v,i)=>{
- const id=String(v.id||v.mappingId||s.id||s.mappingId||key+"-"+i);
- // Keep the visible variant name (e.g. Gummy Llama Sprite).
- const variantName=String(v.displayName||v.name||s.displayName||s.name||("Variant "+(i+1)));
- if(family.variants.some(item=>item.id===id))return;
- family.variants.push({id,name:variantName,image:imageOf(v)||imageOf(s)});
- });
+  const base=familyName(s);
+  const variants=Array.isArray(s.variants)&&s.variants.length?s.variants:[s];
+  variants.forEach((v,i)=>{
+   const seasonName=seasonOf(s,v);
+   // Family identity includes season: older variants never enter newer season cards.
+   const key=seasonName+"::"+base.toLowerCase();
+   if(!map.has(key))map.set(key,{
+    name:base+" Sprite",season:seasonName,
+    image:imageOf(s)||imageOf(v),variants:[]
+   });
+   const family=map.get(key);
+   const id=String(v.id||v.mappingId||s.id||s.mappingId||key+"-"+i);
+   const variantName=String(v.displayName||v.name||s.displayName||s.name||("Variant "+(i+1)));
+   if(family.variants.some(item=>item.id===id))return;
+   family.variants.push({id,name:variantName,image:imageOf(v)||imageOf(s)});
+  });
  }
  return [...map.values()];
+}
+function setupSeasons(){
+ const select=$("seasonSelect");
+ const names=[...new Set(families.map(f=>f.season))].sort((a,b)=>{
+  if(a==="Season unknown")return 1;
+  if(b==="Season unknown")return -1;
+  return b.localeCompare(a,undefined,{numeric:true});
+ });
+ select.replaceChildren();
+ const all=document.createElement("option");
+ all.value="all";all.textContent="All seasons (combined)";
+ select.append(all);
+ for(const name of names){
+  const option=document.createElement("option");
+  option.value=name;option.textContent=name;
+  select.append(option);
+ }
+ const known=names.filter(n=>n!=="Season unknown");
+ // Prefer a known season when one exists, to avoid mixing older and newer Sprites.
+ season=known[0]||names[0]||"all";
+ select.value=season;
 }
 function owned(v){return !!saved[v.id]}
 function amount(f){return f.variants.filter(owned).length}
 function totals(){
- const all=families.flatMap(f=>f.variants);
+ const visibleFamilies=families.filter(f=>season==="all"||f.season===season);
+ const all=visibleFamilies.flatMap(f=>f.variants);
  const n=all.filter(owned).length;
  $("total").textContent=n+" / "+all.length;
  $("progress").style.width=(all.length?n/all.length*100:0)+"%";
- const complete=families.filter(f=>amount(f)===f.variants.length).length;
- $("families").textContent=complete+" / "+families.length+" families completed";
+ const complete=visibleFamilies.filter(f=>amount(f)===f.variants.length).length;
+ $("families").textContent=complete+" / "+visibleFamilies.length+" families completed";
 }
 function makeImage(src,alt){
  const img=document.createElement("img");
@@ -146,6 +188,7 @@ function render(){
  totals();
  const q=$("search").value.toLowerCase();
  const list=families.filter(f=>{
+ if(season!=="all"&&f.season!==season)return false;
  const n=amount(f),total=f.variants.length;
  return f.name.toLowerCase().includes(q)&&
  (filter==="all"||
@@ -196,6 +239,9 @@ function showFamily(){
  const f=selected;
  const root=$("detailContent");
  root.replaceChildren();
+ const seasonTag=document.createElement("p");
+ seasonTag.className="small";seasonTag.textContent=f.season;
+ root.append(seasonTag);
  const h=document.createElement("h2");
  h.textContent=f.name+" — "+amount(f)+"/"+f.variants.length;
  root.append(h);
@@ -251,6 +297,7 @@ $("back").onclick=()=>{
  selected=null;
 };
 $("search").oninput=render;
+$("seasonSelect").onchange=e=>{season=e.target.value;render();};
 document.querySelectorAll("[data-filter]").forEach(b=>{
  b.onclick=()=>{
  filter=b.dataset.filter;
@@ -266,6 +313,7 @@ fetch(API)
 })
 .then(data=>{
  families=prepare(data);
+ setupSeasons();
  if(!families.length)throw Error("No Sprite data");
  render();
 })
