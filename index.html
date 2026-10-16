@@ -37,7 +37,7 @@ input::placeholder{color:#8399b8}
 .card{background:linear-gradient(180deg,#1c2a43,#131f32);border:1px solid var(--border);border-radius:19px;overflow:hidden;cursor:pointer;box-shadow:0 9px 25px #0004;transition:transform .16s,border-color .16s}
 .card:active{transform:scale(.975);border-color:#62dfff}
 .art{height:clamp(145px,43vw,235px);background:radial-gradient(circle at 50% 43%,#385779,#192d48 57%,#101b2e);display:flex;align-items:center;justify-content:center;padding:9px}
-.art img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 12px 16px #0006)}
+.art img{display:block;width:auto;height:auto;max-width:88%;max-height:88%;object-fit:contain;image-rendering:auto;filter:drop-shadow(0 12px 16px #0006)}
 .card-body{padding:14px 13px 15px}
 .card-name{font-size:15px;line-height:1.25;font-weight:850;min-height:38px;letter-spacing:-.3px}
 .count{font-size:26px;font-weight:950;letter-spacing:-.7px;color:#71e8ff;margin:10px 0 4px;font-variant-numeric:tabular-nums}
@@ -49,7 +49,7 @@ input::placeholder{color:#8399b8}
 #detailContent h2{font-size:25px;letter-spacing:-.7px}
 .back{background:#1e334e;color:#eaf7ff;border:1px solid #42607e;padding:13px 17px;border-radius:13px;margin-bottom:22px;font-weight:800}
 .detail-art{height:210px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#35587a,#14223a 70%);border:1px solid var(--border);border-radius:20px;margin-bottom:20px}
-.detail-art img{height:95%;max-width:100%;object-fit:contain;filter:drop-shadow(0 14px 20px #0006)}
+.detail-art img{display:block;width:auto;height:auto;max-height:88%;max-width:88%;object-fit:contain;image-rendering:auto;filter:drop-shadow(0 14px 20px #0006)}
 .variant{display:flex;align-items:center;gap:11px;background:#17263e;border:1px solid var(--border);padding:12px;border-radius:15px;margin:10px 0}
 .variant img{width:63px;height:69px;object-fit:contain;background:#253d5b;border-radius:11px}
 .variant-info{flex:1;min-width:0}
@@ -138,9 +138,9 @@ function compareSeasons(a,b){
 }
 const imageOf=s=>{
  const choices=[
- s.image,s.icon,s.artwork,s.displayImage,
- s.images?.icon,s.images?.large,
- s.images?.small,s.images?.render
+ s.images?.large,s.images?.render,
+ s.artwork,s.displayImage,s.image,
+ s.images?.icon,s.icon,s.images?.small
  ];
  return choices.find(x=>typeof x==="string"&&x.startsWith("http"))||"";
 };
@@ -187,7 +187,7 @@ function prepare(data){
    const key=seasonName+"::"+base.toLowerCase();
    if(!map.has(key))map.set(key,{
     name:base+" Sprite",season:seasonName,
-    image:imageOf(s)||imageOf(v),variants:[],release:0,position:map.size
+    image:imageOf(v)||imageOf(s),variants:[],release:0,position:map.size
    });
    const family=map.get(key);
    family.release=Math.max(family.release,releaseTime(v),releaseTime(s));
@@ -238,6 +238,7 @@ function makeImage(src,alt){
  img.src=src;
  img.alt=alt;
  img.loading="lazy";
+ img.decoding="async";
  return img;
 }
 function render(){
