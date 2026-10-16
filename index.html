@@ -156,6 +156,12 @@ input::placeholder{color:#8399b8}
  .grid .card .full-mastery-banner{font-size:8px!important;padding:4px 2px!important}
  .grid .card .big{font-size:20px!important}
 }
+/* Make Sprite artwork fill more of each four-column card. */
+@media(max-width:639px){
+ .grid .card .art{height:110px;padding:1px}
+ .grid .card .art img{max-width:100%;max-height:100%;width:auto;height:auto;filter:drop-shadow(0 5px 7px #0008)}
+ .grid .card .art img.low-res{max-width:100%;max-height:100%}
+}
 </style>
 </head>
 <body>
