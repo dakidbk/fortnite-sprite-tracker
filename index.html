@@ -170,6 +170,27 @@ input::placeholder{color:#8399b8}
  .grid .card.all-mastered .art img{max-height:100%;height:100%;object-fit:contain}
  .grid .card.all-mastered .full-mastery-banner{top:0}
 }
+/* Compact, readable three-column Sprite cards */
+.grid .card{display:flex;flex-direction:column}
+.grid .card .card-body{display:flex;flex-direction:column;flex:1;gap:5px}
+.grid .card .card-name{min-height:0;margin:0 0 2px;line-height:1.2}
+.grid .card .card-status{margin:3px 0 0;gap:4px}
+.grid .card .count{margin:5px 0 0;line-height:1.1}
+.grid .card .mastered-tag{margin:0}
+.grid .card .mini{margin:6px 0 3px}
+.grid .card .view{margin-top:auto}
+@media(max-width:639px){
+ .grid .card .card-body{padding:9px 7px!important;gap:5px}
+ .grid .card .card-name{font-size:clamp(11px,3vw,14px)!important;min-height:0}
+ .grid .card .status-pill{font-size:clamp(9px,2.35vw,11px)!important;padding:4px 6px!important;line-height:1.15}
+ .grid .card .art{height:126px}
+ .grid .card .art img,.grid .card .art img.low-res{max-width:100%;max-height:100%}
+ .grid .card.all-mastered .art{height:126px;padding:23px 0 0}
+ .grid .card.all-mastered .art img,.grid .card.all-mastered .art img.low-res{height:100%;max-width:100%;max-height:100%;object-fit:contain}
+ .grid .card .full-mastery-banner{font-size:8px!important;letter-spacing:0;padding:5px 1px!important}
+ .grid .card .view{font-size:10px!important;padding:9px 3px!important}
+ .grid .card .count{font-size:clamp(20px,5vw,25px)!important}
+}
 </style>
 </head>
 <body>
@@ -436,7 +457,7 @@ function render(){
  const button=document.createElement("button");
  button.className="view";
  button.textContent="Explore variants →";
- body.append(title,badges,count,sub,mastery,levelSummary,mini,button);
+ body.append(title,badges,count,sub,mastery,mini,button);
  card.append(art,body);
  card.onclick=()=>openFamily(f);
  $("grid").append(card);
