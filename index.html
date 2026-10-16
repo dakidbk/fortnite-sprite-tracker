@@ -3,170 +3,281 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sprite Tracker</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fortnite Sprite Tracker</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#0b1020;color:white;font-family:Arial,sans-serif}
-header{padding:22px 16px;background:#151e34;text-align:center}
-h1{margin:0;color:#60ddff;font-size:27px}
-.subtitle{font-size:12px;color:#aabbd3;margin-top:8px}
-main{padding:16px;max-width:700px;margin:auto}
-.summary{background:#19253e;border-radius:16px;padding:20px;margin-bottom:18px}
-.number{font-size:32px;font-weight:bold;color:#60ddff}
-.progress{height:9px;background:#34425b;border-radius:20px;overflow:hidden;margin-top:12px}
-.fill{height:100%;background:#60ddff;width:0}
-input{width:100%;padding:14px;background:#1c2942;color:white;border:1px solid #455574;border-radius:10px;font-size:16px;margin-bottom:14px}
+body{margin:0;background:#090f20;color:white;font-family:Arial,sans-serif}
+header{text-align:center;padding:24px 12px;background:#17213b}
+h1{font-size:27px;color:#5ad9ff;margin:0}
+header p{color:#aebdd7;font-size:13px}
+main{max-width:750px;margin:auto;padding:16px}
+.panel{background:#1b2945;border-radius:18px;padding:20px;margin-bottom:16px}
+.big{font-size:34px;font-weight:800;color:#5ad9ff;margin:8px 0}
+.bar{height:9px;background:#34445e;border-radius:20px;overflow:hidden}
+.bar div{height:100%;background:#5ad9ff;width:0}
+input{width:100%;padding:14px;background:#1b2945;border:1px solid #455877;border-radius:12px;color:white;font-size:16px;margin-bottom:14px}
 .filters{display:flex;gap:8px;margin-bottom:20px}
-.filters button{flex:1;padding:11px 4px;border:1px solid #42536d;background:#1c2942;color:white;border-radius:9px}
-.filters .selected{background:#60ddff;color:#07111c;font-weight:bold}
+.filters button{flex:1;background:#1b2945;border:1px solid #455877;color:white;padding:12px 4px;border-radius:10px}
+.filters .active{background:#5ad9ff;color:#091323;font-weight:bold}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.card{background:#1b2942;border:1px solid #354762;border-radius:14px;overflow:hidden}
-.picture{height:155px;background:radial-gradient(circle,#334f77,#111b30);display:flex;align-items:center;justify-content:center}
-.picture img{width:100%;height:100%;object-fit:contain}
-.picture.missing img{filter:grayscale(1);opacity:.4}
-.details{padding:12px}
-.name{font-weight:bold;font-size:14px;min-height:35px;overflow-wrap:anywhere}
-.level{font-size:12px;color:#b9cce4;margin:9px 0}
-.controls{display:flex;gap:6px;align-items:center;margin-bottom:8px}
-.controls button{background:#344966;color:white;border:0;border-radius:7px;padding:7px 12px}
-.own{width:100%;padding:10px;border:0;border-radius:8px;background:#60ddff;color:#081320;font-weight:bold}
-.own.yes{background:#304e48;color:#83ffd2}
-.notice{font-size:13px;color:#b9cce4;text-align:center;padding:18px}
+.card{background:#1b2945;border:1px solid #354766;border-radius:15px;overflow:hidden;cursor:pointer}
+.art{height:160px;background:radial-gradient(circle,#385981,#101a2e);display:flex;align-items:center;justify-content:center}
+.art img{width:100%;height:100%;object-fit:contain}
+.card-body{padding:12px}
+.card-name{font-size:15px;font-weight:800;min-height:36px}
+.count{font-size:23px;font-weight:800;color:#5ad9ff;margin:8px 0}
+.small{font-size:12px;color:#b7c8e3}
+.mini{height:6px;background:#34445e;border-radius:10px;overflow:hidden;margin:10px 0}
+.mini div{height:100%;background:#5ad9ff}
+.view{width:100%;border:0;border-radius:9px;background:#334a6a;color:white;padding:11px;margin-top:8px;font-weight:bold}
+#detail{display:none;position:fixed;inset:0;background:#090f20;z-index:10;overflow-y:auto;padding:18px}
+.back{background:#263b5a;color:white;border:0;padding:12px 18px;border-radius:10px;margin-bottom:20px}
+.detail-art{height:170px;display:flex;align-items:center;justify-content:center;background:#1b2945;border-radius:15px}
+.detail-art img{height:100%;max-width:100%;object-fit:contain}
+.variant{display:flex;align-items:center;gap:12px;background:#1b2945;padding:12px;border-radius:12px;margin:10px 0}
+.variant img{width:64px;height:64px;object-fit:contain}
+.variant-info{flex:1;min-width:0}
+.variant-name{font-weight:bold;font-size:14px}
+.variant button{border:0;background:#5ad9ff;color:#091323;border-radius:9px;padding:10px;font-weight:bold}
+.variant button.owned{background:#315b4c;color:#a5ffce}
+.level-row{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:13px}
+.level-row button{padding:5px 10px;background:#344b69;color:white}
+.message{text-align:center;color:#b7c8e3;padding:25px}
 </style>
 </head>
 <body>
 <header>
 <h1>✦ SPRITE TRACKER</h1>
-<div class="subtitle">Your Fortnite Sprite Collection</div>
+<p>Collect every Sprite rarity</p>
 </header>
 <main>
-<section class="summary">
+<div class="panel">
 <div>My Collection</div>
-<div class="number" id="count">0 / 0</div>
-<div class="progress"><div class="fill" id="fill"></div></div>
-</section>
-<input id="search" placeholder="Search Sprites...">
+<div class="big" id="total">0 / 0</div>
+<div class="bar"><div id="progress"></div></div>
+<p class="small" id="families">0 completed families</p>
+</div>
+<input id="search" placeholder="Search Sprite families...">
 <div class="filters">
-<button class="selected" data-filter="all">All</button>
+<button class="active" data-filter="all">All</button>
 <button data-filter="owned">Owned</button>
 <button data-filter="missing">Missing</button>
 </div>
-<div id="status" class="notice">Loading Sprite artwork...</div>
-<div class="grid" id="grid"></div>
-<div class="notice">
-Manual tracking for now. Epic account syncing is not connected.
-</div>
+<div id="message" class="message">Loading Sprites...</div>
+<div id="grid" class="grid"></div>
 </main>
+<section id="detail">
+<button class="back" id="back">← Back to Sprites</button>
+<div id="detailContent"></div>
+</section>
 <script>
 const API="https://prod.fn-api.cc/v1/sprites";
-const grid=document.getElementById("grid");
-const status=document.getElementById("status");
-const search=document.getElementById("search");
-let sprites=[];
-let filter="all";
+let families=[],filter="all",selected=null;
 let saved={};
-try{saved=JSON.parse(localStorage.getItem("mySprites")||"{}")}catch(e){}
-function store(){localStorage.setItem("mySprites",JSON.stringify(saved))}
-function imageOf(s){
- const candidates=[
- s.image,s.icon,s.artwork,s.images?.icon,
- s.images?.large,s.images?.small,
- s.images?.render,s.displayImage,
- s.variants?.[0]?.image,s.variants?.[0]?.icon
+try{
+ saved=JSON.parse(localStorage.getItem("mySprites")||"{}");
+}catch(e){}
+const $=id=>document.getElementById(id);
+const imageOf=s=>{
+ const choices=[
+ s.image,s.icon,s.artwork,s.displayImage,
+ s.images?.icon,s.images?.large,
+ s.images?.small,s.images?.render
  ];
- const found=candidates.find(x=>typeof x==="string"&&x.startsWith("http"));
- return found||"";
+ return choices.find(x=>typeof x==="string"&&x.startsWith("http"))||"";
+};
+function store(){
+ localStorage.setItem("mySprites",JSON.stringify(saved));
 }
-function normalize(data){
- const list=Array.isArray(data)?data:
- Array.isArray(data.sprites)?data.sprites:
- Array.isArray(data.data)?data.data:
- Array.isArray(data.items)?data.items:[];
- return list.flatMap(s=>{
+function familyName(s){
+ return String(s.name||s.displayName||s.id||"Sprite")
+ .replace(/\s+Sprite$/i,"")
+ .trim();
+}
+function getList(data){
+ if(Array.isArray(data))return data;
+ for(const x of [data.sprites,data.data,data.items,data.families]){
+ if(Array.isArray(x))return x;
+ }
+ return [];
+}
+function prepare(data){
+ const raw=getList(data);
+ const map=new Map();
+ for(const s of raw){
+ const base=familyName(s);
+ const key=String(s.id||s.mappingId||base);
  const variants=Array.isArray(s.variants)&&s.variants.length?s.variants:[s];
- return variants.map((v,i)=>({
- id:String(v.id||v.mappingId||s.id||s.mappingId||s.name+"-"+i),
- name:String(v.name||v.displayName||s.name||s.displayName||"Sprite"),
- image:imageOf(v)||imageOf(s)
- }));
+ if(!map.has(key)){
+ map.set(key,{
+ name:base+" Sprite",
+ image:imageOf(s)||imageOf(variants[0]),
+ variants:[]
  });
+ }
+ const family=map.get(key);
+ variants.forEach((v,i)=>{
+ const id=String(v.id||v.mappingId||key+"-"+i);
+ const rarity=v.rarity?.displayValue||
+ v.rarity?.name||v.rarity||
+ v.displayName||v.name||("Variant "+(i+1));
+ family.variants.push({
+ id,
+ name:String(rarity),
+ image:imageOf(v)||imageOf(s)
+ });
+ });
+ }
+ return [...map.values()];
+}
+function owned(v){return !!saved[v.id]}
+function amount(f){return f.variants.filter(owned).length}
+function totals(){
+ const all=families.flatMap(f=>f.variants);
+ const n=all.filter(owned).length;
+ $("total").textContent=n+" / "+all.length;
+ $("progress").style.width=(all.length?n/all.length*100:0)+"%";
+ const complete=families.filter(f=>amount(f)===f.variants.length).length;
+ $("families").textContent=complete+" / "+families.length+" families completed";
+}
+function makeImage(src,alt){
+ const img=document.createElement("img");
+ img.src=src;
+ img.alt=alt;
+ img.loading="lazy";
+ return img;
 }
 function render(){
- const q=search.value.toLowerCase();
- const shown=sprites.filter(s=>
- s.name.toLowerCase().includes(q)&&
- (filter==="all"||(filter==="owned"?!!saved[s.id]:!saved[s.id]))
- );
- grid.replaceChildren();
- for(const s of shown){
- const owned=!!saved[s.id];
+ totals();
+ const q=$("search").value.toLowerCase();
+ const list=families.filter(f=>{
+ const n=amount(f),total=f.variants.length;
+ return f.name.toLowerCase().includes(q)&&
+ (filter==="all"||
+ (filter==="owned"&&n>0)||
+ (filter==="missing"&&n<total));
+ });
+ $("grid").replaceChildren();
+ $("message").textContent=list.length?"":"No Sprite families found.";
+ for(const f of list){
+ const n=amount(f),total=f.variants.length;
  const card=document.createElement("article");
  card.className="card";
- const pic=document.createElement("div");
- pic.className="picture"+(owned?"":" missing");
- if(s.image){
- const img=document.createElement("img");
- img.src=s.image;img.alt=s.name;img.loading="lazy";
- pic.appendChild(img);
+ const art=document.createElement("div");
+ art.className="art";
+ if(f.image)art.append(makeImage(f.image,f.name));
+ const body=document.createElement("div");
+ body.className="card-body";
+ const title=document.createElement("div");
+ title.className="card-name";
+ title.textContent=f.name;
+ const count=document.createElement("div");
+ count.className="count";
+ count.textContent=n+" / "+total;
+ const sub=document.createElement("div");
+ sub.className="small";
+ sub.textContent=n===total?"✓ Complete":"Rarities collected";
+ const mini=document.createElement("div");
+ mini.className="mini";
+ const fill=document.createElement("div");
+ fill.style.width=(n/total*100)+"%";
+ mini.append(fill);
+ const button=document.createElement("button");
+ button.className="view";
+ button.textContent="View Rarities →";
+ body.append(title,count,sub,mini,button);
+ card.append(art,body);
+ card.onclick=()=>openFamily(f);
+ $("grid").append(card);
  }
- const details=document.createElement("div");
- details.className="details";
+}
+function openFamily(f){
+ selected=f;
+ $("detail").style.display="block";
+ document.body.style.overflow="hidden";
+ showFamily();
+}
+function showFamily(){
+ const f=selected;
+ const root=$("detailContent");
+ root.replaceChildren();
+ const h=document.createElement("h2");
+ h.textContent=f.name+" — "+amount(f)+"/"+f.variants.length;
+ root.append(h);
+ const art=document.createElement("div");
+ art.className="detail-art";
+ if(f.image)art.append(makeImage(f.image,f.name));
+ root.append(art);
+ for(const v of f.variants){
+ const row=document.createElement("div");
+ row.className="variant";
+ if(v.image)row.append(makeImage(v.image,v.name));
+ const info=document.createElement("div");
+ info.className="variant-info";
  const name=document.createElement("div");
- name.className="name";name.textContent=s.name;
- const level=document.createElement("div");
- level.className="level";
- level.textContent=owned?"Level "+saved[s.id]:"Not collected";
- details.append(name,level);
- if(owned){
- const controls=document.createElement("div");
- controls.className="controls";
+ name.className="variant-name";
+ name.textContent=v.name;
+ info.append(name);
+ if(owned(v)){
+ const levels=document.createElement("div");
+ levels.className="level-row";
  const minus=document.createElement("button");
  minus.textContent="−";
+ const label=document.createElement("span");
+ label.textContent="Level "+saved[v.id];
  const plus=document.createElement("button");
  plus.textContent="+";
- minus.onclick=()=>{saved[s.id]=Math.max(1,saved[s.id]-1);store();render()};
- plus.onclick=()=>{saved[s.id]++;store();render()};
- controls.append(minus,plus);
- details.appendChild(controls);
+ minus.onclick=()=>{
+ saved[v.id]=Math.max(1,saved[v.id]-1);
+ store();showFamily();render();
+ };
+ plus.onclick=()=>{
+ saved[v.id]++;
+ store();showFamily();render();
+ };
+ levels.append(minus,label,plus);
+ info.append(levels);
  }
  const button=document.createElement("button");
- button.className="own"+(owned?" yes":"");
- button.textContent=owned?"✓ Owned — Remove":"+ Mark Owned";
+ button.className=owned(v)?"owned":"";
+ button.textContent=owned(v)?"✓ Owned":"+ Add";
  button.onclick=()=>{
- if(owned)delete saved[s.id];
- else saved[s.id]=1;
- store();render();
+ if(owned(v))delete saved[v.id];
+ else saved[v.id]=1;
+ store();showFamily();render();
  };
- details.appendChild(button);
- card.append(pic,details);
- grid.appendChild(card);
+ row.append(info,button);
+ root.append(row);
  }
- const count=sprites.filter(s=>saved[s.id]).length;
- document.getElementById("count").textContent=count+" / "+sprites.length;
- document.getElementById("fill").style.width=
- (sprites.length?count/sprites.length*100:0)+"%";
- status.textContent=shown.length?"": "No Sprites to display.";
 }
-document.querySelectorAll("[data-filter]").forEach(button=>{
- button.onclick=()=>{
- filter=button.dataset.filter;
- document.querySelectorAll("[data-filter]").forEach(b=>b.classList.remove("selected"));
- button.classList.add("selected");
+$("back").onclick=()=>{
+ $("detail").style.display="none";
+ document.body.style.overflow="";
+ selected=null;
+};
+$("search").oninput=render;
+document.querySelectorAll("[data-filter]").forEach(b=>{
+ b.onclick=()=>{
+ filter=b.dataset.filter;
+ document.querySelectorAll("[data-filter]").forEach(x=>x.classList.remove("active"));
+ b.classList.add("active");
  render();
  };
 });
-search.addEventListener("input",render);
 fetch(API)
- .then(r=>{if(!r.ok)throw Error("API unavailable");return r.json()})
- .then(data=>{
- sprites=normalize(data);
- if(!sprites.length)throw Error("Unexpected API response");
+.then(r=>{
+ if(!r.ok)throw Error("API error");
+ return r.json();
+})
+.then(data=>{
+ families=prepare(data);
+ if(!families.length)throw Error("No Sprite data");
  render();
- })
- .catch(()=>{
- status.textContent="Could not load Sprites. The API may be unavailable or blocking browser requests.";
- });
+})
+.catch(()=>{
+ $("message").textContent="Could not load Sprite data. Please try refreshing.";
+});
 </script>
 </body>
 </html>
