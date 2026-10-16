@@ -116,6 +116,11 @@ input::placeholder{color:#8399b8}
 .site-footer .footer-note{color:#8ea7c5;font-size:12px}
 .footer-bottom{border-top:1px solid #344962;margin-top:22px;padding-top:17px;text-align:center;font-size:11px;line-height:1.6;color:#8fa7c3}
 @media(max-width:580px){.footer-grid{grid-template-columns:1fr;gap:20px}.site-footer{padding:23px 18px 28px}}
+.new-alert{display:none;align-items:center;justify-content:space-between;gap:12px;margin:0 0 18px;padding:13px 15px;border-radius:14px;background:linear-gradient(120deg,#244f55,#163447);border:1px solid #6ce5d1;color:#e6fffb;font-size:13px;font-weight:750}
+.new-alert.visible{display:flex}
+.new-alert button{border:1px solid #8ce9dc;border-radius:9px;background:#234f56;color:#f1fffd;padding:8px 11px;font-weight:850;white-space:nowrap}
+.card.is-new{border-color:#5de7dc}
+.new-sprite-badge{position:absolute;top:11px;right:11px;z-index:3;background:linear-gradient(130deg,#8effe2,#4ad4fa);color:#072536;padding:6px 10px;border-radius:9px;font-size:11px;font-weight:950;box-shadow:0 4px 14px #0006}
 </style>
 </head>
 <body>
@@ -125,6 +130,7 @@ input::placeholder{color:#8399b8}
 </header>
 <main id="top">
 <div class="sync-wrap"><button id="syncButton" type="button">↻ Refresh Sprites</button><span id="syncStatus" role="status" aria-live="polite">Account sync not connected</span></div>
+<div id="newAlert" class="new-alert" role="status" aria-live="polite"><span id="newAlertText"></span><button type="button" id="showNewButton">View new</button></div>
 <div class="season-label">SPRITE SEASON</div>
 <select id="seasonSelect" aria-label="Choose Sprite season"><option value="all">All seasons</option></select>
 <label class="season-label" for="sortSelect" style="display:block">SORT SPRITES</label>
@@ -161,6 +167,8 @@ input::placeholder{color:#8399b8}
 const API="https://prod.fn-api.cc/v1/sprites";
 let refreshing=false;
 let families=[],filter="all",selected=null,season="all";
+let newSpriteIds=new Set(),showNewOnly=false;
+const catalogStorageKey="spriteCatalogKnownIdsV1";
 let sortOrder=localStorage.getItem("spriteSortOrder")==="oldest"?"oldest":"newest";
 let saved={};
 let mastered={};
@@ -248,6 +256,18 @@ function prepare(data){
  }
  return [...map.values()];
 }
+function catalogIds(list){return [...new Set(list.flatMap(f=>f.variants.map(v=>v.id)))].sort();}
+function updateNewSpriteAlerts(list){
+ const ids=catalogIds(list);
+ let previous=null;
+ try{const value=JSON.parse(localStorage.getItem(catalogStorageKey)||"null");if(Array.isArray(value))previous=new Set(value);}catch(e){}
+ newSpriteIds=previous?new Set(ids.filter(id=>!previous.has(id))):new Set();
+ try{localStorage.setItem(catalogStorageKey,JSON.stringify(ids));}catch(e){}
+ const count=newSpriteIds.size;
+ $("newAlert").classList.toggle("visible",count>0);
+ $("newAlertText").textContent=count?("✦ "+count+" new Sprite variant"+(count===1?"":"s")+" found!"):"";
+ if(!count)showNewOnly=false;
+}
 function setupSeasons(){
  const select=$("seasonSelect");
  const names=[...new Set(families.map(f=>f.season))].sort((a,b)=>{
@@ -296,6 +316,7 @@ function render(){
  const q=$("search").value.toLowerCase();
  const list=families.filter(f=>{
  if(season!=="all"&&f.season!==season)return false;
+ if(showNewOnly&&!f.variants.some(v=>newSpriteIds.has(v.id)))return false;
  const n=amount(f),total=f.variants.length;
  return f.name.toLowerCase().includes(q)&&
  (filter==="all"||
@@ -316,10 +337,13 @@ function render(){
  const card=document.createElement("article");
  const allMastered=total>0&&f.variants.every(isMastered);
  card.className="card"+(n===total?" is-complete":"")+(f.variants.some(isMastered)?" has-mastery":"")+(allMastered?" all-mastered":"");
+ const isNew=f.variants.some(v=>newSpriteIds.has(v.id));
+ if(isNew)card.classList.add("is-new");
  const art=document.createElement("div");
  art.className="art";
  if(f.image)art.append(makeImage(f.image,f.name));
  if(allMastered){const banner=document.createElement("div");banner.className="full-mastery-banner";banner.textContent="★ FULLY MASTERED ★";art.append(banner);}
+ if(isNew){const badge=document.createElement("span");badge.className="new-sprite-badge";badge.textContent="✦ NEW";art.append(badge);}
  const body=document.createElement("div");
  body.className="card-body";
  const title=document.createElement("div");
@@ -468,6 +492,7 @@ async function refreshSprites(isManual=false){
   const updated=prepare(data);
   if(!updated.length)throw Error("No Sprites returned");
   families=updated;
+  updateNewSpriteAlerts(updated);
   const previousSeason=season;
   setupSeasons();
   if([...$("seasonSelect").options].some(o=>o.value===previousSeason)){
@@ -490,6 +515,7 @@ async function refreshSprites(isManual=false){
   refreshing=false;
  }
 }
+$("showNewButton").onclick=()=>{showNewOnly=!showNewOnly;season="all";$("seasonSelect").value="all";$("showNewButton").textContent=showNewOnly?"Show all":"View new";render();};
 $("syncButton").onclick=()=>refreshSprites(true);
 refreshSprites(false);
 </script>
