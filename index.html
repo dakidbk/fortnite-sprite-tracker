@@ -578,7 +578,7 @@ async function refreshSprites(isManual=false){
    if(matching){selected=matching;showFamily();}
   }
   if(isManual)await new Promise(resolve=>setTimeout(resolve,Math.max(0,2100-(Date.now()-start))));
-  $("syncStatus").textContent="✓ Sprite catalog updated · Collection tracking is manual";
+  $("syncStatus").textContent="";
  }catch(error){
   $("syncStatus").textContent="Could not refresh Sprites. Try again.";
   if(!families.length)$("message").textContent="Could not load Sprite data. Please try refreshing.";
