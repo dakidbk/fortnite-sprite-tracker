@@ -294,7 +294,7 @@ input::placeholder{color:#8399b8}
 .password-eye:focus-visible{outline:2px solid #80eaff;outline-offset:1px}
 .password-eye .eye-slash{display:none}
 .password-eye[aria-pressed="true"] .eye-slash{display:block}
-</style>
+#tradeInfoDialog{max-width:560px}#tradeInfoDialog input,#tradeInfoDialog textarea,#usernameForm input{display:block;box-sizing:border-box;width:100%;padding:11px;margin:7px 0 12px;border:1px solid #507596;border-radius:9px;background:#102136;color:#fff;font:inherit}#tradeInfoDialog button[type=submit],#refreshTrades,#usernameForm button{padding:10px 14px;border:0;border-radius:9px;background:#66e4ff;color:#091728;font-weight:800}#tradeListings{display:grid;gap:10px;margin:12px 0}.trade-listing{padding:13px;background:#1b304b;border:1px solid #42698c;border-radius:12px;overflow-wrap:anywhere}.trade-listing strong{color:#a7eaff}.trade-listing button{margin-top:8px}</style>
 </head>
 <body>
 <header class="season-hero">
@@ -309,7 +309,7 @@ input::placeholder{color:#8399b8}
  </div>
  
 </header>
-<main id="top">\n<dialog id="tradeInfoDialog" class="sprite-info-dialog" aria-labelledby="tradeInfoTitle"><section class="sprite-guide"><h2 id="tradeInfoTitle">Trade</h2><p>Sprite trading is not available yet. This section is reserved for a future trading feature.</p><button type="button" id="closeTradeInfo" class="sprite-info-close" aria-label="Close trade information">×</button></section></dialog>
+<main id="top">\n<dialog id="tradeInfoDialog" class="sprite-info-dialog" aria-labelledby="tradeInfoTitle"><section class="sprite-guide"><button type="button" id="closeTradeInfo" class="sprite-info-close" aria-label="Close trade board">×</button><h2 id="tradeInfoTitle">Sprite Trade Board</h2><p>Find collectors interested in trading. Listings show usernames, not email addresses. This site cannot transfer Sprites in Fortnite.</p><form id="tradePostForm" hidden><label for="tradeOffering">Offering</label><input id="tradeOffering" required minlength="2" maxlength="140" placeholder="Sprite variant"><label for="tradeWanted">Looking for</label><input id="tradeWanted" required minlength="2" maxlength="140" placeholder="Sprite variant"><label for="tradeNote">Note (optional)</label><textarea id="tradeNote" maxlength="280" rows="2"></textarea><button type="submit">Post trade</button></form><p id="tradeSignInHint">Sign in and create a username to post.</p><p id="tradeBoardStatus" role="status"></p><div id="tradeListings"></div><button type="button" id="refreshTrades">Refresh trades</button></section></dialog>
 <dialog id="trackerAccountDialog" aria-labelledby="accountTitle">
 <button type="button" id="closeTrackerAccount" aria-label="Close account window">×</button>
 <section class="account-panel" id="trackerAccount" aria-labelledby="accountTitle">
@@ -323,7 +323,7 @@ input::placeholder{color:#8399b8}
 <div class="account-actions"><button type="submit">Sign in</button><button type="button" id="createTrackerAccount">Create account</button><button type="button" id="recoverTrackerAccount" hidden>Forgot password?</button></div>
 </form>
 </div>
-<div id="accountSignedIn" hidden><p id="accountEmailLabel"></p>
+<div id="accountSignedIn" hidden><p id="accountEmailLabel"></p><form id="usernameForm"><label for="trackerUsername">Public username</label><input id="trackerUsername" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" placeholder="3–20 letters, numbers, underscores"><button type="submit">Save username</button><p id="usernameStatus" role="status"></p></form>
 <div class="account-actions"><button type="button" id="signOutTracker">Sign out</button><button type="button" id="importGuestCollection" hidden>Add this browser's guest collection</button></div>
 </div>
 <form id="passwordRecoveryForm" hidden>
@@ -915,7 +915,7 @@ trackerMenuToggle.onclick=()=>{trackerMenu.hidden=!trackerMenu.hidden;trackerMen
 document.addEventListener("click",event=>{if(!trackerMenu.hidden&&!trackerMenu.contains(event.target)&&event.target!==trackerMenuToggle)closeTrackerMenu();});
 document.addEventListener("keydown",event=>{if(event.key==="Escape")closeTrackerMenu();});
 $("openTrackerAccount").onclick=()=>{closeTrackerMenu();accountDialog.showModal();};
-$("openTradeInfo").onclick=()=>{closeTrackerMenu();$("tradeInfoDialog").showModal();};
+$("openTradeInfo").onclick=()=>{closeTrackerMenu();$("tradeInfoDialog").showModal();window.spriteTradeBoard?.refresh();};
 $("closeTradeInfo").onclick=()=>$("tradeInfoDialog").close();
 $("closeTrackerAccount").onclick=()=>accountDialog.close();
 accountDialog.addEventListener("click",event=>{if(event.target===accountDialog){const rect=accountDialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)accountDialog.close();}});
@@ -924,6 +924,54 @@ function initializeTrackerAccounts(createClient){
   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
  });
  let accountId=undefined,authBusy=false,accountStatusKind='';
+ let publicUsername="";
+ async function loadPublicUsername(id){
+  publicUsername="";$("trackerUsername").value="";
+  if(id){const {data,error}=await client.from("sprite_profiles").select("username").eq("user_id",id).maybeSingle();if(!error&&data){publicUsername=data.username;$("trackerUsername").value=data.username;}}
+  updateTradeVisibility();
+ }
+ function updateTradeVisibility(){
+  $("tradePostForm").hidden=!(accountId&&publicUsername);
+  $("tradeSignInHint").hidden=!!(accountId&&publicUsername);
+  $("tradeSignInHint").textContent=accountId?"Set a username under Account to post.":"Sign in and set a username to post.";
+ }
+ $("usernameForm").onsubmit=async event=>{
+  event.preventDefault();if(!accountId||!$("trackerUsername").reportValidity())return;
+  const username=$("trackerUsername").value.trim();
+  if(!/^[A-Za-z0-9_]{3,20}$/.test(username))return;
+  const {error}=await client.from("sprite_profiles").upsert({user_id:accountId,username},{onConflict:"user_id"});
+  $("usernameStatus").textContent=error?(error.code==="23505"?"Username already taken.":error.message):"Username saved!";
+  if(!error){publicUsername=username;updateTradeVisibility();}
+ };
+ async function refreshTrades(){
+  const root=$("tradeListings");root.replaceChildren();$("tradeBoardStatus").textContent="Loading trades…";
+  const {data,error}=await client.from("sprite_trade_posts").select("id,user_id,offering,looking_for,note,created_at,sprite_profiles(username)").order("created_at",{ascending:false}).limit(50);
+  if(error){$("tradeBoardStatus").textContent="Could not load trades.";return;}
+  $("tradeBoardStatus").textContent=data.length?data.length+" recent listings":"No trades posted yet.";
+  for(const item of data){
+   const card=document.createElement("article");card.className="trade-listing";
+   const user=document.createElement("strong");user.textContent="@"+(item.sprite_profiles?.username||"Collector");
+   const offer=document.createElement("p");offer.textContent="Offering: "+item.offering;
+   const want=document.createElement("p");want.textContent="Looking for: "+item.looking_for;
+   const note=document.createElement("p");note.textContent=item.note||"";
+   const date=document.createElement("small");date.textContent=new Date(item.created_at).toLocaleDateString();
+   card.append(user,offer,want,note,date);
+   if(accountId===item.user_id){const button=document.createElement("button");button.textContent="Delete listing";button.onclick=async()=>{button.disabled=true;const {error}=await client.from("sprite_trade_posts").delete().eq("id",item.id).eq("user_id",accountId);if(error){$("tradeBoardStatus").textContent="Could not delete listing.";button.disabled=false;}else await refreshTrades();};card.append(button);}
+   root.append(card);
+  }
+ }
+ $("tradePostForm").onsubmit=async event=>{
+  event.preventDefault();if(!accountId||!publicUsername)return;
+  const offering=$("tradeOffering").value.trim(),looking_for=$("tradeWanted").value.trim(),note=$("tradeNote").value.trim();
+  if(offering.length<2||looking_for.length<2)return;
+  const {error}=await client.from("sprite_trade_posts").insert({user_id:accountId,offering,looking_for,note});
+  if(error){$("tradeBoardStatus").textContent=error.message;return;}
+  $("tradePostForm").reset();await refreshTrades();
+ };
+ $("refreshTrades").onclick=()=>void refreshTrades();
+ window.spriteTradeBoard={refresh:refreshTrades};
+ updateTradeVisibility();
+
  const accountStatus=(text,kind='')=>{
   accountStatusKind=kind;$('accountStatus').textContent=text;
   $('retryAccountSave').hidden=!['offline','conflict'].includes(kind);
@@ -975,7 +1023,7 @@ function initializeTrackerAccounts(createClient){
   const nextId=session?.user?.id||null;
   if(accountId===nextId)return;
   $("openTrackerAccount").textContent=nextId?"Account":"Sign in";
-  accountId=nextId;selected=null;$('detail').style.display='none';document.body.style.overflow='';
+  accountId=nextId;await loadPublicUsername(nextId);selected=null;$('detail').style.display='none';document.body.style.overflow='';
   $('accountSignedOut').hidden=!!nextId;$('accountSignedIn').hidden=!nextId;
   $('accountEmailLabel').textContent=session?.user?.email||'';
   $('importGuestCollection').hidden=!nextId||!Object.keys(guestCollection().owned).length;
