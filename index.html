@@ -85,6 +85,14 @@ input::placeholder{color:#8399b8}
 .sprite-guide li{margin:7px 0;overflow-wrap:anywhere}
 .sprite-guide .small{margin:12px 0 0;line-height:1.6}
 .sprite-guide a{color:#9eefff}
+.detail-art{position:relative}
+.sprite-info-button{position:absolute;top:10px;right:10px;width:40px;height:40px;border:1px solid #80dff688;border-radius:50%;background:#102238ed;color:#9eefff;font-size:25px;line-height:1;cursor:pointer}
+.sprite-info-button:focus-visible,.sprite-info-close:focus-visible{outline:3px solid #80eaff;outline-offset:3px}
+.sprite-info-dialog{width:calc(100% - 28px);max-width:600px;max-height:85dvh;overflow:auto;padding:0;border:1px solid #47769a;border-radius:17px;background:#14263b;color:var(--text);box-shadow:0 20px 80px #000a}
+.sprite-info-dialog::backdrop{background:#030912c9}
+.sprite-info-dialog .sprite-guide{margin:0;padding:23px;border:0}
+.sprite-info-dialog .sprite-guide h3{padding-right:35px}
+.sprite-info-close{position:absolute;top:9px;right:9px;width:36px;height:36px;border:0;border-radius:9px;background:#253e5c;color:#e6f9ff;font-size:24px;cursor:pointer}
 .variant-cost{font-size:11px;color:#c1dcf4;line-height:1.5;margin-top:5px;overflow-wrap:anywhere}
 .variant-name{font-weight:850;font-size:13px;overflow-wrap:anywhere}
 .variant button{border:0;background:#66e4ff;color:#091728;border-radius:10px;padding:10px;font-weight:850;font-size:12px}
@@ -585,7 +593,24 @@ function showFamily(){
  source.href='https://fn-api.cc/';source.target='_blank';source.rel='noopener noreferrer';
  source.textContent='Catalog source: FN API';
  note.append(source,'. Costs and availability can change with game updates.');
- guide.append(note);root.append(guide);
+ guide.append(note);
+ const infoDialog=document.createElement('dialog');
+ infoDialog.className='sprite-info-dialog';
+ guideTitle.id='spriteInfoTitle';
+ guideTitle.textContent=f.name+' — How to get it';
+ infoDialog.setAttribute('aria-labelledby',guideTitle.id);
+ const closeInfo=document.createElement('button');
+ closeInfo.type='button';closeInfo.className='sprite-info-close';
+ closeInfo.textContent='×';closeInfo.setAttribute('aria-label','Close Sprite information');
+ closeInfo.onclick=()=>infoDialog.close();
+ infoDialog.append(closeInfo,guide);root.append(infoDialog);
+ const infoButton=document.createElement('button');
+ infoButton.type='button';infoButton.className='sprite-info-button';
+ infoButton.textContent='ⓘ';
+ infoButton.setAttribute('aria-label','Information about '+f.name);
+ infoButton.setAttribute('aria-haspopup','dialog');
+ infoButton.onclick=()=>infoDialog.showModal();
+ art.append(infoButton);
  for(const v of f.variants){
  const row=document.createElement("div");
  row.className="variant";
@@ -941,6 +966,8 @@ document.head.append(accountSdk);
 </script>
 </body>
 </html>
+
+
 
 
 
