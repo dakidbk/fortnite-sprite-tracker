@@ -597,7 +597,7 @@ async function refreshSprites(isManual=false){
    if(matching){selected=matching;showFamily();}
   }
   if(isManual)await new Promise(resolve=>setTimeout(resolve,Math.max(0,2100-(Date.now()-start))));
-  $("syncStatus").textContent="✓ Sprite catalog updated · Account not connected";
+  $("syncStatus").textContent="✓ Sprite catalog updated · Collection tracking is manual";
  }catch(error){
   $("syncStatus").textContent="Could not refresh Sprites. Try again.";
   if(!families.length)$("message").textContent="Could not load Sprite data. Please try refreshing.";
@@ -631,17 +631,29 @@ function setEpicName(name){
 }
 connectButton.onclick=()=>location.assign(authOrigin+"/start");
 disconnectButton.onclick=()=>{
- sessionStorage.removeItem("spriteEpicSession");
- setEpicName(null);
+ // Visit the Worker directly so it can clear its HttpOnly session cookie.
+ location.assign(authOrigin+"/logout");
 };
 (async()=>{
- const params=new URLSearchParams(location.hash.slice(1));
- const ticket=params.get("epic_session");
- const error=params.get("epic_error");
- if(ticket||error){
-  history.replaceState(null,"",location.pathname+location.search);
-  if(ticket)sessionStorage.setItem("spriteEpicSession",ticket);
+ const callbackUrl=new URL(location.href);
+ const fragment=new URLSearchParams(callbackUrl.hash.slice(1));
+ const error=callbackUrl.searchParams.get("epic_error")||fragment.get("epic_error");
+ const returnedFromLogin=callbackUrl.searchParams.has("epic_connected")||fragment.has("epic_connected");
+ let hasCallback=false;
+ let hasFragmentCallback=false;
+ for(const key of ["epic_connected","epic_error","epic_session"]){
+  if(callbackUrl.searchParams.has(key)||fragment.has(key))hasCallback=true;
+  if(fragment.has(key))hasFragmentCallback=true;
+  callbackUrl.searchParams.delete(key);
+  fragment.delete(key);
  }
+ if(hasCallback){
+  if(hasFragmentCallback)callbackUrl.hash=fragment.toString();
+  history.replaceState(history.state,"",callbackUrl.pathname+callbackUrl.search+callbackUrl.hash);
+ }
+ // Old fragment tickets are no longer credentials; the Worker owns the session.
+ try{sessionStorage.removeItem("spriteEpicSession");}catch{}
+ let loginError="";
  if(error){
   const reasons={
    state:"Epic login security check failed. Try again in the same browser tab.",
@@ -653,28 +665,33 @@ disconnectButton.onclick=()=>{
    missing_account:"Epic did not return an account identifier.",
    server:"The Epic login server encountered an error."
   };
-  connectionNote.textContent=reasons[error]||(
+  loginError=reasons[error]||(
    error.startsWith("profile_")?"Epic account profile request failed ("+error.slice(8)+").":
    error.startsWith("token_")?"Epic token request failed ("+error.slice(6)+").":
    "Epic sign-in failed. Please try again."
   );
  }
- const savedTicket=sessionStorage.getItem("spriteEpicSession");
- if(!savedTicket)return;
+ connectionBadge.textContent="Checking…";
+ connectButton.disabled=true;
+ connectionNote.textContent=loginError||"Checking your Epic account connection…";
  try{
   const res=await fetch(authOrigin+"/session",{
-   headers:{"Authorization":"Bearer "+savedTicket},cache:"no-store"
+   method:"GET",credentials:"include",cache:"no-store"
   });
-  if(!res.ok)throw Error("Session expired");
+  if(!res.ok)throw Error("Session check failed");
   const data=await res.json();
   const isConnected=data.connected===true||data.authenticated===true;
   const epicName=data.name??data.account?.name;
-  if(!isConnected||typeof epicName!=="string")throw Error("Invalid session");
-  setEpicName(epicName||"Epic Player");
+  setEpicName(isConnected?(typeof epicName==="string"&&epicName.trim()?epicName:"Epic Player"):null);
+  if(loginError)connectionNote.textContent=loginError;
+  else if(!isConnected&&returnedFromLogin){
+   connectionNote.textContent="Sign-in returned, but no Epic session is available. Your browser may be blocking third-party cookies for the sign-in service. Allow them for this site and try connecting again. Collection tracking remains manual.";
+  }
  }catch{
-  sessionStorage.removeItem("spriteEpicSession");
   setEpicName(null);
-  connectionNote.textContent="Epic session could not be verified. Sign in again.";
+  connectionNote.textContent=loginError||"Epic session could not be verified. Your browser may be blocking third-party cookies, or the sign-in service may be unavailable. Try connecting again. Collection tracking remains manual.";
+ }finally{
+  connectButton.disabled=false;
  }
 })();
 </script>
