@@ -932,10 +932,13 @@ function initializeTrackerAccounts(createClient){
  });
  let accountId=undefined,authBusy=false,accountStatusKind='';
  let publicUsername="";
+ let usernameChangedAt=null;
+ const usernameSaveButton=$("usernameForm").querySelector('button[type="submit"]');
+ function refreshUsernameCooldown(){const next=usernameChangedAt?new Date(usernameChangedAt).getTime()+7*86400000:0;const locked=!!publicUsername&&Date.now()<next;$("trackerUsername").disabled=locked;usernameSaveButton.disabled=locked;$("usernameStatus").textContent=locked?"Username changes available after "+new Date(next).toLocaleString()+".":(publicUsername?"You can change your username now.":"Choose your username. Once saved, changes require a 7-day wait.");}
  async function loadPublicUsername(id){
-  publicUsername="";$("trackerUsername").value="";
-  if(id){const {data,error}=await client.from("sprite_profiles").select("username").eq("user_id",id).maybeSingle();if(!error&&data){publicUsername=data.username;$("trackerUsername").value=data.username;}}
-  updateTradeVisibility();
+  publicUsername="";usernameChangedAt=null;$("trackerUsername").value="";
+  if(id){const {data,error}=await client.from("sprite_profiles").select("username,username_changed_at").eq("user_id",id).maybeSingle();if(!error&&data){publicUsername=data.username;usernameChangedAt=data.username_changed_at;$("trackerUsername").value=data.username;}}
+  refreshUsernameCooldown();updateTradeVisibility();
  }
  function updateTradeVisibility(){
   $("tradePostForm").hidden=!(accountId&&publicUsername);
@@ -943,12 +946,12 @@ function initializeTrackerAccounts(createClient){
   $("tradeSignInHint").textContent=accountId?"Set a username under Account to post.":"Sign in and set a username to post.";
  }
  $("usernameForm").onsubmit=async event=>{
-  event.preventDefault();if(!accountId||!$("trackerUsername").reportValidity())return;
+  event.preventDefault();if(!accountId||$("trackerUsername").disabled||!$("trackerUsername").reportValidity())return;
   const username=$("trackerUsername").value.trim();
   if(!/^[A-Za-z0-9_]{7,20}$/.test(username))return;
   const {error}=await client.from("sprite_profiles").upsert({user_id:accountId,username},{onConflict:"user_id"});
   $("usernameStatus").textContent=error?(error.code==="23505"?"That username is already taken. Try another.":error.message):"Username saved!";
-  if(!error){publicUsername=username;updateTradeVisibility();}
+  if(!error){publicUsername=username;usernameChangedAt=new Date().toISOString();refreshUsernameCooldown();updateTradeVisibility();}
  };
  async function refreshTrades(){
   const root=$("tradeListings");root.replaceChildren();$("tradeBoardStatus").textContent="Loading trades…";
