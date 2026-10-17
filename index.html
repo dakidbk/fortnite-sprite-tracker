@@ -85,6 +85,7 @@ input::placeholder{color:#8399b8}
 .variant button.owned{background:#22574e;color:#a3ffe1}
 .level-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px}
 .level-row button{padding:5px 10px;background:#334f6d;color:white}
+.level-row button:disabled{opacity:.4;cursor:not-allowed}
 .mastered-tag{display:inline-block;margin:7px 0 2px;color:#f8d988;font-size:11px;font-weight:850;letter-spacing:.2px}
 .master-btn{display:block;margin-top:9px!important;padding:8px 10px!important;background:#283b56!important;color:#d6e5f7!important;border:1px solid #526782!important}
 .master-btn.is-mastered{background:linear-gradient(135deg,#725522,#a27a2c)!important;color:#fff1b4!important;border-color:#e1b75a!important}
@@ -253,6 +254,16 @@ try{mastered=JSON.parse(localStorage.getItem("masteredSprites")||"{}")}catch(e){
 try{
  saved=JSON.parse(localStorage.getItem("mySprites")||"{}");
 }catch(e){}
+// Keep saved levels within Fortnite's supported range, including older entries.
+if(!saved||typeof saved!=="object"||Array.isArray(saved))saved={};
+let levelsCorrected=false;
+for(const [id,value] of Object.entries(saved)){
+ const level=Number(value);
+ if(!Number.isFinite(level)||level<=0){delete saved[id];levelsCorrected=true;continue;}
+ const bounded=Math.min(5,Math.max(1,Math.floor(level)));
+ if(value!==bounded){saved[id]=bounded;levelsCorrected=true;}
+}
+if(levelsCorrected){try{localStorage.setItem("mySprites",JSON.stringify(saved));}catch{}}
 const $=id=>document.getElementById(id);
 $("sortSelect").value=sortOrder;
 function releaseTime(s){
@@ -505,12 +516,14 @@ function showFamily(){
  label.textContent="Level "+saved[v.id];
  const plus=document.createElement("button");
  plus.textContent="+";
+ plus.disabled=saved[v.id]>=5;
+ minus.disabled=saved[v.id]<=1;
  minus.onclick=()=>{
  saved[v.id]=Math.max(1,saved[v.id]-1);
  store();showFamily();render();
  };
  plus.onclick=()=>{
- saved[v.id]++;
+ saved[v.id]=Math.min(5,saved[v.id]+1);
  store();showFamily();render();
  };
  levels.append(minus,label,plus);
