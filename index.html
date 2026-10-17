@@ -216,14 +216,14 @@ input::placeholder{color:#8399b8}
  
 </header>
 <main id="top">
-<section class="epic-connect" aria-labelledby="epicConnectTitle">
+<section class="epic-connect" aria-labelledby="epicConnectTitle" hidden>
  <div class="epic-connect-head"><div><span class="epic-eyebrow">ACCOUNT CONNECTION</span><h2 id="epicConnectTitle">Connect Epic Games</h2></div><span class="epic-pending" id="epicBadge">Not connected</span></div>
  <p>Sign in securely with Epic Games to show your account name. Automatic Fortnite Sprite collection syncing is not available yet; keep tracking manually.</p>
  <button id="epicConnectButton" type="button">Sign in with Epic Games</button><button id="epicSignOutButton" type="button" hidden>Disconnect</button>
  <p class="epic-connect-note" id="epicConnectNote" role="status">No Epic account connected. Collection tracking remains manual.</p>
 </section>
 
-<div class="sync-wrap"><button id="syncButton" type="button">↻ Refresh Sprites</button><span id="syncStatus" role="status" aria-live="polite">Account sync not connected</span></div>
+<div class="sync-wrap"><button id="syncButton" type="button">↻ Refresh Sprites</button><span id="syncStatus" role="status" aria-live="polite">Collection saved in this browser</span></div>
 <div id="newAlert" class="new-alert" role="status" aria-live="polite"><span id="newAlertText"></span><button type="button" id="showNewButton">View new</button></div>
 <div class="season-label">SPRITE SEASON</div>
 <select id="seasonSelect" aria-label="Choose Sprite season"><option value="all">All seasons</option></select>
@@ -245,7 +245,7 @@ input::placeholder{color:#8399b8}
 <div id="grid" class="grid"></div>
 <footer class="site-footer">
  <div class="footer-grid">
-  <section><h3>Sprite Tracker</h3><p>A fan-made home for tracking Fortnite Sprite families, variants, and mastery progress.</p><p class="footer-note">Your collection is saved on this device. Epic account collection sync is not available yet.</p></section>
+  <section><h3>Sprite Tracker</h3><p>A fan-made home for tracking Fortnite Sprite families, variants, and mastery progress.</p><p class="footer-note">Your collection is saved in this browser. Update ownership, levels, and mastery manually.</p></section>
   <section><h3>Quick Links</h3><a href="#top">↑ Back to top</a><a href="./privacy.html">Privacy Policy</a><a href="https://github.com/dakidbk/fortnite-sprite-tracker" target="_blank" rel="noopener noreferrer">Project on GitHub ↗</a></section>
   <section><h3>💬 Feedback &amp; Suggestions</h3><p>Have an idea for Sprite Tracker or found something broken? We’d love to hear it!</p><a class="feedback-action" href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Feature%20Suggestion">💡 Suggest a Feature ↗</a><a class="feedback-action" href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Bug%20Report">🐛 Report a Bug ↗</a><a href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Feedback">✉ Email Feedback</a><p class="footer-note">These buttons open your email app. Never share Epic passwords, tokens, or private account details.</p></section>
  </div>
@@ -614,6 +614,9 @@ $("showNewButton").onclick=()=>{showNewOnly=!showNewOnly;season="all";$("seasonS
 $("syncButton").onclick=()=>refreshSprites(true);
 refreshSprites(false);
 
+// Epic login is hidden until collection synchronization is available.
+(()=>{
+if(document.querySelector(".epic-connect").hidden)return;
 const authOrigin="https://sprite-tracker-auth.bklynshowtimee.workers.dev";
 const connectButton=document.getElementById("epicConnectButton");
 const disconnectButton=document.getElementById("epicSignOutButton");
@@ -695,6 +698,7 @@ disconnectButton.onclick=()=>{
  }finally{
   connectButton.disabled=false;
  }
+})();
 })();
 </script>
 </body>
