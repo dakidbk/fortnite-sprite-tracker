@@ -215,10 +215,10 @@ input::placeholder{color:#8399b8}
 </header>
 <main id="top">
 <section class="epic-connect" aria-labelledby="epicConnectTitle">
- <div class="epic-connect-head"><div><span class="epic-eyebrow">ACCOUNT CONNECTION</span><h2 id="epicConnectTitle">Connect Epic Games</h2></div><span class="epic-pending">Setup needed</span></div>
+ <div class="epic-connect-head"><div><span class="epic-eyebrow">ACCOUNT CONNECTION</span><h2 id="epicConnectTitle">Connect Epic Games</h2></div><span class="epic-pending" id="epicBadge">Not connected</span></div>
  <p>Sign in with Epic to connect your account when authentication is configured. Your Fortnite Sprite collection cannot be imported yet; keep tracking manually for now.</p>
- <button id="epicConnectButton" type="button" disabled>Connect with Epic Games</button>
- <p class="epic-connect-note" id="epicConnectNote" role="status">Epic sign-in is not configured yet. No account is connected.</p>
+ <button id="epicConnectButton" type="button">Sign in with Epic Games</button><button id="epicSignOutButton" type="button" hidden>Disconnect</button>
+ <p class="epic-connect-note" id="epicConnectNote" role="status">No Epic account connected. Collection tracking remains manual.</p>
 </section>
 
 <div class="sync-wrap"><button id="syncButton" type="button">↻ Refresh Sprites</button><span id="syncStatus" role="status" aria-live="polite">Account sync not connected</span></div>
@@ -611,6 +611,54 @@ async function refreshSprites(isManual=false){
 $("showNewButton").onclick=()=>{showNewOnly=!showNewOnly;season="all";$("seasonSelect").value="all";$("showNewButton").textContent=showNewOnly?"Show all":"View new";render();};
 $("syncButton").onclick=()=>refreshSprites(true);
 refreshSprites(false);
+
+const authOrigin="https://sprite-tracker-auth.bklynshowtimee.workers.dev";
+const connectButton=document.getElementById("epicConnectButton");
+const disconnectButton=document.getElementById("epicSignOutButton");
+const connectionNote=document.getElementById("epicConnectNote");
+const connectionBadge=document.getElementById("epicBadge");
+connectButton.disabled=false;
+connectButton.style.cursor="pointer";
+connectButton.style.background="#39c5ed";
+connectButton.style.color="#07182b";
+function setEpicName(name){
+ connectButton.hidden=!!name;
+ disconnectButton.hidden=!name;
+ connectionBadge.textContent=name?"Connected":"Not connected";
+ connectionNote.textContent=name
+  ?"Signed in as "+name+". Sprite ownership is still tracked manually."
+  :"No Epic account connected. Collection tracking remains manual.";
+}
+connectButton.onclick=()=>location.assign(authOrigin+"/start");
+disconnectButton.onclick=()=>{
+ sessionStorage.removeItem("spriteEpicSession");
+ setEpicName(null);
+};
+(async()=>{
+ const params=new URLSearchParams(location.hash.slice(1));
+ const ticket=params.get("epic_session");
+ const error=params.get("epic_error");
+ if(ticket||error){
+  history.replaceState(null,"",location.pathname+location.search);
+  if(ticket)sessionStorage.setItem("spriteEpicSession",ticket);
+ }
+ if(error)connectionNote.textContent="Epic sign-in failed. Please try again.";
+ const savedTicket=sessionStorage.getItem("spriteEpicSession");
+ if(!savedTicket)return;
+ try{
+  const res=await fetch(authOrigin+"/session",{
+   headers:{"Authorization":"Bearer "+savedTicket},cache:"no-store"
+  });
+  if(!res.ok)throw Error("Session expired");
+  const data=await res.json();
+  if(!data.connected||typeof data.name!=="string")throw Error("Invalid session");
+  setEpicName(data.name);
+ }catch{
+  sessionStorage.removeItem("spriteEpicSession");
+  setEpicName(null);
+  connectionNote.textContent="Epic session could not be verified. Sign in again.";
+ }
+})();
 </script>
 </body>
 </html>
