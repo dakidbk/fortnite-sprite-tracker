@@ -278,7 +278,7 @@ input::placeholder{color:#8399b8}
 .account-actions button{padding:11px 14px;border:1px solid #4d7898;border-radius:10px;background:#253e5c;color:#e6f9ff;font-weight:800;cursor:pointer}
 .account-actions button:disabled{opacity:.5;cursor:wait}
 
-#openTrackerAccount{position:absolute;top:15px;right:16px;z-index:4;border:1px solid #8cddff88;border-radius:10px;background:#14283ee8;color:#e8faff;padding:9px 14px;font-size:12px;font-weight:850;cursor:pointer}
+#trackerMenuToggle{position:absolute;top:15px;right:16px;z-index:5;border:1px solid #8cddff88;border-radius:10px;background:#14283ee8;color:#e8faff;padding:9px 12px;font-size:22px;line-height:1;cursor:pointer}\n#trackerMenu{position:absolute;top:60px;right:16px;z-index:6;min-width:170px;padding:7px;border:1px solid #47769a;border-radius:12px;background:#142238;box-shadow:0 12px 30px #0008}\n#trackerMenu[hidden]{display:none}\n#trackerMenu button{display:block;width:100%;text-align:left;padding:12px 14px;border:0;border-radius:8px;background:transparent;color:#e8faff;font-size:14px;font-weight:800;cursor:pointer}\n#trackerMenu button:hover,#trackerMenu button:focus-visible{background:#294b6a}\n#openTrackerAccount{border:1px solid #8cddff88;border-radius:10px;background:#14283ee8;color:#e8faff;padding:9px 14px;font-size:12px;font-weight:850;cursor:pointer}
 #openTrackerAccount:focus-visible,#closeTrackerAccount:focus-visible{outline:3px solid #80eaff;outline-offset:3px}
 .season-hero{padding-top:65px}
 #trackerAccountDialog{position:fixed;inset:0;width:calc(100% - 28px);max-width:440px;max-height:90dvh;overflow:auto;margin:auto;padding:0;border:1px solid #47769a;border-radius:18px;background:#142238;color:#f5f9ff;box-shadow:0 20px 80px #000a}
@@ -298,7 +298,7 @@ input::placeholder{color:#8399b8}
 </head>
 <body>
 <header class="season-hero">
- <button type="button" id="openTrackerAccount" aria-haspopup="dialog" aria-controls="trackerAccountDialog">Sign in</button>
+ <button type="button" id="trackerMenuToggle" aria-label="Open menu" aria-haspopup="true" aria-expanded="false" aria-controls="trackerMenu">☰</button>\n <nav id="trackerMenu" aria-label="Site menu" hidden><button type="button" id="openTrackerAccount" aria-haspopup="dialog" aria-controls="trackerAccountDialog">Account</button><button type="button" id="openTradeInfo">Trade</button></nav>
  <div class="hero-content">
   <div class="hero-kicker"><span class="hero-live-dot"></span> CHAPTER 7 · SEASON 4 · OVERRIDE</div>
   <div class="hero-event">🎃 FORTNITEMARES 2026</div>
@@ -309,7 +309,7 @@ input::placeholder{color:#8399b8}
  </div>
  
 </header>
-<main id="top">
+<main id="top">\n<dialog id="tradeInfoDialog" class="sprite-info-dialog" aria-labelledby="tradeInfoTitle"><section class="sprite-guide"><h2 id="tradeInfoTitle">Trade</h2><p>Sprite trading is not available yet. This section is reserved for a future trading feature.</p><button type="button" id="closeTradeInfo" class="sprite-info-close" aria-label="Close trade information">×</button></section></dialog>
 <dialog id="trackerAccountDialog" aria-labelledby="accountTitle">
 <button type="button" id="closeTrackerAccount" aria-label="Close account window">×</button>
 <section class="account-panel" id="trackerAccount" aria-labelledby="accountTitle">
@@ -909,7 +909,14 @@ function clearAccountPassword(id){
  setPasswordVisibility(input,button,false);
 }
 const accountDialog=$("trackerAccountDialog");
-$("openTrackerAccount").onclick=()=>accountDialog.showModal();
+const trackerMenu=$("trackerMenu"),trackerMenuToggle=$("trackerMenuToggle");
+function closeTrackerMenu(){trackerMenu.hidden=true;trackerMenuToggle.setAttribute("aria-expanded","false");}
+trackerMenuToggle.onclick=()=>{trackerMenu.hidden=!trackerMenu.hidden;trackerMenuToggle.setAttribute("aria-expanded",String(!trackerMenu.hidden));};
+document.addEventListener("click",event=>{if(!trackerMenu.hidden&&!trackerMenu.contains(event.target)&&event.target!==trackerMenuToggle)closeTrackerMenu();});
+document.addEventListener("keydown",event=>{if(event.key==="Escape")closeTrackerMenu();});
+$("openTrackerAccount").onclick=()=>{closeTrackerMenu();accountDialog.showModal();};
+$("openTradeInfo").onclick=()=>{closeTrackerMenu();$("tradeInfoDialog").showModal();};
+$("closeTradeInfo").onclick=()=>$("tradeInfoDialog").close();
 $("closeTrackerAccount").onclick=()=>accountDialog.close();
 accountDialog.addEventListener("click",event=>{if(event.target===accountDialog){const rect=accountDialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)accountDialog.close();}});
 function initializeTrackerAccounts(createClient){
