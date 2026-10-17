@@ -243,7 +243,7 @@ input::placeholder{color:#8399b8}
 <label for="trackerEmail">Email</label><input id="trackerEmail" type="email" required autocomplete="username" maxlength="254">
 <label for="trackerPassword">Password</label><div class="password-field"><input id="trackerPassword" type="password" required minlength="10" maxlength="128" autocomplete="current-password" aria-describedby="passwordHint"><button type="button" class="password-eye" data-password-target="trackerPassword" aria-controls="trackerPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m4 4 16 16"/></svg></button></div>
 <p id="passwordHint">Use 10 characters or more.</p>
-<div class="account-actions"><button type="submit">Sign in</button><button type="button" id="createTrackerAccount">Create account</button><button type="button" id="recoverTrackerAccount">Forgot password?</button></div>
+<div class="account-actions"><button type="submit">Sign in</button><button type="button" id="createTrackerAccount">Create account</button><button type="button" id="recoverTrackerAccount" hidden>Forgot password?</button></div>
 </form>
 </div>
 <div id="accountSignedIn" hidden><p id="accountEmailLabel"></p>
