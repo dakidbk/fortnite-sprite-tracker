@@ -315,7 +315,8 @@ input::placeholder{color:#8399b8}
  </div>
  
 </header>
-<main id="top">\n<dialog id="tradeInfoDialog" class="sprite-info-dialog" aria-labelledby="tradeInfoTitle"><section class="sprite-guide"><button type="button" id="closeTradeInfo" class="sprite-info-close" aria-label="Close trade board">×</button><h2 id="tradeInfoTitle">Sprite Trade Board</h2><p>Find collectors interested in trading. Listings show usernames, not email addresses. This site cannot transfer Sprites in Fortnite.</p><form id="tradePostForm" hidden><label for="tradeOffering">Offering</label><input id="tradeOffering" required minlength="2" maxlength="140" placeholder="Sprite variant"><label for="tradeWanted">Looking for</label><input id="tradeWanted" required minlength="2" maxlength="140" placeholder="Sprite variant"><label for="tradeNote">Note (optional)</label><textarea id="tradeNote" maxlength="280" rows="2"></textarea><button type="submit">Post trade</button></form><p id="tradeSignInHint">Sign in and create a username to post.</p><p id="tradeBoardStatus" role="status"></p><div id="tradeListings"></div><button type="button" id="refreshTrades">Refresh trades</button></section></dialog>
+<main id="top">
+<dialog id="tradeInfoDialog" class="sprite-info-dialog" aria-labelledby="tradeInfoTitle"><section class="sprite-guide"><button type="button" id="closeTradeInfo" class="sprite-info-close" aria-label="Close trade board">×</button><h2 id="tradeInfoTitle">Sprite Trade Board</h2><p>Find collectors interested in trading. Listings show usernames, not email addresses. This site cannot transfer Sprites in Fortnite.</p><form id="tradePostForm" hidden><label for="tradeOffering">Offering</label><input id="tradeOffering" required minlength="2" maxlength="140" placeholder="Sprite variant"><label for="tradeWanted">Looking for</label><input id="tradeWanted" required minlength="2" maxlength="140" placeholder="Sprite variant"><label for="tradeNote">Note (optional)</label><textarea id="tradeNote" maxlength="280" rows="2"></textarea><button type="submit">Post trade</button></form><p id="tradeSignInHint">Sign in and create a username to post.</p><p id="tradeBoardStatus" role="status"></p><div id="tradeListings"></div><button type="button" id="refreshTrades">Refresh trades</button></section></dialog>
 <dialog id="trackerAccountDialog" aria-labelledby="accountTitle">
 <button type="button" id="closeTrackerAccount" aria-label="Close account window">×</button>
 <section class="account-panel" id="trackerAccount" aria-labelledby="accountTitle">
@@ -946,7 +947,7 @@ function initializeTrackerAccounts(createClient){
   const username=$("trackerUsername").value.trim();
   if(!/^[A-Za-z0-9_]{7,20}$/.test(username))return;
   const {error}=await client.from("sprite_profiles").upsert({user_id:accountId,username},{onConflict:"user_id"});
-  $("usernameStatus").textContent=error?(error.code==="23505"?"Username already taken.":error.message):"Username saved!";
+  $("usernameStatus").textContent=error?(error.code==="23505"?"That username is already taken. Try another.":error.message):"Username saved!";
   if(!error){publicUsername=username;updateTradeVisibility();}
  };
  async function refreshTrades(){
