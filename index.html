@@ -299,7 +299,7 @@ input::placeholder{color:#8399b8}
 .password-eye:focus-visible{outline:2px solid #80eaff;outline-offset:1px}
 .password-eye .eye-slash{display:none}
 .password-eye[aria-pressed="true"] .eye-slash{display:block}
-#tradeInfoDialog{max-width:560px}#tradeInfoDialog input,#tradeInfoDialog textarea,#usernameForm input{display:block;box-sizing:border-box;width:100%;padding:11px;margin:7px 0 12px;border:1px solid #507596;border-radius:9px;background:#102136;color:#fff;font:inherit}#tradeInfoDialog button[type=submit],#refreshTrades,#usernameForm button{padding:10px 14px;border:0;border-radius:9px;background:#66e4ff;color:#091728;font-weight:800}#tradeListings{display:grid;gap:10px;margin:12px 0}.trade-listing{padding:13px;background:#1b304b;border:1px solid #42698c;border-radius:12px;overflow-wrap:anywhere}.trade-listing strong{color:#a7eaff}.trade-listing button{margin-top:8px}</style>
+#tradeInfoDialog{max-width:560px}#tradeInfoDialog input,#tradeInfoDialog textarea,#usernameForm input{display:block;box-sizing:border-box;width:100%;padding:11px;margin:7px 0 12px;border:1px solid #507596;border-radius:9px;background:#102136;color:#fff;font:inherit}#tradeInfoDialog button[type=submit],#refreshTrades,#usernameForm button{padding:10px 14px;border:0;border-radius:9px;background:#66e4ff;color:#091728;font-weight:800}#tradeListings{display:grid;gap:10px;margin:12px 0}.trade-listing{padding:13px;background:#1b304b;border:1px solid #42698c;border-radius:12px;overflow-wrap:anywhere}.trade-listing strong{color:#a7eaff}.trade-listing button{margin-top:8px}#tradeInfoDialog{inset:0!important;width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;box-sizing:border-box;overflow-y:auto!important;padding:20px 16px 70px!important;background:#0b1425!important}#tradeInfoDialog .sprite-guide{max-width:760px;margin:0 auto;padding:18px 12px;border:0;background:transparent}#tradeInfoDialog select{display:block;width:100%;box-sizing:border-box;padding:14px;margin:8px 0 18px;border:1px solid #507596;border-radius:11px;background:#1a2d47;color:white;font:inherit}#tradeInfoDialog .trade-checkbox{display:flex;align-items:center;gap:10px;margin:14px 0;font-weight:700}#tradeInfoDialog .trade-checkbox input{width:20px;height:20px;margin:0;flex:none}#tradeInfoDialog .sprite-info-close{position:sticky;float:right;top:0;z-index:2}#tradeInfoDialog .trade-listing{padding:16px}#tradeInfoDialog .trade-listing p{margin:8px 0}</style>
 </head>
 <body>
 <header class="season-hero">
@@ -316,7 +316,7 @@ input::placeholder{color:#8399b8}
  
 </header>
 <main id="top">
-<dialog id="tradeInfoDialog" class="sprite-info-dialog" aria-labelledby="tradeInfoTitle"><section class="sprite-guide"><button type="button" id="closeTradeInfo" class="sprite-info-close" aria-label="Close trade board">×</button><h2 id="tradeInfoTitle">Sprite Trade Board</h2><p>Find collectors interested in trading. Listings show usernames, not email addresses. This site cannot transfer Sprites in Fortnite.</p><form id="tradePostForm" hidden><label for="tradeOffering">Offering</label><input id="tradeOffering" required minlength="2" maxlength="140" placeholder="Sprite variant"><label for="tradeWanted">Looking for</label><input id="tradeWanted" required minlength="2" maxlength="140" placeholder="Sprite variant"><label for="tradeNote">Note (optional)</label><textarea id="tradeNote" maxlength="280" rows="2"></textarea><button type="submit">Post trade</button></form><p id="tradeSignInHint">Sign in and create a username to post.</p><p id="tradeBoardStatus" role="status"></p><div id="tradeListings"></div><button type="button" id="refreshTrades">Refresh trades</button></section></dialog>
+<dialog id="tradeInfoDialog" class="sprite-info-dialog" aria-labelledby="tradeInfoTitle"><section class="sprite-guide"><button type="button" id="closeTradeInfo" class="sprite-info-close" aria-label="Close trade board">×</button><h2 id="tradeInfoTitle">Sprite Trade Board</h2><p>Choose from your owned Sprites to offer. Browse what other collectors want. This board cannot transfer items in Fortnite.</p><form id="tradePostForm" hidden><label for="tradeOffering">My owned Sprite to trade</label><select id="tradeOffering" required><option value="">Choose an owned Sprite</option></select><label for="tradeWanted">Sprite I'm looking for</label><select id="tradeWanted" required><option value="">Choose a Sprite</option></select><label class="trade-checkbox"><input id="tradeAddMe" type="checkbox"> Add me on Fortnite (show my Fortnite username publicly on this listing)</label><div id="tradeContactFields" hidden><label for="tradeFortniteName">My Fortnite display name</label><input id="tradeFortniteName" maxlength="32" minlength="3" placeholder="Fortnite display name"></div><button type="submit">Post trade</button></form><p id="tradeSignInHint">Sign in and create a username to post.</p><p id="tradeBoardStatus" role="status"></p><div id="tradeListings"></div><button type="button" id="refreshTrades">Refresh trades</button></section></dialog>
 <dialog id="trackerAccountDialog" aria-labelledby="accountTitle">
 <button type="button" id="closeTrackerAccount" aria-label="Close account window">×</button>
 <section class="account-panel" id="trackerAccount" aria-labelledby="accountTitle">
@@ -932,12 +932,13 @@ function initializeTrackerAccounts(createClient){
  });
  let accountId=undefined,authBusy=false,accountStatusKind='';
  let publicUsername="";
+ let fortniteDisplayName="";
  let usernameChangedAt=null;
  const usernameSaveButton=$("usernameForm").querySelector('button[type="submit"]');
  function refreshUsernameCooldown(){const next=usernameChangedAt?new Date(usernameChangedAt).getTime()+7*86400000:0;const locked=!!publicUsername&&Date.now()<next;$("trackerUsername").disabled=locked;usernameSaveButton.disabled=locked;$("usernameStatus").textContent=locked?"Username changes available after "+new Date(next).toLocaleString()+".":(publicUsername?"You can change your username now.":"Choose your username. Once saved, changes require a 7-day wait.");}
  async function loadPublicUsername(id){
-  publicUsername="";usernameChangedAt=null;$("trackerUsername").value="";
-  if(id){const {data,error}=await client.from("sprite_profiles").select("username,username_changed_at").eq("user_id",id).maybeSingle();if(!error&&data){publicUsername=data.username;usernameChangedAt=data.username_changed_at;$("trackerUsername").value=data.username;}}
+  publicUsername="";fortniteDisplayName="";usernameChangedAt=null;$("trackerUsername").value="";
+  if(id){const {data,error}=await client.from("sprite_profiles").select("username,username_changed_at,fortnite_username").eq("user_id",id).maybeSingle();if(!error&&data){publicUsername=data.username;fortniteDisplayName=data.fortnite_username||"";usernameChangedAt=data.username_changed_at;$("trackerUsername").value=data.username;}}
   refreshUsernameCooldown();updateTradeVisibility();
  }
  function updateTradeVisibility(){
@@ -953,9 +954,24 @@ function initializeTrackerAccounts(createClient){
   $("usernameStatus").textContent=error?(error.code==="23505"?"That username is already taken. Try another.":error.message):"Username saved!";
   if(!error){publicUsername=username;usernameChangedAt=new Date().toISOString();refreshUsernameCooldown();updateTradeVisibility();}
  };
+ function populateTradeOptions(){
+  const offering=$("tradeOffering"),wanted=$("tradeWanted");
+  offering.replaceChildren(new Option("Choose an owned Sprite",""));
+  wanted.replaceChildren(new Option("Choose a Sprite",""));
+  const all=families.flatMap(f=>f.variants);
+  const seen=new Set();
+  for(const sprite of all){
+   if(seen.has(sprite.id))continue;seen.add(sprite.id);
+   if(owned(sprite))offering.add(new Option(sprite.name,sprite.id));
+   wanted.add(new Option(sprite.name,sprite.id));
+  }
+  if(!offering.options.length||offering.options.length===1)$("tradeBoardStatus").textContent="Mark a Sprite as Owned in your collection before posting a trade.";
+  $("tradeFortniteName").value=fortniteDisplayName;
+ }
+ $("tradeAddMe").onchange=()=>{$("tradeContactFields").hidden=!$("tradeAddMe").checked;$("tradeFortniteName").required=$("tradeAddMe").checked;};
  async function refreshTrades(){
   const root=$("tradeListings");root.replaceChildren();$("tradeBoardStatus").textContent="Loading trades…";
-  const {data,error}=await client.from("sprite_trade_posts").select("id,user_id,offering,looking_for,note,created_at,sprite_profiles(username)").order("created_at",{ascending:false}).limit(50);
+  const {data,error}=await client.from("sprite_trade_posts").select("id,user_id,offering,looking_for,note,created_at,show_fortnite_username,fortnite_username,sprite_profiles(username)").order("created_at",{ascending:false}).limit(50);
   if(error){$("tradeBoardStatus").textContent="Could not load trades.";return;}
   $("tradeBoardStatus").textContent=data.length?data.length+" recent listings":"No trades posted yet.";
   for(const item of data){
@@ -965,21 +981,21 @@ function initializeTrackerAccounts(createClient){
    const want=document.createElement("p");want.textContent="Looking for: "+item.looking_for;
    const note=document.createElement("p");note.textContent=item.note||"";
    const date=document.createElement("small");date.textContent=new Date(item.created_at).toLocaleDateString();
-   card.append(user,offer,want,note,date);
+   card.append(user,offer,want);if(item.show_fortnite_username&&item.fortnite_username){const contact=document.createElement("p");contact.textContent="Add me on Fortnite: "+item.fortnite_username;card.append(contact);}card.append(date);
    if(accountId===item.user_id){const button=document.createElement("button");button.textContent="Delete listing";button.onclick=async()=>{button.disabled=true;const {error}=await client.from("sprite_trade_posts").delete().eq("id",item.id).eq("user_id",accountId);if(error){$("tradeBoardStatus").textContent="Could not delete listing.";button.disabled=false;}else await refreshTrades();};card.append(button);}
    root.append(card);
   }
  }
  $("tradePostForm").onsubmit=async event=>{
   event.preventDefault();if(!accountId||!publicUsername)return;
-  const offering=$("tradeOffering").value.trim(),looking_for=$("tradeWanted").value.trim(),note=$("tradeNote").value.trim();
+  const offeringId=$("tradeOffering").value,lookingId=$("tradeWanted").value;const all=families.flatMap(f=>f.variants);const offerSprite=all.find(v=>v.id===offeringId),wantedSprite=all.find(v=>v.id===lookingId);if(!offerSprite||!owned(offerSprite)||!wantedSprite){$("tradeBoardStatus").textContent="Choose an owned Sprite to offer and a Sprite to request.";return;}const offering=offerSprite.name,looking_for=wantedSprite.name,show_fortnite_username=$("tradeAddMe").checked,fortnite_username=show_fortnite_username?$("tradeFortniteName").value.trim():null;const note="";if(show_fortnite_username&&(fortnite_username.length<3||fortnite_username.length>32)){ $("tradeBoardStatus").textContent="Enter your Fortnite display name (3–32 characters).";return;}
   if(offering.length<2||looking_for.length<2)return;
-  const {error}=await client.from("sprite_trade_posts").insert({user_id:accountId,offering,looking_for,note});
+  const {error}=await client.from("sprite_trade_posts").insert({user_id:accountId,offering,looking_for,note,show_fortnite_username,fortnite_username});
   if(error){$("tradeBoardStatus").textContent=error.message;return;}
-  $("tradePostForm").reset();await refreshTrades();
+  if(show_fortnite_username){fortniteDisplayName=fortnite_username;await client.from("sprite_profiles").update({fortnite_username}).eq("user_id",accountId);} $("tradePostForm").reset();$("tradeContactFields").hidden=true;await refreshTrades();
  };
  $("refreshTrades").onclick=()=>void refreshTrades();
- window.spriteTradeBoard={refresh:refreshTrades};
+ window.spriteTradeBoard={refresh:async()=>{populateTradeOptions();await refreshTrades();}};
  updateTradeVisibility();
 
  const accountStatus=(text,kind='')=>{
