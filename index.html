@@ -189,16 +189,6 @@ input::placeholder{color:#8399b8}
  .grid .card .view{font-size:10px!important;padding:9px 3px!important}
  .grid .card .count{font-size:clamp(20px,5vw,25px)!important}
 }
-.epic-connect{border:1px solid #52688b;background:linear-gradient(135deg,#1d2944,#121c30);border-radius:18px;padding:18px;margin-bottom:19px;box-shadow:0 8px 24px #0003}
-.epic-connect-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.epic-connect h2{font-size:19px;margin:5px 0 0;line-height:1.2}
-.epic-eyebrow{font-size:10px;letter-spacing:1.4px;font-weight:900;color:#88dfff}
-.epic-pending{font-size:10px;font-weight:850;color:#f6d591;background:#49391e;border:1px solid #95743b;border-radius:99px;padding:6px 8px;white-space:nowrap}
-.epic-connect p{font-size:12px;line-height:1.6;color:#b9cbe5;margin:12px 0}
-.epic-connect button{width:100%;background:#343f53;color:#aebcd0;border:1px solid #536179;border-radius:12px;padding:13px;font-size:14px;font-weight:850;cursor:not-allowed}
-.epic-connect .epic-connect-note{font-size:11px;margin-bottom:0;color:#e4c995}
-.epic-connect button:not(:disabled){cursor:pointer}
-.epic-connect button:disabled{cursor:wait!important;opacity:.65}
 </style>
 </head>
 <body>
@@ -214,12 +204,6 @@ input::placeholder{color:#8399b8}
  
 </header>
 <main id="top">
-<section class="epic-connect" aria-labelledby="epicConnectTitle" hidden>
- <div class="epic-connect-head"><div><span class="epic-eyebrow">ACCOUNT CONNECTION</span><h2 id="epicConnectTitle">Connect Epic Games</h2></div><span class="epic-pending" id="epicBadge">Not connected</span></div>
- <p>Sign in securely with Epic Games to show your account name. Automatic Fortnite Sprite collection syncing is not available yet; keep tracking manually.</p>
- <button id="epicConnectButton" type="button">Sign in with Epic Games</button><button id="epicSignOutButton" type="button" hidden>Disconnect</button>
- <p class="epic-connect-note" id="epicConnectNote" role="status">No Epic account connected. Collection tracking remains manual.</p>
-</section>
 
 <div class="sync-wrap"><span id="syncStatus" role="status" aria-live="polite">Collection saved in this browser</span></div>
 <div id="newAlert" class="new-alert" role="status" aria-live="polite"><span id="newAlertText"></span><button type="button" id="showNewButton">View new</button></div>
@@ -245,7 +229,7 @@ input::placeholder{color:#8399b8}
  <div class="footer-grid">
   <section><h3>Sprite Tracker</h3><p>A fan-made home for tracking Fortnite Sprite families, variants, and mastery progress.</p><p class="footer-note">Your collection is saved in this browser. Update ownership, levels, and mastery manually.</p></section>
   <section><h3>Quick Links</h3><a href="#top">↑ Back to top</a><a href="./privacy.html">Privacy Policy</a><a href="https://github.com/dakidbk/fortnite-sprite-tracker" target="_blank" rel="noopener noreferrer">Project on GitHub ↗</a></section>
-  <section><h3>💬 Feedback &amp; Suggestions</h3><p>Have an idea for Sprite Tracker or found something broken? We’d love to hear it!</p><a class="feedback-action" href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Feature%20Suggestion">💡 Suggest a Feature ↗</a><a class="feedback-action" href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Bug%20Report">🐛 Report a Bug ↗</a><a href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Feedback">✉ Email Feedback</a><p class="footer-note">These buttons open your email app. Never share Epic passwords, tokens, or private account details.</p></section>
+  <section><h3>💬 Feedback &amp; Suggestions</h3><p>Have an idea for Sprite Tracker or found something broken? We’d love to hear it!</p><a class="feedback-action" href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Feature%20Suggestion">💡 Suggest a Feature ↗</a><a class="feedback-action" href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Bug%20Report">🐛 Report a Bug ↗</a><a href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Feedback">✉ Email Feedback</a><p class="footer-note">These buttons open your email app. Never share passwords, tokens, or private account details.</p></section>
  </div>
  <div class="footer-bottom">© 2026 Sprite Tracker · Created by <a href="https://github.com/dakidbk" target="_blank" rel="noopener noreferrer" style="display:inline;color:#81edff">dakidbk</a> · Independent, non-commercial fan project.<p>Portions of the materials used are trademarks and/or copyrighted works of Epic Games, Inc. All rights reserved by Epic. This material is not official and is not endorsed by Epic.</p></div>
 </footer>
@@ -606,92 +590,6 @@ async function refreshSprites(isManual=false){
 $("showNewButton").onclick=()=>{showNewOnly=!showNewOnly;season="all";$("seasonSelect").value="all";$("showNewButton").textContent=showNewOnly?"Show all":"View new";render();};
 refreshSprites(false);
 
-// Epic login is hidden until collection synchronization is available.
-(()=>{
-if(document.querySelector(".epic-connect").hidden)return;
-const authOrigin="https://sprite-tracker-auth.bklynshowtimee.workers.dev";
-const connectButton=document.getElementById("epicConnectButton");
-const disconnectButton=document.getElementById("epicSignOutButton");
-const connectionNote=document.getElementById("epicConnectNote");
-const connectionBadge=document.getElementById("epicBadge");
-connectButton.disabled=false;
-connectButton.style.cursor="pointer";
-connectButton.style.background="#39c5ed";
-connectButton.style.color="#07182b";
-function setEpicName(name){
- connectButton.hidden=!!name;
- disconnectButton.hidden=!name;
- connectionBadge.textContent=name?"Connected":"Not connected";
- connectionNote.textContent=name
-  ?"Signed in as "+name+". Sprite ownership is still tracked manually."
-  :"No Epic account connected. Collection tracking remains manual.";
-}
-connectButton.onclick=()=>location.assign(authOrigin+"/start");
-disconnectButton.onclick=()=>{
- // Visit the Worker directly so it can clear its HttpOnly session cookie.
- location.assign(authOrigin+"/logout");
-};
-(async()=>{
- const callbackUrl=new URL(location.href);
- const fragment=new URLSearchParams(callbackUrl.hash.slice(1));
- const error=callbackUrl.searchParams.get("epic_error")||fragment.get("epic_error");
- const returnedFromLogin=callbackUrl.searchParams.has("epic_connected")||fragment.has("epic_connected");
- let hasCallback=false;
- let hasFragmentCallback=false;
- for(const key of ["epic_connected","epic_error","epic_session"]){
-  if(callbackUrl.searchParams.has(key)||fragment.has(key))hasCallback=true;
-  if(fragment.has(key))hasFragmentCallback=true;
-  callbackUrl.searchParams.delete(key);
-  fragment.delete(key);
- }
- if(hasCallback){
-  if(hasFragmentCallback)callbackUrl.hash=fragment.toString();
-  history.replaceState(history.state,"",callbackUrl.pathname+callbackUrl.search+callbackUrl.hash);
- }
- // Old fragment tickets are no longer credentials; the Worker owns the session.
- try{sessionStorage.removeItem("spriteEpicSession");}catch{}
- let loginError="";
- if(error){
-  const reasons={
-   state:"Epic login security check failed. Try again in the same browser tab.",
-   authorization:"Epic did not authorize this login.",
-   configuration:"Epic login server credentials are not configured.",
-   token_400:"Epic rejected the login token request (400). Check the Worker OAuth v2 endpoint and credentials.",
-   token_401:"Epic rejected the client credentials (401).",
-   token_missing:"Epic did not return an access token.",
-   missing_account:"Epic did not return an account identifier.",
-   server:"The Epic login server encountered an error."
-  };
-  loginError=reasons[error]||(
-   error.startsWith("profile_")?"Epic account profile request failed ("+error.slice(8)+").":
-   error.startsWith("token_")?"Epic token request failed ("+error.slice(6)+").":
-   "Epic sign-in failed. Please try again."
-  );
- }
- connectionBadge.textContent="Checking…";
- connectButton.disabled=true;
- connectionNote.textContent=loginError||"Checking your Epic account connection…";
- try{
-  const res=await fetch(authOrigin+"/session",{
-   method:"GET",credentials:"include",cache:"no-store"
-  });
-  if(!res.ok)throw Error("Session check failed");
-  const data=await res.json();
-  const isConnected=data.connected===true||data.authenticated===true;
-  const epicName=data.name??data.account?.name;
-  setEpicName(isConnected?(typeof epicName==="string"&&epicName.trim()?epicName:"Epic Player"):null);
-  if(loginError)connectionNote.textContent=loginError;
-  else if(!isConnected&&returnedFromLogin){
-   connectionNote.textContent="Sign-in returned, but no Epic session is available. Your browser may be blocking third-party cookies for the sign-in service. Allow them for this site and try connecting again. Collection tracking remains manual.";
-  }
- }catch{
-  setEpicName(null);
-  connectionNote.textContent=loginError||"Epic session could not be verified. Your browser may be blocking third-party cookies, or the sign-in service may be unavailable. Try connecting again. Collection tracking remains manual.";
- }finally{
-  connectButton.disabled=false;
- }
-})();
-})();
 </script>
 </body>
 </html>
