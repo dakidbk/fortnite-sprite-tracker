@@ -91,8 +91,6 @@ input::placeholder{color:#8399b8}
 .level-summary{display:block;margin-top:5px;font-size:11px;color:#aac4dc}
 .variant-level{display:inline-block;margin-top:8px;padding:5px 9px;background:#284666;border:1px solid #42698c;border-radius:8px;color:#a9edff;font-size:12px;font-weight:850}
 .sync-wrap{display:flex;gap:10px;align-items:center;margin:0 0 18px}
-#syncButton{flex:1;border:1px solid #5ad6fa;background:linear-gradient(130deg,#56e4ff,#3baff4);color:#061628;font-weight:900;border-radius:14px;padding:14px 16px;font-size:14px}
-#syncButton:disabled{opacity:.65}
 #syncStatus{font-size:11px;color:#b7c8e3;max-width:170px}
 #loadingScreen{display:none;position:fixed;inset:0;z-index:100;background:#080d19;align-items:center;justify-content:center;flex-direction:column;gap:18px;text-align:center;padding:24px}
 #loadingScreen.visible{display:flex}
@@ -223,7 +221,7 @@ input::placeholder{color:#8399b8}
  <p class="epic-connect-note" id="epicConnectNote" role="status">No Epic account connected. Collection tracking remains manual.</p>
 </section>
 
-<div class="sync-wrap"><button id="syncButton" type="button">↻ Refresh Sprites</button><span id="syncStatus" role="status" aria-live="polite">Collection saved in this browser</span></div>
+<div class="sync-wrap"><span id="syncStatus" role="status" aria-live="polite">Collection saved in this browser</span></div>
 <div id="newAlert" class="new-alert" role="status" aria-live="polite"><span id="newAlertText"></span><button type="button" id="showNewButton">View new</button></div>
 <div class="season-label">SPRITE SEASON</div>
 <select id="seasonSelect" aria-label="Choose Sprite season"><option value="all">All seasons</option></select>
@@ -574,9 +572,6 @@ document.querySelectorAll("[data-filter]").forEach(b=>{
 async function refreshSprites(isManual=false){
  if(refreshing)return;
  refreshing=true;
- const button=$("syncButton");
- button.disabled=true;
- button.textContent="Refreshing…";
  if(isManual){$("loadingScreen").classList.add("visible");document.body.style.overflow="hidden";}
  $("syncStatus").textContent="Checking Sprite catalog…";
  const start=Date.now();
@@ -605,13 +600,10 @@ async function refreshSprites(isManual=false){
   if(!families.length)$("message").textContent="Could not load Sprite data. Please try refreshing.";
  }finally{
   if(isManual){$("loadingScreen").classList.remove("visible");document.body.style.overflow=selected?"hidden":"";}
-  button.disabled=false;
-  button.textContent="↻ Refresh Sprites";
   refreshing=false;
  }
 }
 $("showNewButton").onclick=()=>{showNewOnly=!showNewOnly;season="all";$("seasonSelect").value="all";$("showNewButton").textContent=showNewOnly?"Show all":"View new";render();};
-$("syncButton").onclick=()=>refreshSprites(true);
 refreshSprites(false);
 
 // Epic login is hidden until collection synchronization is available.
