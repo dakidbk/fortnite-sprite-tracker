@@ -190,6 +190,13 @@ input::placeholder{color:#8399b8}
  .grid .card .view{font-size:10px!important;padding:9px 3px!important}
  .grid .card .count{font-size:clamp(20px,5vw,25px)!important}
 }
+
+.backup-panel{margin:0 0 20px;padding:15px;border:1px solid #365572;border-radius:15px;background:#142238}
+.backup-panel h2{margin:0 0 7px;font-size:15px;color:#80dff6}
+.backup-panel p{font-size:12px;color:#b7c8e3;line-height:1.5;margin:7px 0}
+.backup-actions{display:flex;flex-wrap:wrap;gap:9px}
+.backup-actions button{padding:11px 14px;border:1px solid #4d7898;border-radius:10px;background:#253e5c;color:#e6f9ff;font-weight:800;cursor:pointer}
+.backup-actions button:disabled{opacity:.5;cursor:wait}
 </style>
 </head>
 <body>
@@ -206,6 +213,13 @@ input::placeholder{color:#8399b8}
 </header>
 <main id="top">
 
+<section class="backup-panel" aria-labelledby="backupTitle">
+<h2 id="backupTitle">Backup &amp; Restore</h2>
+<p>Save your collection to a file or bring it to another device. Restore adds your saved Sprites, keeps higher levels, and preserves mastery.</p>
+<div class="backup-actions"><button type="button" id="downloadBackup">Download backup</button><button type="button" id="chooseBackup">Choose backup</button><button type="button" id="restoreBackup" hidden>Restore collection</button></div>
+<input type="file" id="backupFile" accept=".json,application/json" hidden>
+<p id="backupStatus" role="status" aria-live="polite"></p>
+</section>
 <div class="sync-wrap"><span id="syncStatus" role="status" aria-live="polite">Collection saved in this browser</span></div>
 <div id="newAlert" class="new-alert" role="status" aria-live="polite"><span id="newAlertText"></span><button type="button" id="showNewButton">View new</button></div>
 <div class="season-label">SPRITE SEASON</div>
@@ -601,6 +615,70 @@ async function refreshSprites(isManual=false){
  }
 }
 $("showNewButton").onclick=()=>{showNewOnly=!showNewOnly;season="all";$("seasonSelect").value="all";$("showNewButton").textContent=showNewOnly?"Show all":"View new";render();};
+
+function validateBackup(data){
+ const record=value=>value!==null&&typeof value==="object"&&!Array.isArray(value);
+ if(!record(data)||data.app!=="sprite-tracker"||data.version!==1||!record(data.owned)||!record(data.mastered))throw Error("Choose a Sprite Tracker backup file.");
+ const entries=Object.entries(data.owned),masteryEntries=Object.entries(data.mastered);
+ if(entries.length>10000||masteryEntries.length>10000)throw Error("This backup contains too many entries.");
+ const validId=id=>id.length>0&&id.length<=200&&!/[\\x00-\\x1f]/.test(id)&&!["__proto__","constructor","prototype"].includes(id);
+ for(const [id,level] of entries){
+  if(!validId(id)||!Number.isInteger(level)||level<1||level>5)throw Error("This backup has an invalid Sprite level.");
+ }
+ for(const [id,value] of masteryEntries){
+  if(!validId(id)||typeof value!=="boolean"||!Object.hasOwn(data.owned,id))throw Error("This backup has invalid mastery data.");
+ }
+ return {owned:Object.fromEntries(entries),mastered:Object.fromEntries(masteryEntries.filter(([,value])=>value))};
+}
+let pendingBackup=null;
+$("downloadBackup").onclick=()=>{
+ try{
+  const data=validateBackup({app:"sprite-tracker",version:1,owned:saved,mastered:Object.fromEntries(Object.entries(mastered).filter(([id,value])=>value&&Object.hasOwn(saved,id)))});
+  const blob=new Blob([JSON.stringify({app:"sprite-tracker",version:1,createdAt:new Date().toISOString(),...data},null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob),link=document.createElement("a");
+  link.href=url;link.download="sprite-tracker-backup-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $("backupStatus").textContent="Backup downloaded. Keep the file somewhere safe.";
+ }catch{$("backupStatus").textContent="Could not create a backup. Your collection has not changed.";}
+};
+$("chooseBackup").onclick=()=>{$("backupFile").click();};
+let backupRead=0;
+$("backupFile").onchange=async()=>{
+ const read=++backupRead,file=$("backupFile").files[0];
+ pendingBackup=null;$("restoreBackup").hidden=true;
+ if(!file)return;
+ try{
+  if(file.size>2*1024*1024)throw Error("Choose a backup smaller than 2 MB.");
+  const data=validateBackup(JSON.parse(await file.text()));
+  if(read!==backupRead)return;
+  pendingBackup=data;
+  $("backupStatus").textContent="Ready: "+Object.keys(data.owned).length+" owned Sprites, "+Object.keys(data.mastered).length+" mastered. Select Restore collection to add them.";
+  $("restoreBackup").hidden=false;
+ }catch(error){if(read===backupRead)$("backupStatus").textContent=error instanceof SyntaxError?"This file is not a valid JSON backup.":error.message;}
+ finally{if(read===backupRead)$("backupFile").value="";}
+};
+$("restoreBackup").onclick=()=>{
+ if(!pendingBackup)return;
+ const nextSaved={...saved},nextMastered={...mastered};
+ for(const [id,level] of Object.entries(pendingBackup.owned))nextSaved[id]=Math.max(nextSaved[id]||0,level);
+ for(const id of Object.keys(pendingBackup.mastered))nextMastered[id]=true;
+ let previousOwned,previousMastery,started=false;
+ try{
+  previousOwned=localStorage.getItem("mySprites");previousMastery=localStorage.getItem("masteredSprites");started=true;
+  localStorage.setItem("mySprites",JSON.stringify(nextSaved));
+  localStorage.setItem("masteredSprites",JSON.stringify(nextMastered));
+ }catch{
+  if(started){try{
+   if(previousOwned===null)localStorage.removeItem("mySprites");else localStorage.setItem("mySprites",previousOwned);
+   if(previousMastery===null)localStorage.removeItem("masteredSprites");else localStorage.setItem("masteredSprites",previousMastery);
+  }catch{}}
+  $("backupStatus").textContent="Could not save the restored collection. Check browser storage and try again.";return;
+ }
+ saved=nextSaved;mastered=nextMastered;pendingBackup=null;$("restoreBackup").hidden=true;
+ render();if(selected)showFamily();
+ $("backupStatus").textContent="Collection restored. Existing progress was kept.";
+};
+
 refreshSprites(false);
 
 </script>
