@@ -216,7 +216,7 @@ input::placeholder{color:#8399b8}
 <main id="top">
 <section class="epic-connect" aria-labelledby="epicConnectTitle">
  <div class="epic-connect-head"><div><span class="epic-eyebrow">ACCOUNT CONNECTION</span><h2 id="epicConnectTitle">Connect Epic Games</h2></div><span class="epic-pending" id="epicBadge">Not connected</span></div>
- <p>Sign in with Epic to connect your account when authentication is configured. Your Fortnite Sprite collection cannot be imported yet; keep tracking manually for now.</p>
+ <p>Sign in securely with Epic Games to show your account name. Automatic Fortnite Sprite collection syncing is not available yet; keep tracking manually.</p>
  <button id="epicConnectButton" type="button">Sign in with Epic Games</button><button id="epicSignOutButton" type="button" hidden>Disconnect</button>
  <p class="epic-connect-note" id="epicConnectNote" role="status">No Epic account connected. Collection tracking remains manual.</p>
 </section>
@@ -642,7 +642,23 @@ disconnectButton.onclick=()=>{
   history.replaceState(null,"",location.pathname+location.search);
   if(ticket)sessionStorage.setItem("spriteEpicSession",ticket);
  }
- if(error)connectionNote.textContent="Epic sign-in failed. Please try again.";
+ if(error){
+  const reasons={
+   state:"Epic login security check failed. Try again in the same browser tab.",
+   authorization:"Epic did not authorize this login.",
+   configuration:"Epic login server credentials are not configured.",
+   token_400:"Epic rejected the login token request (400). Check the Worker OAuth v2 endpoint and credentials.",
+   token_401:"Epic rejected the client credentials (401).",
+   token_missing:"Epic did not return an access token.",
+   missing_account:"Epic did not return an account identifier.",
+   server:"The Epic login server encountered an error."
+  };
+  connectionNote.textContent=reasons[error]||(
+   error.startsWith("profile_")?"Epic account profile request failed ("+error.slice(8)+").":
+   error.startsWith("token_")?"Epic token request failed ("+error.slice(6)+").":
+   "Epic sign-in failed. Please try again."
+  );
+ }
  const savedTicket=sessionStorage.getItem("spriteEpicSession");
  if(!savedTicket)return;
  try{
@@ -651,8 +667,10 @@ disconnectButton.onclick=()=>{
   });
   if(!res.ok)throw Error("Session expired");
   const data=await res.json();
-  if(!data.connected||typeof data.name!=="string")throw Error("Invalid session");
-  setEpicName(data.name);
+  const isConnected=data.connected===true||data.authenticated===true;
+  const epicName=data.name??data.account?.name;
+  if(!isConnected||typeof epicName!=="string")throw Error("Invalid session");
+  setEpicName(epicName||"Epic Player");
  }catch{
   sessionStorage.removeItem("spriteEpicSession");
   setEpicName(null);
