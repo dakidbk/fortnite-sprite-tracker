@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Fortnite Sprite Tracker — Families</title>
+<meta name="description" content="Track your Fortnite Sprite collection, explore every family and variant, and follow your progress toward full mastery.">
 <style>
 :root{color-scheme:dark;--bg:#080d19;--surface:#121d31;--surface2:#1b2941;--border:rgba(166,205,255,.14);--text:#f5f9ff;--muted:#9caecb;--accent:#60e3ff}
 *{box-sizing:border-box}
@@ -232,16 +233,76 @@ input::placeholder{color:#8399b8}
 .password-eye:focus-visible{outline:2px solid #80eaff;outline-offset:1px}
 .password-eye .eye-slash{display:none}
 .password-eye[aria-pressed="true"] .eye-slash{display:block}
+
+/* Collection-first layout: keep the catalog within reach. */
+main{max-width:1152px;padding-top:20px}
+.season-hero{min-height:0;padding:54px max(20px,calc((100vw - 1120px)/2)) 25px}
+.hero-content{max-width:1120px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px 40px;align-items:center}
+.hero-intro{grid-row:1 / 3}
+.hero-event{margin-top:12px}
+.season-hero h1{font-size:clamp(36px,5vw,56px);line-height:1;letter-spacing:-2px}
+.season-hero h1 br{display:none}
+.season-hero h1 br:after{content:" "}
+.season-hero p{margin:12px 0 0;line-height:1.6}
+.hero-code{width:100%;max-width:none;align-self:end}
+.hero-small{margin:0;align-self:start}
+.sync-wrap:has(#syncStatus:empty){display:none}
+.catalog-overview{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px;align-items:center;margin-bottom:20px}
+.catalog-overview .panel{margin:0;padding:18px 22px;border-radius:18px}
+.catalog-overview .big{font-size:36px;margin:4px 0 10px}
+.catalog-overview .panel .small{margin-top:9px}
+.catalog-selects{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.catalog-selects label{display:block;margin-bottom:9px}
+#seasonSelect,#sortSelect{appearance:auto;min-height:48px;margin:0;padding:12px;border-radius:12px;font-size:13px;box-shadow:none}
+.search-row{display:flex;align-items:center;gap:12px}
+.search-row input{margin:0;min-width:0}
+#clearFilters{flex-shrink:0;min-height:48px;padding:10px 14px;border:1px solid #45617e;border-radius:12px;background:#17243a;color:#d6f5ff;font-weight:750;cursor:pointer}
+#clearFilters[hidden]{display:none}
+.browse-meta{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:12px 0 18px}
+.browse-meta .filters{margin:0;min-width:280px;padding:3px;border-radius:13px}
+.browse-meta .filters button{min-height:44px;padding:10px 16px;cursor:pointer}
+#resultCount{margin:0;color:#b4c8e0;font-size:12px;text-align:right}
+.grid{gap:16px}
+@media(min-width:1000px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #80eaff;outline-offset:3px}
+.skip-link{position:absolute;top:8px;left:16px;z-index:20;padding:12px 16px;border-radius:8px;background:#b5ff6e;color:#12200b;font-weight:800;transform:translateY(-180%)}
+.skip-link:focus{transform:translateY(0)}
+#catalog{scroll-margin-top:16px}
+@media(max-width:760px){
+ .hero-content{grid-template-columns:1fr;gap:10px}
+ .hero-intro{grid-row:auto}
+ .hero-code{max-width:390px;margin-top:6px}
+ .hero-small{max-width:390px}
+ .catalog-overview{gap:14px;grid-template-columns:1fr}
+ .catalog-selects{order:1}
+ .browse-meta{gap:10px;flex-wrap:wrap}
+ .browse-meta .filters{flex:1;min-width:240px}
+ #resultCount{text-align:left}
+}
+@media(max-width:639px){
+ main{padding:16px 12px 40px}
+ .season-hero{padding:54px 18px 20px}
+ .grid{gap:9px}
+ .catalog-overview .panel{padding:15px 18px}
+ .catalog-overview .big{font-size:30px}
+ .catalog-selects{gap:10px}
+ .search-row{gap:8px}
+ #clearFilters{padding:9px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.loading-symbol,.loading-track:after{animation:none}}
 </style>
 </head>
 <body>
+<a class="skip-link" href="#catalog">Skip to Sprite collection</a>
 <header class="season-hero">
  <button type="button" id="openTrackerAccount" aria-haspopup="dialog" aria-controls="trackerAccountDialog">Sign in</button>
  <div class="hero-content">
+  <div class="hero-intro">
   <div class="hero-kicker"><span class="hero-live-dot"></span> CHAPTER 7 · SEASON 4 · OVERRIDE</div>
   <div class="hero-event">🎃 FORTNITEMARES 2026</div>
-  <h1>SPRITE<br>TRACKER</h1>
+  <h1>SPRITE <br>TRACKER</h1>
   <p>COLLECT THE SPRITES. MASTER EVERY VARIANT.</p>
+  </div>
   <div class="hero-code"><div><span class="hero-code-label">SUPPORT THE CREATOR</span><strong>DAKIDBK</strong></div><button type="button" id="copyCreatorCode" aria-label="Copy creator code DAKIDBK">⧉ COPY CODE</button></div>
   <div class="hero-small">Optional Fortnite creator code · Unofficial fan site · No in-game rewards for using this code</div>
  </div>
@@ -274,24 +335,36 @@ input::placeholder{color:#8399b8}
 </dialog>
 <div class="sync-wrap"><span id="syncStatus" role="status" aria-live="polite">Collection saved in this browser</span></div>
 <div id="newAlert" class="new-alert" role="status" aria-live="polite"><span id="newAlertText"></span><button type="button" id="showNewButton">View new</button></div>
-<div class="season-label">SPRITE SEASON</div>
-<select id="seasonSelect" aria-label="Choose Sprite season"><option value="all">All seasons</option></select>
-<label class="season-label" for="sortSelect" style="display:block">SORT SPRITES</label>
-<select id="sortSelect" aria-label="Sort Sprites by newest additions"><option value="newest">Newest → Oldest</option><option value="oldest">Oldest → Newest</option></select>
+<section id="catalog" aria-label="Your Sprite collection">
+<div class="catalog-overview">
 <div class="panel">
 <div>My Collection</div>
 <div class="big" id="total">0 / 0</div>
-<div class="bar"><div id="progress"></div></div>
+<div class="bar" id="collectionProgress" role="progressbar" aria-label="Variants collected" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0"><div id="progress"></div></div>
 <p class="small" id="families">0 completed families</p>
 </div>
-<input id="search" placeholder="Search Sprite families...">
-<div class="filters">
-<button class="active" data-filter="all">All</button>
-<button data-filter="owned">Owned</button>
-<button data-filter="missing">Missing</button>
+<div class="catalog-selects">
+<div><label class="season-label" for="seasonSelect">SPRITE SEASON</label>
+<select id="seasonSelect" aria-label="Choose Sprite season"><option value="all">All seasons</option></select></div>
+<div><label class="season-label" for="sortSelect">SORT SPRITES</label>
+<select id="sortSelect" aria-label="Sort Sprites by release date"><option value="newest">Newest → Oldest</option><option value="oldest">Oldest → Newest</option></select></div>
+</div>
+</div>
+<div class="search-row">
+<input id="search" type="search" aria-label="Search Sprite families and variants" placeholder="Search families or variants…" aria-controls="grid" autocomplete="off">
+<button type="button" id="clearFilters" hidden>Clear filters</button>
+</div>
+<div class="browse-meta">
+<div class="filters" role="group" aria-label="Filter by collection status">
+<button type="button" class="active" data-filter="all" aria-pressed="true">All</button>
+<button type="button" data-filter="owned" aria-pressed="false">Owned</button>
+<button type="button" data-filter="missing" aria-pressed="false">Missing</button>
+</div>
+<p id="resultCount" role="status" aria-live="polite" aria-atomic="true"></p>
 </div>
 <div id="message" class="message">Loading Sprites...</div>
 <div id="grid" class="grid"></div>
+</section>
 <footer class="site-footer">
  <div class="footer-grid">
   <section><h3>Sprite Tracker</h3><p>A fan-made home for tracking Fortnite Sprite families, variants, and mastery progress.</p><p class="footer-note">Sign in to save your collection online, or keep a guest collection in this browser.</p></section>
@@ -463,6 +536,8 @@ function totals(){
  const all=visibleFamilies.flatMap(f=>f.variants);
  const n=all.filter(owned).length;
  $("total").textContent=n+" / "+all.length;
+ $("collectionProgress").setAttribute("aria-valuemax",String(Math.max(1,all.length)));
+ $("collectionProgress").setAttribute("aria-valuenow",String(n));
  $("progress").style.width=(all.length?n/all.length*100:0)+"%";
  const complete=visibleFamilies.filter(f=>amount(f)===f.variants.length).length;
  $("families").textContent=complete+" / "+visibleFamilies.length+" families completed";
@@ -478,12 +553,12 @@ function makeImage(src,alt){
 }
 function render(){
  totals();
- const q=$("search").value.toLowerCase();
+ const q=$("search").value.trim().toLowerCase();
  const list=families.filter(f=>{
  if(season!=="all"&&f.season!==season)return false;
  if(showNewOnly&&!f.variants.some(v=>newSpriteIds.has(v.id)))return false;
  const n=amount(f),total=f.variants.length;
- return f.name.toLowerCase().includes(q)&&
+ return (f.name.toLowerCase().includes(q)||f.variants.some(v=>v.name.toLowerCase().includes(q)))&&
  (filter==="all"||
  (filter==="owned"&&n>0)||
  (filter==="missing"&&n<total));
@@ -495,6 +570,8 @@ function render(){
   if(a.release!==b.release)return a.release? -1:1;
   return direction*(a.position-b.position);
  });
+ $("resultCount").textContent=list.length+" "+(list.length===1?"family":"families")+" shown";
+ $("clearFilters").hidden=!q&&filter==="all"&&season==="all"&&!showNewOnly;
  $("grid").replaceChildren();
  $("message").textContent=list.length?"":"No Sprite families found.";
  for(const f of list){
@@ -544,6 +621,7 @@ function render(){
  const button=document.createElement("button");
  button.className="view";
  button.textContent="Explore variants →";
+ button.setAttribute("aria-label","Explore variants for "+f.name);
  body.append(title,badges,count,sub,mastery,mini,button);
  card.append(art,body);
  card.onclick=()=>openFamily(f);
@@ -678,16 +756,26 @@ $("back").onclick=()=>{
  selected=null;
 };
 $("search").oninput=render;
-$("sortSelect").onchange=e=>{sortOrder=e.target.value;localStorage.setItem("spriteSortOrder",sortOrder);season="all";$("seasonSelect").value="all";render();window.scrollTo({top:0,behavior:"smooth"});};
+$("sortSelect").onchange=e=>{sortOrder=e.target.value;localStorage.setItem("spriteSortOrder",sortOrder);render();};
 $("seasonSelect").onchange=e=>{season=e.target.value;render();};
 document.querySelectorAll("[data-filter]").forEach(b=>{
  b.onclick=()=>{
  filter=b.dataset.filter;
- document.querySelectorAll("[data-filter]").forEach(x=>x.classList.remove("active"));
+ document.querySelectorAll("[data-filter]").forEach(x=>{x.classList.remove("active");x.setAttribute("aria-pressed","false");});
  b.classList.add("active");
+ b.setAttribute("aria-pressed","true");
  render();
  };
 });
+$("clearFilters").onclick=()=>{
+ $("search").value="";
+ filter="all";season="all";showNewOnly=false;
+ $("seasonSelect").value="all";
+ $("showNewButton").textContent="View new";
+ document.querySelectorAll("[data-filter]").forEach(b=>{const active=b.dataset.filter==="all";b.classList.toggle("active",active);b.setAttribute("aria-pressed",String(active));});
+ render();
+ $("search").focus();
+};
 async function refreshSprites(isManual=false){
  if(refreshing)return;
  refreshing=true;
