@@ -77,6 +77,18 @@ input::placeholder{color:#8399b8}
 .detail-art{height:210px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#35587a,#14223a 70%);border:1px solid var(--border);border-radius:20px;margin-bottom:20px}
 .detail-art img{display:block;width:auto;height:auto;max-height:88%;max-width:88%;object-fit:contain;image-rendering:auto;filter:drop-shadow(0 14px 20px #0006)}
 .variant{display:flex;align-items:center;gap:11px;background:#17263e;border:1px solid var(--border);padding:12px;border-radius:15px;margin:10px 0}
+/* Animated rarity energy spans each full variant card. */
+.variant{position:relative;isolation:isolate;overflow:hidden;--rarity-rgb:83,143,190;background:linear-gradient(120deg,rgba(var(--rarity-rgb),.20),#17263e 52%,rgba(var(--rarity-rgb),.13));border-color:rgba(var(--rarity-rgb),.65);box-shadow:inset 0 0 18px rgba(var(--rarity-rgb),.10),0 0 12px rgba(var(--rarity-rgb),.09);animation:rarityPulse 4s ease-in-out infinite}
+.variant::before{content:"";position:absolute;z-index:-1;inset:-70%;pointer-events:none;background:linear-gradient(110deg,transparent 36%,rgba(var(--rarity-rgb),.04) 44%,rgba(var(--rarity-rgb),.28) 50%,rgba(var(--rarity-rgb),.04) 56%,transparent 64%);transform:translateX(-38%) rotate(8deg);animation:raritySweep 6s ease-in-out infinite}
+.variant[data-rarity="common"]{--rarity-rgb:160,174,191}
+.variant[data-rarity="uncommon"]{--rarity-rgb:80,223,126}
+.variant[data-rarity="rare"]{--rarity-rgb:65,167,255}
+.variant[data-rarity="epic"]{--rarity-rgb:183,96,255}
+.variant[data-rarity="legendary"]{--rarity-rgb:255,192,66}
+.variant[data-rarity="mythic"]{--rarity-rgb:255,119,63}
+@keyframes raritySweep{0%,15%{transform:translateX(-38%) rotate(8deg)}65%,100%{transform:translateX(38%) rotate(8deg)}}
+@keyframes rarityPulse{0%,100%{box-shadow:inset 0 0 18px rgba(var(--rarity-rgb),.09),0 0 9px rgba(var(--rarity-rgb),.08)}50%{box-shadow:inset 0 0 24px rgba(var(--rarity-rgb),.18),0 0 20px rgba(var(--rarity-rgb),.23)}}
+@media(prefers-reduced-motion:reduce){.variant,.variant::before{animation:none}}
 .variant img{width:63px;height:69px;object-fit:contain;background:#253d5b;border-radius:11px}
 .variant-info{flex:1;min-width:0}
 .sprite-guide{background:#14263b;border:1px solid #365572;border-radius:16px;padding:17px;margin:0 0 20px;line-height:1.6}
@@ -416,10 +428,15 @@ function prepare(data){
    // A missing variant price must not inherit a different variant's base price.
    const cost=v.summonCost;
    family.variants.push({id,name:variantName,image:imageOf(v)||imageOf(s),
-    summonCost:typeof cost==='number'&&Number.isFinite(cost)&&cost>=0?cost:null});
+    summonCost:typeof cost==='number'&&Number.isFinite(cost)&&cost>=0?cost:null,rarity:spriteRarity(v.rarity)||spriteRarity(s.rarity)});
   });
  }
  return [...map.values()];
+}
+function spriteRarity(value){
+ const raw=typeof value==="string"?value:(value&&typeof value==="object"?(value.value||value.name||value.id||""):"");
+ const rarity=String(raw).toLowerCase().replace(/[^a-z]/g,"");
+ return ["common","uncommon","rare","epic","legendary","mythic"].includes(rarity)?rarity:"";
 }
 function catalogIds(list){return [...new Set(list.flatMap(f=>f.variants.map(v=>v.id)))].sort();}
 function updateNewSpriteAlerts(list){
@@ -614,6 +631,7 @@ function showFamily(){
  for(const v of f.variants){
  const row=document.createElement("div");
  row.className="variant";
+ if(v.rarity){row.dataset.rarity=v.rarity;row.setAttribute("aria-label",v.name+" — "+v.rarity+" rarity");}
  if(v.image)row.append(makeImage(v.image,v.name));
  const info=document.createElement("div");
  info.className="variant-info";
