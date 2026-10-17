@@ -79,6 +79,13 @@ input::placeholder{color:#8399b8}
 .variant{display:flex;align-items:center;gap:11px;background:#17263e;border:1px solid var(--border);padding:12px;border-radius:15px;margin:10px 0}
 .variant img{width:63px;height:69px;object-fit:contain;background:#253d5b;border-radius:11px}
 .variant-info{flex:1;min-width:0}
+.sprite-guide{background:#14263b;border:1px solid #365572;border-radius:16px;padding:17px;margin:0 0 20px;line-height:1.6}
+.sprite-guide h3{margin:0 0 8px;font-size:17px;color:#80eaff}
+.sprite-guide ul{margin:0;padding-left:20px}
+.sprite-guide li{margin:7px 0;overflow-wrap:anywhere}
+.sprite-guide .small{margin:12px 0 0;line-height:1.6}
+.sprite-guide a{color:#9eefff}
+.variant-cost{font-size:11px;color:#c1dcf4;line-height:1.5;margin-top:5px;overflow-wrap:anywhere}
 .variant-name{font-weight:850;font-size:13px;overflow-wrap:anywhere}
 .variant button{border:0;background:#66e4ff;color:#091728;border-radius:10px;padding:10px;font-weight:850;font-size:12px}
 .variant button.owned{background:#22574e;color:#a3ffe1}
@@ -351,6 +358,8 @@ function store(){
 function familyName(s){
  const full=String(s.name||s.displayName||s.id||"Sprite").trim();
  const stem=full.replace(/\s+Sprite$/i,"").trim();
+ // Catalog families already have a base name; keep multiword names intact.
+ if(Array.isArray(s.variants)&&s.variants.length)return stem;
  // Variants commonly have a style prefix, e.g. Gummy Llama, Galaxy Llama.
  // Use the last family word so they all appear under Llama Sprite.
  const words=stem.split(/\s+/);
@@ -388,14 +397,18 @@ function prepare(data){
    const key=seasonName+"::"+base.toLowerCase();
    if(!map.has(key))map.set(key,{
     name:base+" Sprite",season:seasonName,
-    image:imageOf(v)||imageOf(s),variants:[],release:0,position:map.size
+    image:imageOf(v)||imageOf(s),variants:[],release:0,position:map.size,
+    acquisitionHint:typeof s.acquisitionHint==='string'?s.acquisitionHint.trim():''
    });
    const family=map.get(key);
    family.release=Math.max(family.release,releaseTime(v),releaseTime(s));
    const id=String(v.id||v.mappingId||s.id||s.mappingId||key+"-"+i);
    const variantName=String(v.displayName||v.name||s.displayName||s.name||("Variant "+(i+1)));
    if(family.variants.some(item=>item.id===id))return;
-   family.variants.push({id,name:variantName,image:imageOf(v)||imageOf(s)});
+   // A missing variant price must not inherit a different variant's base price.
+   const cost=v.summonCost;
+   family.variants.push({id,name:variantName,image:imageOf(v)||imageOf(s),
+    summonCost:typeof cost==='number'&&Number.isFinite(cost)&&cost>=0?cost:null});
   });
  }
  return [...map.values()];
@@ -549,6 +562,30 @@ function showFamily(){
  art.className="detail-art";
  if(f.image)art.append(makeImage(f.image,f.name));
  root.append(art);
+ const guide=document.createElement('section');
+ guide.className='sprite-guide';
+ const guideTitle=document.createElement('h3');
+ guideTitle.textContent='How to get it';
+ guide.append(guideTitle);
+ const tips=document.createElement('ul');
+ const locationTip=document.createElement('li');
+ locationTip.textContent=f.acquisitionHint||'A location hint is not available for this Sprite yet.';
+ tips.append(locationTip);
+ for(const v of f.variants){
+  const tip=document.createElement('li');
+  tip.textContent=v.summonCost===null?v.name+': summon cost not available.':
+   v.name+' costs '+v.summonCost.toLocaleString('en-US')+' Sprite Dust to summon.';
+  tips.append(tip);
+ }
+ guide.append(tips);
+ const note=document.createElement('p');
+ note.className='small';
+ note.append('Summon costs apply to Sprites you have already unlocked. Location hints are general clues, not guaranteed spawn points. Check the season above; hints for earlier seasons may no longer apply. ');
+ const source=document.createElement('a');
+ source.href='https://fn-api.cc/';source.target='_blank';source.rel='noopener noreferrer';
+ source.textContent='Catalog source: FN API';
+ note.append(source,'. Costs and availability can change with game updates.');
+ guide.append(note);root.append(guide);
  for(const v of f.variants){
  const row=document.createElement("div");
  row.className="variant";
@@ -559,6 +596,10 @@ function showFamily(){
  name.className="variant-name";
  name.textContent=v.name;
  info.append(name);
+ const costLabel=document.createElement('div');
+ costLabel.className='variant-cost';
+ costLabel.textContent=v.summonCost===null?'Summon cost not available':v.summonCost.toLocaleString('en-US')+' Sprite Dust to summon';
+ info.append(costLabel);
  const levelBadge=document.createElement("div");
  levelBadge.className="variant-level";
  levelBadge.textContent=owned(v)?"LVL "+saved[v.id]:"LVL — · Missing";
@@ -900,5 +941,7 @@ document.head.append(accountSdk);
 </script>
 </body>
 </html>
+
+
 
 
