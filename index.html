@@ -323,7 +323,7 @@ input::placeholder{color:#8399b8}
 <div class="account-actions"><button type="submit">Sign in</button><button type="button" id="createTrackerAccount">Create account</button><button type="button" id="recoverTrackerAccount" hidden>Forgot password?</button></div>
 </form>
 </div>
-<div id="accountSignedIn" hidden><p id="accountEmailLabel"></p><form id="usernameForm"><label for="trackerUsername">Public username</label><input id="trackerUsername" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_]{3,20}" placeholder="3–20 letters, numbers, underscores"><button type="submit">Save username</button><p id="usernameStatus" role="status"></p></form>
+<div id="accountSignedIn" hidden><p id="accountEmailLabel"></p><form id="usernameForm"><label for="trackerUsername">Public username</label><input id="trackerUsername" required minlength="7" maxlength="20" pattern="[A-Za-z0-9_]{7,20}" placeholder="7–20 letters, numbers, underscores"><button type="submit">Save username</button><p id="usernameStatus" role="status"></p></form>
 <div class="account-actions"><button type="button" id="signOutTracker">Sign out</button><button type="button" id="importGuestCollection" hidden>Add this browser's guest collection</button></div>
 </div>
 <form id="passwordRecoveryForm" hidden>
@@ -938,7 +938,7 @@ function initializeTrackerAccounts(createClient){
  $("usernameForm").onsubmit=async event=>{
   event.preventDefault();if(!accountId||!$("trackerUsername").reportValidity())return;
   const username=$("trackerUsername").value.trim();
-  if(!/^[A-Za-z0-9_]{3,20}$/.test(username))return;
+  if(!/^[A-Za-z0-9_]{7,20}$/.test(username))return;
   const {error}=await client.from("sprite_profiles").upsert({user_id:accountId,username},{onConflict:"user_id"});
   $("usernameStatus").textContent=error?(error.code==="23505"?"Username already taken.":error.message):"Username saved!";
   if(!error){publicUsername=username;updateTradeVisibility();}
