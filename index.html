@@ -118,6 +118,27 @@ input::placeholder{color:#8399b8}
 .variant[data-theme="cube"]{--rarity-rgb:154,91,235}
 .variant[data-theme="loothacker"]{--rarity-rgb:119,92,255}
 @media(prefers-reduced-motion:reduce){.detail-art,.detail-art::before{animation:none}}
+
+/* Fortnite-inspired variant finishes: textured atmospheric backgrounds, not a sweeping shimmer. */
+.variant{background:radial-gradient(ellipse at 24% 8%,rgba(var(--rarity-rgb),.36),transparent 60%),linear-gradient(145deg,#203048,#111b2d 85%);border-color:rgba(var(--rarity-rgb),.46);box-shadow:inset 0 0 28px rgba(var(--rarity-rgb),.10);animation:none}
+.variant::before{inset:0;z-index:-1;transform:none;animation:none;opacity:.65;background:radial-gradient(circle at 72% 25%,rgba(var(--rarity-rgb),.28) 0 1px,transparent 2px),radial-gradient(circle at 30% 75%,rgba(var(--rarity-rgb),.22) 0 1px,transparent 2px);background-size:32px 38px,47px 52px}
+.variant[data-theme="base"]{background:linear-gradient(150deg,#18436b,#192a43 60%,#111d31)}
+.variant[data-theme="cheatmaster"]{background:repeating-linear-gradient(90deg,transparent 0 20px,#32f5720c 21px 22px,transparent 23px 41px),radial-gradient(ellipse at 20% 10%,#1dbd6359,transparent 65%),linear-gradient(135deg,#143f2d,#102b26 75%,#12233a)}
+.variant[data-theme="cheatmaster"]::before{content:"010 101 001 110 011 100 010 111 001 101";font:700 11px/26px monospace;letter-spacing:12px;overflow:hidden;overflow-wrap:anywhere;color:#5aff8650;opacity:.7;background:repeating-linear-gradient(0deg,transparent 0 18px,#1efa4b12 19px 20px);animation:codeFloat 14s linear infinite}
+.variant[data-theme="gold"]{background:radial-gradient(ellipse at 20% 0%,#ffe78b75,transparent 60%),repeating-linear-gradient(120deg,#ffd86509 0 3px,transparent 4px 13px),linear-gradient(145deg,#87601b,#49381e 60%,#222331)}
+.variant[data-theme="gold"]::before{background:radial-gradient(circle,#ffe9a2bb 0 1px,transparent 2px);background-size:24px 28px;animation:ambientDrift 16s linear infinite}
+.variant[data-theme="loothacker"]{background:radial-gradient(ellipse at 15% 12%,#db4ff85c,transparent 55%),repeating-linear-gradient(0deg,transparent 0 8px,#7d6cff18 9px 10px),linear-gradient(130deg,#2e2d8a,#292458 60%,#161d39)}
+.variant[data-theme="loothacker"]::before{background:repeating-linear-gradient(90deg,#64bfff17 0 2px,transparent 3px 18px),repeating-linear-gradient(0deg,#a74bff20 0 2px,transparent 3px 25px);animation:digitalDrift 12s linear infinite}
+.variant[data-theme="bountyhunter"]{background:radial-gradient(ellipse at 28% 0%,#ffb0d080,transparent 55%),conic-gradient(from 110deg at 65% 40%,#45254e,#873e80,#45254e,#bb609c,#45254e)}
+.variant[data-theme="bountyhunter"]::before{background:radial-gradient(ellipse at 70% 30%,#fca3ec55,transparent 55%),radial-gradient(ellipse at 20% 85%,#ae63ff55,transparent 55%);animation:ambientDrift 13s ease-in-out infinite alternate}
+.variant[data-theme="trickortreat"]{background:radial-gradient(ellipse at 25% 5%,#ffc35285,transparent 60%),linear-gradient(140deg,#b54e22,#67301f 65%,#302232)}
+.variant[data-theme="trickortreat"]::before{background:radial-gradient(circle,#ffbc5c99 0 2px,transparent 4px);background-size:45px 50px;animation:ambientDrift 18s linear infinite}
+.variant[data-theme="quack"]{background:radial-gradient(ellipse at 25% 10%,#e4c4ff80,transparent 55%),linear-gradient(140deg,#7750ac,#4e438e 55%,#242447)}
+.variant[data-theme="quack"]::before{background:radial-gradient(ellipse at 40% 45%,#d1b7ff55,transparent 60%),repeating-linear-gradient(125deg,transparent 0 22px,#c4a8ff14 23px 25px);animation:ambientDrift 16s ease-in-out infinite alternate}
+@keyframes digitalDrift{from{background-position:0 0,0 0}to{background-position:36px 0,0 50px}}
+@keyframes codeFloat{from{background-position:0 0}to{background-position:0 100px}}
+@keyframes ambientDrift{from{background-position:0 0;opacity:.45}to{background-position:40px 25px;opacity:.85}}
+@media(prefers-reduced-motion:reduce){.variant::before{animation:none!important}}
 .variant img{width:63px;height:69px;object-fit:contain;background:#253d5b;border-radius:11px}
 .variant-info{flex:1;min-width:0}
 .sprite-guide{background:#14263b;border:1px solid #365572;border-radius:16px;padding:17px;margin:0 0 20px;line-height:1.6}
