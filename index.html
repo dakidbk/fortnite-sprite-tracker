@@ -99,6 +99,25 @@ input::placeholder{color:#8399b8}
 @keyframes raritySweep{0%,15%{transform:translateX(-38%) rotate(8deg)}65%,100%{transform:translateX(38%) rotate(8deg)}}
 @keyframes rarityPulse{0%,100%{box-shadow:inset 0 0 18px rgba(var(--rarity-rgb),.09),0 0 9px rgba(var(--rarity-rgb),.08)}50%{box-shadow:inset 0 0 24px rgba(var(--rarity-rgb),.18),0 0 20px rgba(var(--rarity-rgb),.23)}}
 @media(prefers-reduced-motion:reduce){.variant,.variant::before{animation:none}}
+/* The hero uses the Sprite's base rarity; rows use their variant finish. */
+.detail-art{position:relative;isolation:isolate;overflow:hidden;--hero-rgb:65,167,255;background:radial-gradient(circle at 50% 45%,rgba(var(--hero-rgb),.25),#14223a 72%);border-color:rgba(var(--hero-rgb),.6);box-shadow:inset 0 0 28px rgba(var(--hero-rgb),.12),0 0 18px rgba(var(--hero-rgb),.1);animation:heroRarityGlow 4s ease-in-out infinite}
+.detail-art::before{content:"";position:absolute;inset:-70%;z-index:-1;pointer-events:none;background:linear-gradient(110deg,transparent 40%,rgba(var(--hero-rgb),.03) 44%,rgba(var(--hero-rgb),.25) 50%,rgba(var(--hero-rgb),.03) 56%,transparent 60%);animation:raritySweep 6s ease-in-out infinite}
+.detail-art[data-rarity="common"]{--hero-rgb:160,174,191}
+.detail-art[data-rarity="uncommon"]{--hero-rgb:80,223,126}
+.detail-art[data-rarity="rare"]{--hero-rgb:65,167,255}
+.detail-art[data-rarity="epic"]{--hero-rgb:183,96,255}
+.detail-art[data-rarity="legendary"]{--hero-rgb:255,192,66}
+.detail-art[data-rarity="mythic"]{--hero-rgb:255,119,63}
+@keyframes heroRarityGlow{0%,100%{box-shadow:inset 0 0 20px rgba(var(--hero-rgb),.12),0 0 10px rgba(var(--hero-rgb),.1)}50%{box-shadow:inset 0 0 35px rgba(var(--hero-rgb),.25),0 0 24px rgba(var(--hero-rgb),.23)}}
+.variant[data-theme="base"]{--rarity-rgb:65,167,255}
+.variant[data-theme="quack"]{--rarity-rgb:181,121,255}
+.variant[data-theme="gummy"]{--rarity-rgb:255,117,182}
+.variant[data-theme="galaxy"]{--rarity-rgb:132,99,255}
+.variant[data-theme="gem"]{--rarity-rgb:128,237,249}
+.variant[data-theme="holofoil"]{--rarity-rgb:205,155,255}
+.variant[data-theme="cube"]{--rarity-rgb:154,91,235}
+.variant[data-theme="loothacker"]{--rarity-rgb:119,92,255}
+@media(prefers-reduced-motion:reduce){.detail-art,.detail-art::before{animation:none}}
 .variant img{width:63px;height:69px;object-fit:contain;background:#253d5b;border-radius:11px}
 .variant-info{flex:1;min-width:0}
 .sprite-guide{background:#14263b;border:1px solid #365572;border-radius:16px;padding:17px;margin:0 0 20px;line-height:1.6}
@@ -450,16 +469,21 @@ function spriteRarity(value){
 }
 function spriteVariantTheme(name){
  const text=String(name||"").toLowerCase();
- if(/cheatmaster/.test(text))return "cheatmaster";
+ if(/cheat\s*master/.test(text))return "cheatmaster";
  if(/\bgold\b|golden/.test(text))return "gold";
- if(/loot hacker/.test(text))return "loothacker";
+ if(/loot\s*hacker/.test(text))return "loothacker";
  if(/bounty hunter/.test(text))return "bountyhunter";
  if(/trick or treat/.test(text))return "trickortreat";
  if(/\bice\b|frost|snow/.test(text))return "ice";
  if(/\bfire\b|flame|lava/.test(text))return "fire";
  if(/shadow|dark/.test(text))return "shadow";
- if(/one wish willow/.test(text))return "willow";
- return "";
+ if(/\bquack\b/.test(text))return "quack";
+ if(/\bgummy\b/.test(text))return "gummy";
+ if(/\bgalaxy\b/.test(text))return "galaxy";
+ if(/\bgem\b/.test(text))return "gem";
+ if(/\bholofoil\b/.test(text))return "holofoil";
+ if(/\bcube\b/.test(text))return "cube";
+ return "base";
 }
 function catalogIds(list){return [...new Set(list.flatMap(f=>f.variants.map(v=>v.id)))].sort();}
 function updateNewSpriteAlerts(list){
@@ -608,6 +632,8 @@ function showFamily(){
  root.append(h);
  const art=document.createElement("div");
  art.className="detail-art";
+ const baseVariant=f.variants.find(v=>spriteVariantTheme(v.name)==="base")||f.variants[0];
+ art.dataset.rarity=(baseVariant&&baseVariant.rarity)||"rare";
  if(f.image)art.append(makeImage(f.image,f.name));
  root.append(art);
  const guide=document.createElement('section');
@@ -654,7 +680,7 @@ function showFamily(){
  for(const v of f.variants){
  const row=document.createElement("div");
  row.className="variant";
- if(v.rarity){row.dataset.rarity=v.rarity;row.setAttribute("aria-label",v.name+" — "+v.rarity+" rarity");}else{const theme=spriteVariantTheme(v.name);if(theme)row.dataset.theme=theme;}
+ row.dataset.theme=spriteVariantTheme(v.name);
  if(v.image)row.append(makeImage(v.image,v.name));
  const info=document.createElement("div");
  info.className="variant-info";
