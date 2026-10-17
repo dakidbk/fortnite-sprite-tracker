@@ -200,10 +200,20 @@ input::placeholder{color:#8399b8}
 .account-actions{display:flex;flex-wrap:wrap;gap:9px}
 .account-actions button{padding:11px 14px;border:1px solid #4d7898;border-radius:10px;background:#253e5c;color:#e6f9ff;font-weight:800;cursor:pointer}
 .account-actions button:disabled{opacity:.5;cursor:wait}
+
+#openTrackerAccount{position:absolute;top:15px;right:16px;z-index:4;border:1px solid #8cddff88;border-radius:10px;background:#14283ee8;color:#e8faff;padding:9px 14px;font-size:12px;font-weight:850;cursor:pointer}
+#openTrackerAccount:focus-visible,#closeTrackerAccount:focus-visible{outline:3px solid #80eaff;outline-offset:3px}
+.season-hero{padding-top:65px}
+#trackerAccountDialog{position:fixed;inset:0;width:calc(100% - 28px);max-width:440px;max-height:90dvh;overflow:auto;margin:auto;padding:0;border:1px solid #47769a;border-radius:18px;background:#142238;color:#f5f9ff;box-shadow:0 20px 80px #000a}
+#trackerAccountDialog::backdrop{background:#030912bf}
+#trackerAccountDialog .account-panel{margin:0;border:0;padding:24px}
+#trackerAccountDialog h2{padding-right:26px}
+#closeTrackerAccount{position:absolute;top:9px;right:10px;border:0;background:transparent;color:#d7ecff;width:32px;height:32px;font-size:25px;cursor:pointer}
 </style>
 </head>
 <body>
 <header class="season-hero">
+ <button type="button" id="openTrackerAccount" aria-haspopup="dialog" aria-controls="trackerAccountDialog">Sign in</button>
  <div class="hero-content">
   <div class="hero-kicker"><span class="hero-live-dot"></span> CHAPTER 7 · SEASON 4 · OVERRIDE</div>
   <div class="hero-event">🎃 FORTNITEMARES 2026</div>
@@ -215,16 +225,18 @@ input::placeholder{color:#8399b8}
  
 </header>
 <main id="top">
+<dialog id="trackerAccountDialog" aria-labelledby="accountTitle">
+<button type="button" id="closeTrackerAccount" aria-label="Close account window">×</button>
 <section class="account-panel" id="trackerAccount" aria-labelledby="accountTitle">
 <h2 id="accountTitle">Your Sprite Tracker account</h2>
 <p>Save your collection online and continue on another device.</p>
-<div id="accountSignedOut"><details><summary>Sign in or create an account</summary>
+<div id="accountSignedOut">
 <form id="accountForm">
 <label for="trackerEmail">Email</label><input id="trackerEmail" type="email" required autocomplete="username" maxlength="254">
 <label for="trackerPassword">Password</label><input id="trackerPassword" type="password" required minlength="12" maxlength="128" autocomplete="current-password" aria-describedby="passwordHint">
 <p id="passwordHint">Use at least 12 characters.</p>
 <div class="account-actions"><button type="submit">Sign in</button><button type="button" id="createTrackerAccount">Create account</button><button type="button" id="recoverTrackerAccount">Forgot password?</button></div>
-</form></details>
+</form>
 </div>
 <div id="accountSignedIn" hidden><p id="accountEmailLabel"></p>
 <div class="account-actions"><button type="button" id="signOutTracker">Sign out</button><button type="button" id="importGuestCollection" hidden>Add this browser's guest collection</button></div>
@@ -236,6 +248,7 @@ input::placeholder{color:#8399b8}
 <p id="accountStatus" role="status" aria-live="polite">Connecting to account service…</p>
 <div class="account-actions"><button type="button" id="retryAccountSave" hidden>Retry saving</button><button type="button" id="loadOnlineCollection" hidden>Use online collection (discard unsaved edits)</button></div>
 </section>
+</dialog>
 <div class="sync-wrap"><span id="syncStatus" role="status" aria-live="polite">Collection saved in this browser</span></div>
 <div id="newAlert" class="new-alert" role="status" aria-live="polite"><span id="newAlertText"></span><button type="button" id="showNewButton">View new</button></div>
 <div class="season-label">SPRITE SEASON</div>
@@ -720,6 +733,10 @@ refreshSprites(false);
 });
 
 // Loaded only after the managed authentication SDK is available.
+const accountDialog=$("trackerAccountDialog");
+$("openTrackerAccount").onclick=()=>accountDialog.showModal();
+$("closeTrackerAccount").onclick=()=>accountDialog.close();
+accountDialog.addEventListener("click",event=>{if(event.target===accountDialog){const rect=accountDialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)accountDialog.close();}});
 function initializeTrackerAccounts(createClient){
  const client=createClient('https://fwjthjqevmukrovpbvfx.supabase.co','sb_publishable_3nu6EByo3Vt5tLTzhFuDAg_XijD9m6r',{
   auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
@@ -775,6 +792,7 @@ function initializeTrackerAccounts(createClient){
  async function changeAccount(session){
   const nextId=session?.user?.id||null;
   if(accountId===nextId)return;
+  $("openTrackerAccount").textContent=nextId?"Account":"Sign in";
   accountId=nextId;selected=null;$('detail').style.display='none';document.body.style.overflow='';
   $('accountSignedOut').hidden=!!nextId;$('accountSignedIn').hidden=!nextId;
   $('accountEmailLabel').textContent=session?.user?.email||'';
@@ -832,7 +850,7 @@ function initializeTrackerAccounts(createClient){
   finally{$('newTrackerPassword').value='';setBusy(false);}
  };
  client.auth.onAuthStateChange((event,session)=>{
-  if(event==='PASSWORD_RECOVERY')$('passwordRecoveryForm').hidden=false;
+  if(event==='PASSWORD_RECOVERY'){$('passwordRecoveryForm').hidden=false;if(!accountDialog.open)accountDialog.showModal();}
   // Keep asynchronous database work outside the authentication callback lock.
   setTimeout(()=>{void changeAccount(session).catch(()=>accountStatus('Could not load your collection. Please retry.','offline'));},0);
  });
