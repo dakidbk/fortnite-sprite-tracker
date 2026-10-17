@@ -7,13 +7,18 @@
 <p class="note">Fortnite Sprite Tracker is an independent, non-commercial fan-made collection tracking website. It is not affiliated with, endorsed by, or operated by Epic Games.</p>
 <p class="note">Portions of the materials used are trademarks and/or copyrighted works of Epic Games, Inc. All rights reserved by Epic. This material is not official and is not endorsed by Epic.</p>
 <h2>Information you provide</h2>
-<p>You can manually mark Sprite variants as owned, record levels, and mark them as mastered. The tracker stores these selections in your browser's local storage on your device. This information is not automatically sent to the site's developer or uploaded to a user account.</p>
+<p>You can manually mark Sprite variants as owned, record levels, and mark them as mastered. The tracker stores these selections in your browser's local storage on your device. Guest progress is not uploaded to an account. If you sign in, changes to your account collection are sent to the account-storage service described below.</p>
+<h2>Sprite Tracker accounts</h2>
+<p>Optional Sprite Tracker accounts use Supabase for email-and-password authentication and online collection storage. When you create an account or sign in, your email address and password are submitted directly to Supabase over an encrypted connection. Account sessions are stored in this browser so you can stay signed in.</p>
+<p>Your signed-in collection stores Sprite identifiers, levels, mastery choices, update times, and revision numbers under your account identifier. Database access rules restrict a collection to its signed-in owner. Guest collections stay separate unless you choose to add guest progress to your account. Account saving does not retrieve in-game Fortnite inventory.</p>
+<p>The account library is loaded from jsDelivr. This provider and Supabase may receive ordinary connection data, such as IP address and browser details, when your browser contacts them. See <a href="https://supabase.com/privacy">Supabase's privacy policy</a> for its practices.</p>
 <h2>Public Sprite catalog</h2>
 <p>The site requests public Sprite catalog information, including Sprite names and images, from a third-party Fortnite data API (prod.fn-api.cc). When your browser contacts this provider, the provider may receive ordinary connection data such as your IP address and browser details under its own practices.</p>
 <h2>Hosting and technical information</h2>
-<p>This site is hosted on GitHub Pages. GitHub may process standard web request information to serve the website. The tracker does not currently use its own analytics, advertising trackers, or server-side account database.</p>
+<p>This site is hosted on GitHub Pages. GitHub may process standard web request information to serve the website. The tracker does not currently use its own analytics or advertising trackers. Optional accounts and online collections are stored with Supabase.</p>
 <h2>Storage and deletion</h2>
-<p>Your collection selections remain in local browser storage until you clear the site's browser data or remove them using the tracker controls. Clearing browser data may permanently erase your locally saved collection.</p>
+<p>Your collection selections remain in local browser storage until you clear the site's browser data or remove them using the tracker controls. Clearing browser data may permanently erase guest progress or account edits that have not finished saving online. Successfully saved account progress remains online until removed. </p>
+<p>To request deletion of a Sprite Tracker account and its online collection, contact the address below from your account email. Signing out does not delete an account or its collection.</p>
 <h2>Sharing</h2>
 <p>The tracker does not intentionally sell or share your manually entered collection data with advertisers. External services used to host the site and display public Sprite data operate independently.</p>
 <h2>Account security</h2>

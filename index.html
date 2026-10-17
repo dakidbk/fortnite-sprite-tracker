@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -191,10 +190,38 @@ input::placeholder{color:#8399b8}
  .grid .card .count{font-size:clamp(20px,5vw,25px)!important}
 }
 
+
+.account-panel{margin:0 0 20px;padding:15px;border:1px solid #365572;border-radius:15px;background:#142238}
+.account-panel h2{margin:0 0 7px;font-size:15px;color:#80dff6}
+.account-panel p{font-size:12px;color:#b7c8e3;line-height:1.5;margin:7px 0}
+.account-panel summary{cursor:pointer;font-size:13px;font-weight:750;color:#a9ebff;padding:9px 0}
+.account-panel label{display:block;font-size:12px;color:#c5d8ef;margin:9px 0 5px}
+.account-panel input{margin-bottom:5px}
+.account-actions{display:flex;flex-wrap:wrap;gap:9px}
+.account-actions button{padding:11px 14px;border:1px solid #4d7898;border-radius:10px;background:#253e5c;color:#e6f9ff;font-weight:800;cursor:pointer}
+.account-actions button:disabled{opacity:.5;cursor:wait}
+
+#openTrackerAccount{position:absolute;top:15px;right:16px;z-index:4;border:1px solid #8cddff88;border-radius:10px;background:#14283ee8;color:#e8faff;padding:9px 14px;font-size:12px;font-weight:850;cursor:pointer}
+#openTrackerAccount:focus-visible,#closeTrackerAccount:focus-visible{outline:3px solid #80eaff;outline-offset:3px}
+.season-hero{padding-top:65px}
+#trackerAccountDialog{position:fixed;inset:0;width:calc(100% - 28px);max-width:440px;max-height:90dvh;overflow:auto;margin:auto;padding:0;border:1px solid #47769a;border-radius:18px;background:#142238;color:#f5f9ff;box-shadow:0 20px 80px #000a}
+#trackerAccountDialog::backdrop{background:#030912bf}
+#trackerAccountDialog .account-panel{margin:0;border:0;padding:24px}
+#trackerAccountDialog h2{padding-right:26px}
+#closeTrackerAccount{position:absolute;top:9px;right:10px;border:0;background:transparent;color:#d7ecff;width:32px;height:32px;font-size:25px;cursor:pointer}
+
+.password-field{position:relative}
+.password-field input{padding-right:54px}
+.password-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:38px;height:38px;display:flex;align-items:center;justify-content:center;border:0;border-radius:8px;background:transparent;color:#a9dff5;cursor:pointer}
+.password-eye:hover{background:#284666}
+.password-eye:focus-visible{outline:2px solid #80eaff;outline-offset:1px}
+.password-eye .eye-slash{display:none}
+.password-eye[aria-pressed="true"] .eye-slash{display:block}
 </style>
 </head>
 <body>
 <header class="season-hero">
+ <button type="button" id="openTrackerAccount" aria-haspopup="dialog" aria-controls="trackerAccountDialog">Sign in</button>
  <div class="hero-content">
   <div class="hero-kicker"><span class="hero-live-dot"></span> CHAPTER 7 · SEASON 4 · OVERRIDE</div>
   <div class="hero-event">🎃 FORTNITEMARES 2026</div>
@@ -206,6 +233,30 @@ input::placeholder{color:#8399b8}
  
 </header>
 <main id="top">
+<dialog id="trackerAccountDialog" aria-labelledby="accountTitle">
+<button type="button" id="closeTrackerAccount" aria-label="Close account window">×</button>
+<section class="account-panel" id="trackerAccount" aria-labelledby="accountTitle">
+<h2 id="accountTitle">Your Sprite Tracker account</h2>
+<p>Save your collection online and continue on another device.</p>
+<div id="accountSignedOut">
+<form id="accountForm">
+<label for="trackerEmail">Email</label><input id="trackerEmail" type="email" required autocomplete="username" maxlength="254">
+<label for="trackerPassword">Password</label><div class="password-field"><input id="trackerPassword" type="password" required minlength="10" maxlength="128" autocomplete="current-password" aria-describedby="passwordHint"><button type="button" class="password-eye" data-password-target="trackerPassword" aria-controls="trackerPassword" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m4 4 16 16"/></svg></button></div>
+<p id="passwordHint">Use 10 characters or more.</p>
+<div class="account-actions"><button type="submit">Sign in</button><button type="button" id="createTrackerAccount">Create account</button><button type="button" id="recoverTrackerAccount" hidden>Forgot password?</button></div>
+</form>
+</div>
+<div id="accountSignedIn" hidden><p id="accountEmailLabel"></p>
+<div class="account-actions"><button type="button" id="signOutTracker">Sign out</button><button type="button" id="importGuestCollection" hidden>Add this browser's guest collection</button></div>
+</div>
+<form id="passwordRecoveryForm" hidden>
+<label for="newTrackerPassword">New password</label><div class="password-field"><input id="newTrackerPassword" type="password" required minlength="10" maxlength="128" autocomplete="new-password"><button type="button" class="password-eye" data-password-target="newTrackerPassword" aria-controls="newTrackerPassword" aria-label="Show new password" aria-pressed="false"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path class="eye-slash" d="m4 4 16 16"/></svg></button></div>
+<div class="account-actions"><button type="submit">Save new password</button></div>
+</form>
+<p id="accountStatus" role="status" aria-live="polite">Connecting to account service…</p>
+<div class="account-actions"><button type="button" id="retryAccountSave" hidden>Retry saving</button><button type="button" id="loadOnlineCollection" hidden>Use online collection (discard unsaved edits)</button></div>
+</section>
+</dialog>
 <div class="sync-wrap"><span id="syncStatus" role="status" aria-live="polite">Collection saved in this browser</span></div>
 <div id="newAlert" class="new-alert" role="status" aria-live="polite"><span id="newAlertText"></span><button type="button" id="showNewButton">View new</button></div>
 <div class="season-label">SPRITE SEASON</div>
@@ -228,7 +279,7 @@ input::placeholder{color:#8399b8}
 <div id="grid" class="grid"></div>
 <footer class="site-footer">
  <div class="footer-grid">
-  <section><h3>Sprite Tracker</h3><p>A fan-made home for tracking Fortnite Sprite families, variants, and mastery progress.</p><p class="footer-note">Your collection is saved in this browser. Update ownership, levels, and mastery manually.</p></section>
+  <section><h3>Sprite Tracker</h3><p>A fan-made home for tracking Fortnite Sprite families, variants, and mastery progress.</p><p class="footer-note">Sign in to save your collection online, or keep a guest collection in this browser.</p></section>
   <section><h3>Quick Links</h3><a href="#top">↑ Back to top</a><a href="./privacy.html">Privacy Policy</a><a href="https://github.com/dakidbk/fortnite-sprite-tracker" target="_blank" rel="noopener noreferrer">Project on GitHub ↗</a></section>
   <section><h3>💬 Feedback &amp; Suggestions</h3><p>Have an idea for Sprite Tracker or found something broken? We’d love to hear it!</p><a class="feedback-action" href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Feature%20Suggestion">💡 Suggest a Feature ↗</a><a class="feedback-action" href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Bug%20Report">🐛 Report a Bug ↗</a><a href="mailto:spritetracker247@gmail.com?subject=Sprite%20Tracker%20Feedback">✉ Email Feedback</a><p class="footer-note">These buttons open your email app. Never share passwords, tokens, or private account details.</p></section>
  </div>
@@ -248,11 +299,12 @@ let families=[],filter="all",selected=null,season="all";
 let newSpriteIds=new Set(),showNewOnly=false;
 const catalogStorageKey="spriteCatalogKnownIdsV1";
 let sortOrder=localStorage.getItem("spriteSortOrder")==="oldest"?"oldest":"newest";
+let ownedStorageKey="mySprites",masteryStorageKey="masteredSprites";
 let saved={};
 let mastered={};
-try{mastered=JSON.parse(localStorage.getItem("masteredSprites")||"{}")}catch(e){}
+try{mastered=JSON.parse(localStorage.getItem(masteryStorageKey)||"{}")}catch(e){}
 try{
- saved=JSON.parse(localStorage.getItem("mySprites")||"{}");
+ saved=JSON.parse(localStorage.getItem(ownedStorageKey)||"{}");
 }catch(e){}
 // Keep saved levels within Fortnite's supported range, including older entries.
 if(!saved||typeof saved!=="object"||Array.isArray(saved))saved={};
@@ -263,7 +315,7 @@ for(const [id,value] of Object.entries(saved)){
  const bounded=Math.min(5,Math.max(1,Math.floor(level)));
  if(value!==bounded){saved[id]=bounded;levelsCorrected=true;}
 }
-if(levelsCorrected){try{localStorage.setItem("mySprites",JSON.stringify(saved));}catch{}}
+if(levelsCorrected){try{localStorage.setItem(ownedStorageKey,JSON.stringify(saved));}catch{}}
 const $=id=>document.getElementById(id);
 $("sortSelect").value=sortOrder;
 function releaseTime(s){
@@ -289,8 +341,12 @@ const imageOf=s=>{
  ];
  return choices.find(x=>typeof x==="string"&&x.startsWith("http"))||"";
 };
+function notifyAccountCollection(){
+ try{window.accountCloud?.change({owned:saved,mastered});}catch{document.getElementById("accountStatus").textContent="Could not save changes. Keep this page open and retry.";}
+}
 function store(){
- localStorage.setItem("mySprites",JSON.stringify(saved));
+ localStorage.setItem(ownedStorageKey,JSON.stringify(saved));
+ notifyAccountCollection();
 }
 function familyName(s){
  const full=String(s.name||s.displayName||s.id||"Sprite").trim();
@@ -379,7 +435,7 @@ function setupSeasons(){
 }
 function owned(v){return !!saved[v.id]}
 function isMastered(v){return owned(v)&&!!mastered[v.id]}
-function saveMastery(){localStorage.setItem("masteredSprites",JSON.stringify(mastered))}
+function saveMastery(){localStorage.setItem(masteryStorageKey,JSON.stringify(mastered));notifyAccountCollection();}
 function amount(f){return f.variants.filter(owned).length}
 function totals(){
  const visibleFamilies=families.filter(f=>season==="all"||f.season===season);
@@ -607,6 +663,242 @@ refreshSprites(false);
 
 
 
+// Shared browser/Node state engine. The transport must enforce user ownership on the server.
+(function(root,factory){
+ const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.SpriteCloud=api;
+})(typeof globalThis!=='undefined'?globalThis:this,()=>{
+ class CollectionCloud{
+  constructor({transport,storage,apply,status}){Object.assign(this,{transport,storage,apply,status});this.user=null;this.generation=0;this.busy=false;this.ready=false;this.timer=null;}
+  key(user=this.user){return 'spriteCloudV1:'+user;}
+  persist(){this.storage.setItem(this.key(),JSON.stringify(this.state));}
+  collection(){
+   const owned={},mastered={};
+   for(const [id,row]of Object.entries(this.state.rows))if(row){owned[id]=row.level;if(row.mastered)mastered[id]=true;}
+   return {owned,mastered};
+  }
+  async switchUser(user){
+   clearTimeout(this.timer);const generation=++this.generation;this.user=user;this.ready=false;
+   if(!user)return;
+   this.state={rows:{},pending:{},base:{}};
+   try{const cache=JSON.parse(this.storage.getItem(this.key())||'null');if(cache&&cache.rows&&cache.base&&cache.pending)this.state=cache;}catch{}
+   this.apply(this.collection(),user);this.status('Loading your collection…');
+   try{
+    const rows=await this.transport.read(user);if(generation!==this.generation)return;
+    const next={};for(const row of rows)next[row.sprite_id]=row;
+    for(const id of Object.keys(this.state.pending)){
+     const expected=this.state.base[id]||0,actual=next[id]?.revision||0;
+     if(expected!==actual){this.ready=false;this.status('Your collection changed on another device. Unsaved edits are kept on this device. Choose Use online collection to discard them.','conflict');return;}
+    }
+    const pending={...this.state.pending},oldRows=this.state.rows;
+    this.state={rows:next,base:Object.fromEntries(Object.entries(next).map(([id,row])=>[id,row.revision])),pending};
+    for(const id of Object.keys(pending))this.state.rows[id]=oldRows[id]||null;
+    this.persist();this.ready=true;this.apply(this.collection(),user);
+    this.status(Object.keys(pending).length?'Saving your changes…':'Collection saved online.');
+    if(Object.keys(pending).length)void this.flush();
+   }catch{if(generation===this.generation){this.status('Could not reach online storage. Your cached collection is available; retry before editing.','offline');}}
+  }
+  change({owned,mastered}){
+   if(!this.user||!this.ready)return false;
+   const ids=new Set([...Object.keys(this.state.rows),...Object.keys(owned)]);
+   for(const id of ids){
+    const old=this.state.rows[id],next=Object.hasOwn(owned,id)?{level:owned[id],mastered:!!mastered[id]}:null;
+    if((old?.level||null)===(next?.level||null)&&!!old?.mastered===!!next?.mastered)continue;
+    if(next&&(!Number.isInteger(next.level)||next.level<1||next.level>5))throw Error('Invalid level');
+    this.state.rows[id]=next;this.state.pending[id]=true;
+   }
+   this.persist();clearTimeout(this.timer);this.timer=setTimeout(()=>void this.flush(),400);this.status('Saving your changes…');return true;
+  }
+  async flush(){
+   if(this.busy||!this.ready||!this.user)return;
+   this.busy=true;const generation=this.generation,user=this.user,state=this.state;
+   try{
+    while(Object.keys(state.pending).length){
+     const id=Object.keys(state.pending)[0],row=state.rows[id]?{...state.rows[id]}:null,revision=state.base[id]||0;
+     const result=await this.transport.write(user,id,row,revision);
+     if(generation!==this.generation)return;
+     if(result.conflict){this.ready=false;this.status('Your collection changed on another device. Unsaved edits are kept on this device. Choose Use online collection to discard them.','conflict');return;}
+     state.base[id]=result.revision||0;
+     const latest=state.rows[id];
+     if((latest?.level||null)===(row?.level||null)&&!!latest?.mastered===!!row?.mastered)delete state.pending[id];
+     this.persist();
+    }
+    this.status('Collection saved online.');
+   }catch{if(generation===this.generation)this.status('Changes saved on this device. Online saving failed; select Retry saving.','offline');}
+   finally{this.busy=false;if(generation!==this.generation&&this.ready&&this.user&&Object.keys(this.state.pending).length)void this.flush();}
+  }
+  async discardAndReload(){
+   if(!this.user||this.busy)return;
+   const generation=this.generation,user=this.user;
+   try{
+    const rows=await this.transport.read(user);if(generation!==this.generation)return;
+    const next=Object.fromEntries(rows.map(row=>[row.sprite_id,row]));
+    this.state={rows:next,base:Object.fromEntries(rows.map(row=>[row.sprite_id,row.revision])),pending:{}};
+    this.persist();this.ready=true;this.apply(this.collection(),user);this.status('Online collection loaded.');
+   }catch{this.status('Could not load online collection. Local changes were kept.','offline');}
+  }
+ }
+ return {CollectionCloud};
+});
+
+// Loaded only after the managed authentication SDK is available.
+function setPasswordVisibility(input,button,visible){
+ input.type=visible?"text":"password";
+ button.setAttribute("aria-pressed",String(visible));
+ button.setAttribute("aria-label",(visible?"Hide ":"Show ")+(input.id==="newTrackerPassword"?"new password":"password"));
+}
+document.querySelectorAll("[data-password-target]").forEach(button=>{
+ button.onclick=()=>{const input=$(button.dataset.passwordTarget);setPasswordVisibility(input,button,input.type==="password");};
+});
+function clearAccountPassword(id){
+ const input=$(id);input.value="";
+ const button=document.querySelector('[data-password-target="'+id+'"]');
+ setPasswordVisibility(input,button,false);
+}
+const accountDialog=$("trackerAccountDialog");
+$("openTrackerAccount").onclick=()=>accountDialog.showModal();
+$("closeTrackerAccount").onclick=()=>accountDialog.close();
+accountDialog.addEventListener("click",event=>{if(event.target===accountDialog){const rect=accountDialog.getBoundingClientRect();if(event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom)accountDialog.close();}});
+function initializeTrackerAccounts(createClient){
+ const client=createClient('https://fwjthjqevmukrovpbvfx.supabase.co','sb_publishable_3nu6EByo3Vt5tLTzhFuDAg_XijD9m6r',{
+  auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+ });
+ let accountId=undefined,authBusy=false,accountStatusKind='';
+ const accountStatus=(text,kind='')=>{
+  accountStatusKind=kind;$('accountStatus').textContent=text;
+  $('retryAccountSave').hidden=!['offline','conflict'].includes(kind);
+  $('loadOnlineCollection').hidden=kind!=='conflict';
+  const locked=!!accountId&&!cloud.ready;
+  $('grid').inert=locked;$('detailContent').inert=locked;
+  $('importGuestCollection').disabled=locked;
+ };
+ const transport={
+  async read(user){
+   const {data,error}=await client.from('sprite_progress').select('sprite_id,level,mastered,revision').eq('user_id',user).limit(10000);
+   if(error)throw error;return data;
+  },
+  async write(user,id,row,revision){
+   let query;
+   if(!revision){
+    if(!row)return {revision:0};
+    query=client.from('sprite_progress').insert({user_id:user,sprite_id:id,level:row.level,mastered:row.mastered}).select('revision');
+   }else if(row){
+    query=client.from('sprite_progress').update({level:row.level,mastered:row.mastered}).eq('user_id',user).eq('sprite_id',id).eq('revision',revision).select('revision');
+   }else{
+    query=client.from('sprite_progress').delete().eq('user_id',user).eq('sprite_id',id).eq('revision',revision).select('revision');
+   }
+   const {data,error}=await query;
+   if(error){if(error.code==='23505')return {conflict:true};throw error;}
+   if(!data.length)return {conflict:true};
+   return {revision:row?data[0].revision:0};
+  }
+ };
+ const cloud=new SpriteCloud.CollectionCloud({transport,storage:localStorage,status:accountStatus,
+  apply:(collection,user)=>{
+   ownedStorageKey='spriteAccount:'+user+':owned';masteryStorageKey='spriteAccount:'+user+':mastered';
+   saved=collection.owned;mastered=collection.mastered;
+   localStorage.setItem(ownedStorageKey,JSON.stringify(saved));localStorage.setItem(masteryStorageKey,JSON.stringify(mastered));
+   render();if(selected)showFamily();
+  }
+ });
+ window.accountCloud=cloud;
+ const guestCollection=()=>{
+  try{
+   const raw=JSON.parse(localStorage.getItem('mySprites')||'{}'),mastery=JSON.parse(localStorage.getItem('masteredSprites')||'{}');
+   if(!raw||typeof raw!=='object'||Array.isArray(raw))throw Error();
+   const owned=Object.fromEntries(Object.entries(raw).filter(([id,level])=>id.length>0&&id.length<=200&&!/[\x00-\x1f]/.test(id)&&!['__proto__','constructor','prototype'].includes(id)&&Number.isInteger(level)&&level>=1&&level<=5));
+   return {owned,mastered:Object.fromEntries(Object.keys(owned).filter(id=>mastery?.[id]===true).map(id=>[id,true]))};
+  }
+  catch{return {owned:{},mastered:{}};}
+ };
+ async function changeAccount(session){
+  const nextId=session?.user?.id||null;
+  if(accountId===nextId)return;
+  $("openTrackerAccount").textContent=nextId?"Account":"Sign in";
+  accountId=nextId;selected=null;$('detail').style.display='none';document.body.style.overflow='';
+  $('accountSignedOut').hidden=!!nextId;$('accountSignedIn').hidden=!nextId;
+  $('accountEmailLabel').textContent=session?.user?.email||'';
+  $('importGuestCollection').hidden=!nextId||!Object.keys(guestCollection().owned).length;
+  if(nextId){await cloud.switchUser(nextId);if(cloud.ready&&$('passwordRecoveryForm').hidden&&accountDialog.open)accountDialog.close();}
+  else{
+   await cloud.switchUser(null);ownedStorageKey='mySprites';masteryStorageKey='masteredSprites';
+   const guest=guestCollection();saved=guest.owned;mastered=guest.mastered;
+   $('grid').inert=false;$('detailContent').inert=false;
+   render();accountStatus('Guest progress stays in this browser.');
+  }
+ }
+ function setBusy(busy){authBusy=busy;for(const element of $('trackerAccount').querySelectorAll('button,input'))element.disabled=busy;if(!busy)accountStatus($('accountStatus').textContent,accountStatusKind);}
+ async function authenticate(mode){
+  if(authBusy)return;
+  const email=$('trackerEmail').value.trim(),password=$('trackerPassword').value;
+  if(!$('trackerEmail').reportValidity())return;
+  if(mode!=='reset'&&!$('trackerPassword').reportValidity())return;
+  setBusy(true);accountStatus(mode==='reset'?'Requesting a recovery email…':'Connecting…');
+  try{
+   let result;
+   if(mode==='signup'){
+    result=await client.auth.signUp({email,password});
+    if(!result.error&&!result.data.session)result=await client.auth.signInWithPassword({email,password});
+    else if(result.error?.code==='user_already_exists')result=await client.auth.signInWithPassword({email,password});
+   }
+   else if(mode==='reset')result=await client.auth.resetPasswordForEmail(email,{redirectTo:location.origin+'/?reset=1'});
+   else result=await client.auth.signInWithPassword({email,password});
+   if(result.error)throw result.error;
+   if(mode==='reset')accountStatus('If this address has an account, a recovery email will arrive shortly.');
+   else{
+    if(!result.data.session)throw Error("Could not finish signing in. Please use Sign in.");
+    await changeAccount(result.data.session);
+    if(cloud.ready&&accountDialog.open)accountDialog.close();
+   }
+  }catch(error){accountStatus(error.message||'Could not connect. Please try again.');}
+  finally{clearAccountPassword('trackerPassword');setBusy(false);}
+ }
+ $('accountForm').onsubmit=event=>{event.preventDefault();void authenticate('signin');};
+ $('createTrackerAccount').onclick=()=>void authenticate('signup');
+ $('recoverTrackerAccount').onclick=()=>void authenticate('reset');
+ $('signOutTracker').onclick=async()=>{
+  if(authBusy)return;setBusy(true);
+  try{const {error}=await client.auth.signOut({scope:'local'});if(error)throw error;await changeAccount(null);}
+  catch{accountStatus('Could not sign out. Please try again.');}finally{setBusy(false);}
+ };
+ $('retryAccountSave').onclick=()=>{if(cloud.ready)void cloud.flush();else if(accountId)void cloud.switchUser(accountId);};
+ $('loadOnlineCollection').onclick=()=>void cloud.discardAndReload();
+ $('importGuestCollection').onclick=()=>{
+  if(!cloud.ready)return;const guest=guestCollection();
+  for(const [id,level]of Object.entries(guest.owned))saved[id]=Math.max(saved[id]||0,level);
+  for(const id of Object.keys(guest.mastered))mastered[id]=true;
+  store();saveMastery();render();if(selected)showFamily();$('importGuestCollection').hidden=true;
+ };
+ $('passwordRecoveryForm').onsubmit=async event=>{
+  event.preventDefault();if(authBusy||!$('newTrackerPassword').reportValidity())return;
+  const password=$('newTrackerPassword').value;setBusy(true);
+  try{const {error}=await client.auth.updateUser({password});if(error)throw error;
+   $('passwordRecoveryForm').hidden=true;accountStatus('Password changed.');
+   const url=new URL(location.href);url.searchParams.delete('reset');history.replaceState(history.state,'',url.pathname+url.search+url.hash);
+  }catch(error){accountStatus(error.message||'Could not update password.');}
+  finally{clearAccountPassword('newTrackerPassword');setBusy(false);}
+ };
+ client.auth.onAuthStateChange((event,session)=>{
+  if(event==='PASSWORD_RECOVERY'){$('passwordRecoveryForm').hidden=false;if(!accountDialog.open)accountDialog.showModal();}
+  // Keep asynchronous database work outside the authentication callback lock.
+  setTimeout(()=>{void changeAccount(session).catch(()=>accountStatus('Could not load your collection. Please retry.','offline'));},0);
+ });
+ window.addEventListener('online',()=>{if(accountId){if(cloud.ready)void cloud.flush();else void cloud.switchUser(accountId);}});
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&accountId&&!cloud.busy&&cloud.ready){
+  if(Object.keys(cloud.state.pending).length)void cloud.flush();else void cloud.switchUser(accountId);
+ }});
+ client.auth.getSession().then(({data,error})=>{if(error)throw error;return changeAccount(data.session);}).catch(()=>accountStatus('Account service is unavailable. Your guest collection is still available.'));
+}
+
+const accountSdk=document.createElement('script');
+accountSdk.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.js';
+accountSdk.integrity='sha384-TcHRA3zBbn+Lexh5n+Oil4guNPOS3rjNDpGRAN46u/s/mB2IZ50ceC6TYDU2yvgK';
+accountSdk.crossOrigin='anonymous';
+accountSdk.onload=()=>{try{initializeTrackerAccounts(window.supabase.createClient);}catch{document.getElementById('accountStatus').textContent='Account service unavailable. Your guest collection is still available.';}};
+accountSdk.onerror=()=>{document.getElementById('accountStatus').textContent='Account service unavailable. Your guest collection is still available.';};
+document.head.append(accountSdk);
+
 </script>
 </body>
 </html>
+
+
