@@ -80,6 +80,16 @@ input::placeholder{color:#8399b8}
 /* Animated rarity energy spans each full variant card. */
 .variant{position:relative;isolation:isolate;overflow:hidden;--rarity-rgb:83,143,190;background:linear-gradient(120deg,rgba(var(--rarity-rgb),.20),#17263e 52%,rgba(var(--rarity-rgb),.13));border-color:rgba(var(--rarity-rgb),.65);box-shadow:inset 0 0 18px rgba(var(--rarity-rgb),.10),0 0 12px rgba(var(--rarity-rgb),.09);animation:rarityPulse 4s ease-in-out infinite}
 .variant::before{content:"";position:absolute;z-index:-1;inset:-70%;pointer-events:none;background:linear-gradient(110deg,transparent 36%,rgba(var(--rarity-rgb),.04) 44%,rgba(var(--rarity-rgb),.28) 50%,rgba(var(--rarity-rgb),.04) 56%,transparent 64%);transform:translateX(-38%) rotate(8deg);animation:raritySweep 6s ease-in-out infinite}
+/* Variant color themes when the catalog does not provide a rarity. */
+.variant[data-theme="willow"]{--rarity-rgb:230,166,80}
+.variant[data-theme="cheatmaster"]{--rarity-rgb:82,238,115}
+.variant[data-theme="gold"]{--rarity-rgb:255,206,58}
+.variant[data-theme="loothacker"]{--rarity-rgb:177,89,255}
+.variant[data-theme="bountyhunter"]{--rarity-rgb:255,95,197}
+.variant[data-theme="trickortreat"]{--rarity-rgb:255,125,46}
+.variant[data-theme="ice"]{--rarity-rgb:80,222,255}
+.variant[data-theme="fire"]{--rarity-rgb:255,89,64}
+.variant[data-theme="shadow"]{--rarity-rgb:159,107,240}
 .variant[data-rarity="common"]{--rarity-rgb:160,174,191}
 .variant[data-rarity="uncommon"]{--rarity-rgb:80,223,126}
 .variant[data-rarity="rare"]{--rarity-rgb:65,167,255}
@@ -438,6 +448,19 @@ function spriteRarity(value){
  const rarity=String(raw).toLowerCase().replace(/[^a-z]/g,"");
  return ["common","uncommon","rare","epic","legendary","mythic"].includes(rarity)?rarity:"";
 }
+function spriteVariantTheme(name){
+ const text=String(name||"").toLowerCase();
+ if(/cheatmaster/.test(text))return "cheatmaster";
+ if(/\bgold\b|golden/.test(text))return "gold";
+ if(/loot hacker/.test(text))return "loothacker";
+ if(/bounty hunter/.test(text))return "bountyhunter";
+ if(/trick or treat/.test(text))return "trickortreat";
+ if(/\bice\b|frost|snow/.test(text))return "ice";
+ if(/\bfire\b|flame|lava/.test(text))return "fire";
+ if(/shadow|dark/.test(text))return "shadow";
+ if(/one wish willow/.test(text))return "willow";
+ return "";
+}
 function catalogIds(list){return [...new Set(list.flatMap(f=>f.variants.map(v=>v.id)))].sort();}
 function updateNewSpriteAlerts(list){
  const ids=catalogIds(list);
@@ -631,7 +654,7 @@ function showFamily(){
  for(const v of f.variants){
  const row=document.createElement("div");
  row.className="variant";
- if(v.rarity){row.dataset.rarity=v.rarity;row.setAttribute("aria-label",v.name+" — "+v.rarity+" rarity");}
+ if(v.rarity){row.dataset.rarity=v.rarity;row.setAttribute("aria-label",v.name+" — "+v.rarity+" rarity");}else{const theme=spriteVariantTheme(v.name);if(theme)row.dataset.theme=theme;}
  if(v.image)row.append(makeImage(v.image,v.name));
  const info=document.createElement("div");
  info.className="variant-info";
