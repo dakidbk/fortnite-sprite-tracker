@@ -818,7 +818,7 @@ function initializeTrackerAccounts(createClient){
   $('accountSignedOut').hidden=!!nextId;$('accountSignedIn').hidden=!nextId;
   $('accountEmailLabel').textContent=session?.user?.email||'';
   $('importGuestCollection').hidden=!nextId||!Object.keys(guestCollection().owned).length;
-  if(nextId){await cloud.switchUser(nextId);}
+  if(nextId){await cloud.switchUser(nextId);if(cloud.ready&&$('passwordRecoveryForm').hidden&&accountDialog.open)accountDialog.close();}
   else{
    await cloud.switchUser(null);ownedStorageKey='mySprites';masteryStorageKey='masteredSprites';
    const guest=guestCollection();saved=guest.owned;mastered=guest.mastered;
@@ -835,13 +835,20 @@ function initializeTrackerAccounts(createClient){
   setBusy(true);accountStatus(mode==='reset'?'Requesting a recovery email…':'Connecting…');
   try{
    let result;
-   if(mode==='signup')result=await client.auth.signUp({email,password,options:{emailRedirectTo:location.origin+'/'}});
+   if(mode==='signup'){
+    result=await client.auth.signUp({email,password});
+    if(!result.error&&!result.data.session)result=await client.auth.signInWithPassword({email,password});
+    else if(result.error?.code==='user_already_exists')result=await client.auth.signInWithPassword({email,password});
+   }
    else if(mode==='reset')result=await client.auth.resetPasswordForEmail(email,{redirectTo:location.origin+'/?reset=1'});
    else result=await client.auth.signInWithPassword({email,password});
    if(result.error)throw result.error;
    if(mode==='reset')accountStatus('If this address has an account, a recovery email will arrive shortly.');
-   else if(mode==='signup'&&!result.data.session)accountStatus('Check your email to confirm your account, then sign in.');
-   else await changeAccount(result.data.session);
+   else{
+    if(!result.data.session)throw Error("Could not finish signing in. Please use Sign in.");
+    await changeAccount(result.data.session);
+    if(cloud.ready&&accountDialog.open)accountDialog.close();
+   }
   }catch(error){accountStatus(error.message||'Could not connect. Please try again.');}
   finally{clearAccountPassword('trackerPassword');setBusy(false);}
  }
