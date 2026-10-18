@@ -15,6 +15,18 @@ h1{position:relative;z-index:1;font-size:clamp(26px,7vw,40px);font-weight:950;le
 h1::first-letter{color:var(--accent)}
 header p{position:relative;z-index:1;color:#a9bed8;font-size:13px;margin:12px 0 0;letter-spacing:.25px}
 main{max-width:780px;margin:auto;padding:22px 16px 64px}
+.daily-quests{margin-bottom:24px;padding:18px;border:1px solid #365572;border-radius:18px;background:linear-gradient(135deg,#1d3657,#121e32)}
+.daily-quests h2{margin:0 0 6px;font-size:20px;color:#80eaff}
+.daily-quests .small{margin:0 0 14px;line-height:1.5}
+.quest-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.quest-card{min-width:0;padding:12px;border:1px solid var(--border);border-radius:14px;background:#14243a;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px}
+.quest-card img,.quest-art{width:80px;height:80px;object-fit:contain}
+.quest-art{display:grid;place-items:center;font-size:32px}
+.quest-name{font-size:13px;overflow-wrap:anywhere;flex:1}
+.quest-card button{width:100%;min-height:44px;border:0;border-radius:10px;padding:10px 6px;font-weight:850;background:#66e4ff;color:#091728;cursor:pointer}
+.quest-card button:disabled{background:#22574e;color:#a3ffe1;cursor:default}
+.quest-card button:focus-visible{outline:3px solid white;outline-offset:3px}
+@media(max-width:420px){.quest-list{grid-template-columns:1fr}.quest-card{display:grid;grid-template-columns:58px minmax(0,1fr) auto;text-align:left;padding:10px}.quest-card img,.quest-art{width:58px;height:58px}.quest-card button{width:auto}}
 .season-label{font-size:11px;letter-spacing:1.7px;color:#80dff6;margin:0 0 10px;font-weight:850}
 #sortSelect{appearance:none;width:100%;padding:14px 16px;margin:0 0 18px;background:#17243a;border:1px solid #365572;border-radius:14px;color:white;font-size:14px;font-weight:800}
 #seasonSelect{appearance:none;width:100%;padding:17px 45px 17px 17px;margin-bottom:20px;background:linear-gradient(145deg,#1b2d4a,#132138);border:1px solid #365572;border-radius:16px;color:white;font-size:15px;font-weight:800;box-shadow:0 8px 22px #0003}
@@ -343,6 +355,12 @@ input::placeholder{color:#8399b8}
 </dialog>
 <div class="sync-wrap"><span id="syncStatus" role="status" aria-live="polite">Collection saved in this browser</span></div>
 <div id="newAlert" class="new-alert" role="status" aria-live="polite"><span id="newAlertText"></span><button type="button" id="showNewButton">View new</button></div>
+<section id="dailyQuests" class="daily-quests" aria-labelledby="dailyQuestTitle">
+<h2 id="dailyQuestTitle">Daily Quests</h2>
+<p class="small">Collect today's suggested missing variants. Complete marks them Owned. Resets at local midnight.</p>
+<p id="dailyQuestStatus" class="small" role="status" aria-live="polite">Loading your quests…</p>
+<div id="dailyQuestList" class="quest-list"></div>
+</section>
 <div class="season-label">SPRITE SEASON</div>
 <select id="seasonSelect" aria-label="Choose Sprite season"><option value="all">All seasons</option></select>
 <label class="season-label" for="sortSelect" style="display:block">SORT SPRITES</label>
@@ -568,7 +586,57 @@ function makeImage(src,alt){
  img.addEventListener("load",()=>{if(img.naturalWidth&&img.naturalWidth<180)img.classList.add("low-res")},{once:true});
  return img;
 }
+// Persist today's picks separately for each guest/account collection; ownership stays authoritative.
+const dailyQuestCache=new Map();
+let questCollectionLoading=false;
+function questDay(now=new Date()){
+ return [now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+}
+function questRank(value){
+ let hash=2166136261;
+ for(const char of value){hash^=char.charCodeAt(0);hash=Math.imul(hash,16777619);}
+ return hash>>>0;
+}
+function questsLocked(){return questCollectionLoading||(!!window.accountCloud?.user&&!window.accountCloud.ready);}
+function renderDailyQuests(){
+ const root=$('dailyQuestList'),status=$('dailyQuestStatus');root.replaceChildren();
+ if(questsLocked()){status.textContent='Waiting for your account collection. Retry saving under Account if needed.';return;}
+ if(!families.length){status.textContent='Quests will appear when the Sprite catalog loads.';return;}
+ const day=questDay(),key='spriteDailyQuestsV1:'+ownedStorageKey;
+ const all=new Map(families.flatMap(f=>f.variants).map(v=>[v.id,v]));
+ let state=dailyQuestCache.get(key);
+ if(!state){try{state=JSON.parse(localStorage.getItem(key)||'null');}catch{}}
+ if(!state||state.day!==day||!Array.isArray(state.ids))state={day,ids:[]};
+ state.ids=[...new Set(state.ids)].filter(id=>typeof id==='string'&&all.has(id)).slice(0,3);
+ const candidates=[...all.values()].filter(v=>!owned(v)&&!state.ids.includes(v.id));
+ const seed=day+':'+ownedStorageKey+':';
+ candidates.sort((a,b)=>questRank(seed+a.id)-questRank(seed+b.id)||(a.id<b.id?-1:a.id>b.id?1:0));
+ state.ids.push(...candidates.slice(0,3-state.ids.length).map(v=>v.id));
+ dailyQuestCache.set(key,state);
+ try{localStorage.setItem(key,JSON.stringify(state));}catch{}
+ const completed=state.ids.filter(id=>owned(all.get(id))).length;
+ status.textContent=state.ids.length?completed+' / '+state.ids.length+' completed today':'All Sprites owned! Check back after new variants arrive.';
+ for(const id of state.ids){
+  const v=all.get(id),card=document.createElement('article');card.className='quest-card';
+  if(v.image)card.append(makeImage(v.image,v.name));
+  else{const art=document.createElement('span');art.className='quest-art';art.textContent='✦';art.setAttribute('aria-hidden','true');card.append(art);}
+  const name=document.createElement('strong');name.className='quest-name';name.textContent=v.name;
+  const button=document.createElement('button');button.type='button';button.disabled=owned(v);
+  button.textContent=owned(v)?'✓ Completed':'Complete';button.setAttribute('aria-label',(owned(v)?'Completed: ':'Complete quest: ')+v.name);
+  button.onclick=()=>{
+   // Recheck stale buttons after midnight or an account switch before changing progress.
+   if(questsLocked()||key!=='spriteDailyQuestsV1:'+ownedStorageKey||day!==questDay()){renderDailyQuests();return;}
+   if(owned(v))return;
+   saved[v.id]=1;store();render();if(selected)showFamily();
+  };
+  card.append(name,button);root.append(card);
+ }
+}
+setInterval(()=>{if([...dailyQuestCache.values()].some(state=>state.day!==questDay()))renderDailyQuests();},30000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')renderDailyQuests();});
+
 function render(){
+ renderDailyQuests();
  totals();
  const q=$("search").value.toLowerCase();
  const list=families.filter(f=>{
@@ -1035,6 +1103,7 @@ function initializeTrackerAccounts(createClient){
   $('loadOnlineCollection').hidden=kind!=='conflict';
   const locked=!!accountId&&!cloud.ready;
   $('grid').inert=locked;$('detailContent').inert=locked;
+  renderDailyQuests();
   $('importGuestCollection').disabled=locked;
  };
  const transport={
@@ -1080,16 +1149,16 @@ function initializeTrackerAccounts(createClient){
   const nextId=session?.user?.id||null;
   if(accountId===nextId)return;
   $("openTrackerAccount").textContent=nextId?"Account":"Sign in";
-  accountId=nextId;await loadPublicUsername(nextId);selected=null;$('detail').style.display='none';document.body.style.overflow='';
+  accountId=nextId;questCollectionLoading=true;renderDailyQuests();await loadPublicUsername(nextId);selected=null;$('detail').style.display='none';document.body.style.overflow='';
   $('accountSignedOut').hidden=!!nextId;$('accountSignedIn').hidden=!nextId;
   $('accountEmailLabel').textContent=session?.user?.email||'';
   $('importGuestCollection').hidden=!nextId||!Object.keys(guestCollection().owned).length;
-  if(nextId){await cloud.switchUser(nextId);if(cloud.ready&&$('passwordRecoveryForm').hidden&&accountDialog.open)accountDialog.close();}
+  if(nextId){await cloud.switchUser(nextId);questCollectionLoading=false;renderDailyQuests();if(cloud.ready&&$('passwordRecoveryForm').hidden&&accountDialog.open)accountDialog.close();}
   else{
    await cloud.switchUser(null);ownedStorageKey='mySprites';masteryStorageKey='masteredSprites';
    const guest=guestCollection();saved=guest.owned;mastered=guest.mastered;
    $('grid').inert=false;$('detailContent').inert=false;
-   render();accountStatus('Guest progress stays in this browser.');
+   questCollectionLoading=false;render();accountStatus('Guest progress stays in this browser.');
   }
  }
  function setBusy(busy){authBusy=busy;for(const element of $('trackerAccount').querySelectorAll('button,input'))element.disabled=busy;if(!busy)accountStatus($('accountStatus').textContent,accountStatusKind);}
