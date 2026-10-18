@@ -317,6 +317,18 @@ input::placeholder{color:#8399b8}
 .cheat-row button{min-height:44px;min-width:62px;border:1px solid #42607e;border-radius:10px;background:#253e5c;color:#e6f9ff;font-weight:800;cursor:pointer}
 .cheat-row button:focus-visible{outline:3px solid #80eaff;outline-offset:3px}
 #cheatCodesDialog h3{margin:22px 0 2px}#cheatCodesDialog h2{padding-right:30px}#cheatSearch{margin:8px 0}
+.sprite-radar-button{right:58px;display:grid;place-items:center}.sprite-radar-button svg{width:24px;height:24px}
+.pin-button,.find-button{border:1px solid #42698c!important;border-radius:10px;background:#243e5c!important;color:#d9f6ff!important;min-height:44px;padding:9px 12px;font-weight:800;cursor:pointer}
+.pin-button[aria-pressed="true"]{color:#ffe7a0!important;border-color:#c7a54d!important;background:#4a3b20!important}
+.pin-button:focus-visible,.find-button:focus-visible{outline:3px solid #80eaff;outline-offset:3px}
+.card .pin-button{position:absolute;top:10px;right:10px;z-index:3}.detail-pin{margin:0 0 14px}.variant .pin-button{margin-top:9px}
+.quest-actions svg{width:20px;height:20px}.quest-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;width:100%}.quest-actions button{min-width:44px!important;width:auto!important}.quest-actions .quest-complete{flex:1 0 100%;}
+#spriteRadarDialog{max-width:860px}#spriteRadarDialog .sprite-info-close{position:sticky;float:right;top:0;z-index:2}#spriteRadarDialog h2{padding-right:36px}
+.radar-map{position:relative;width:100%;background:#0d2847;border-radius:12px;overflow:hidden;aspect-ratio:1}.radar-map img{display:block;width:100%;height:100%;object-fit:contain}
+.radar-marker{position:absolute;transform:translate(-50%,-50%);width:44px;height:44px;border:2px solid white;border-radius:50%;background:#09bbd9bb;color:#fff;font-weight:950;box-shadow:0 0 0 9px #5eefff33;cursor:pointer}
+.radar-places{padding-left:24px}.radar-places button{background:transparent;color:#9eefff;border:0;text-align:left;font:inherit;min-height:44px;cursor:pointer;text-decoration:underline}
+.radar-marker:focus-visible,.radar-marker.is-active{outline:4px solid #ffe46c;outline-offset:4px;background:#5a4600}
+@media(max-width:420px){.quest-actions{justify-content:flex-end;max-width:115px}.quest-actions button{padding:8px 5px;font-size:11px}.filters{gap:2px}.radar-marker{width:32px;height:32px}}
 </style>
 </head>
 <body>
@@ -334,6 +346,14 @@ input::placeholder{color:#8399b8}
  
 </header>
 <main id="top">
+<dialog id="spriteRadarDialog" class="sprite-info-dialog" aria-labelledby="spriteRadarTitle"><section class="sprite-guide">
+<button type="button" id="closeSpriteRadar" class="sprite-info-close" aria-label="Close Sprite radar">×</button>
+<h2 id="spriteRadarTitle">Sprite radar</h2><p id="spriteRadarHint"></p><div id="spriteRadarCodes"></div>
+<div id="spriteRadarMap" class="radar-map"><img src="assets/ch7s4-map.webp" alt="Chapter 7 Season 4 island map, captured October 18, 2026" loading="lazy"></div>
+<p id="spriteRadarStatus" class="small" role="status" aria-live="polite"></p><ol id="spriteRadarPlaces" class="radar-places"></ol>
+<p class="small">Numbered circles mark suggested search areas, not guaranteed spawns. Loot and special variants can have extra requirements. This map is a Chapter 7 Season 4 snapshot from October 18, 2026.</p>
+<p class="small">Sources: <a href="https://fortnite-api.com/" target="_blank" rel="noopener noreferrer">Map: Fortnite-API / Epic Games</a> · <a href="https://beebom.com/fortnite-cheat-master-sprites-locations-powers/" target="_blank" rel="noopener noreferrer">Sprite search areas</a> · <a href="https://www.digitaltq.com/fortnite-sprites-best-routes-locations" target="_blank" rel="noopener noreferrer">General collection routes</a> · <a href="https://fortnite.gg/" target="_blank" rel="noopener noreferrer">Open live interactive map</a></p>
+</section></dialog>
 <dialog id="cheatCodesDialog" class="sprite-info-dialog" aria-labelledby="cheatCodesTitle"><section class="sprite-guide">
 <button type="button" id="closeCheatCodes" class="sprite-info-close" aria-label="Close cheat codes">×</button>
 <h2 id="cheatCodesTitle">Cheat Codes</h2>
@@ -393,6 +413,7 @@ input::placeholder{color:#8399b8}
 <button class="active" data-filter="all">All</button>
 <button data-filter="owned">Owned</button>
 <button data-filter="missing">Missing</button>
+<button data-filter="pinned">Pinned</button>
 </div>
 <div id="message" class="message">Loading Sprites...</div>
 <div id="grid" class="grid"></div>
@@ -647,11 +668,61 @@ function renderDailyQuests(){
    if(owned(v))return;
    saved[v.id]=1;store();render();if(selected)showFamily();
   };
-  card.append(name,button);root.append(card);
+  const actions=document.createElement('div');actions.className='quest-actions';button.className='quest-complete';
+  const find=document.createElement('button');find.type='button';find.className='find-button';find.innerHTML=radarIcon;find.setAttribute('aria-label','Where to find '+v.name);find.onclick=()=>{const family=families.find(f=>f.variants.some(item=>item.id===v.id));if(family)openSpriteRadar(family,v);};
+  actions.append(button,pinButton(v.id,v.name),find);card.append(name,actions);root.append(card);
  }
 }
 setInterval(()=>{if([...dailyQuestCache.values()].some(state=>state.day!==questDay()))renderDailyQuests();},30000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')renderDailyQuests();});
+
+// Wishlist pins are scoped to the active collection and kept on this browser.
+function pinKey(){return 'spritePinsV1:'+ownedStorageKey;}
+function readPins(){try{const pins=JSON.parse(localStorage.getItem(pinKey())||'[]');return new Set(Array.isArray(pins)?pins.filter(id=>typeof id==='string'):[]);}catch{return new Set();}}
+function familyPinId(f){return 'family:'+f.season+':'+f.name;}
+function familyPinned(f){const pins=readPins();return pins.has(familyPinId(f))||f.variants.some(v=>pins.has(v.id));}
+function pinButton(id,label){
+ const key=pinKey(),button=document.createElement('button');button.type='button';button.className='pin-button';
+ const pinned=readPins().has(id);button.textContent=pinned?'★ Pinned':'☆ Pin';button.setAttribute('aria-pressed',String(pinned));button.setAttribute('aria-label',(pinned?'Unpin ':'Pin ')+label);
+ button.onclick=event=>{event.stopPropagation();if(key!==pinKey()||questCollectionLoading)return;const pins=readPins();if(pins.has(id))pins.delete(id);else pins.add(id);try{localStorage.setItem(key,JSON.stringify([...pins]));}catch{return;}render();if(selected)showFamily();};
+ return button;
+}
+const radarIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12 19 5M12 3v3M3 12h3M12 18v3M18 12h3"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>';
+// Approximate area centers on the dated map snapshot, not individual loot coordinates.
+const radarAreas={
+ 'Green Hill Zone':[29,50],'Golden Grove':[73,56],'Stone Sanctum':[42,64],"Geno's Machine":[44,50],"Reality's Reign":[55,51],
+ 'Chopped Shop':[16,36],'Lifty Lodge':[28,22],'Shaken Sanctuary':[62,69],'Heatwave Harbor':[22,69],'Sunken Shores':[42,79],'Cluster Coast':[68,82],'Mega Maze':[52,72]
+};
+const spriteSearchAreas={
+ sonic:['Green Hill Zone'],tails:['Green Hill Zone'],shadow:['Green Hill Zone'],jonesy:['Golden Grove'],onigiri:['Golden Grove'],adventure:['Stone Sanctum'],'crash bandicoot':['Stone Sanctum'],
+ '8-bit':["Geno's Machine"],killswitch:["Geno's Machine"],'storm scout':["Reality's Reign"],'x-ray':['Chopped Shop'],overshield:['Lifty Lodge','Shaken Sanctuary'],pond:['Heatwave Harbor','Sunken Shores','Cluster Coast'],klombo:['Mega Maze']
+};
+function openSpriteRadar(f,variant=null){
+ $('spriteRadarTitle').textContent=(variant?.name||f.name)+' — Where to find';
+ const current=String(f.season).toUpperCase()==='CH7S4';
+ const stem=f.name.replace(/ Sprite$/i,'').toLowerCase();
+ const areas=current?(spriteSearchAreas[stem]||['Golden Grove',"Reality's Reign",'Chopped Shop','Lifty Lodge','Cluster Coast']):[];
+ const specific=!!spriteSearchAreas[stem];
+ $('spriteRadarHint').textContent=!current?'This Sprite belongs to '+f.season+'. Its original locations are not on this Chapter 7 Season 4 map. '+(f.acquisitionHint||'No current location is confirmed.'):
+  (specific?'Suggested areas for this Sprite family. Search chests and Cheat Code consoles; the exact variant is not guaranteed. ':'No confirmed area for this Sprite. These are general Sprite collection routes, not a confirmed spawn for this family. ')+(f.acquisitionHint?'Catalog clue: '+f.acquisitionHint:'');
+ const codeRoot=$('spriteRadarCodes');codeRoot.replaceChildren();
+ if(current){
+  const matches=lobbyHackCodes.filter(item=>item.category==='Sprites'&&(variant?item.reward.toLowerCase()===variant.name.replace(/ Sprite$/i,'').toLowerCase():item.reward.toLowerCase().endsWith(stem)));
+  for(const item of matches){const line=document.createElement('p');line.textContent='Lobby option: '+item.code+' → '+item.reward+(item.note?' · '+item.note:'');codeRoot.append(line);}
+  if(variant&&spriteVariantTheme(variant.name)!=='base'){const note=document.createElement('p');note.className='small';note.textContent='Variant availability can depend on events, quests, upgrades, or a Lobby Hack code. Area markers do not promise this finish.';codeRoot.append(note);}
+ }
+ const map=$('spriteRadarMap');map.querySelectorAll('.radar-marker').forEach(el=>el.remove());
+ const list=$('spriteRadarPlaces');list.replaceChildren();
+ $('spriteRadarStatus').textContent=areas.length?(specific?'Suggested family search areas':'General collection routes'):'Earlier-season locations are not marked on this map.';
+ areas.forEach((name,i)=>{
+  const marker=document.createElement('button');marker.type='button';marker.className='radar-marker';marker.textContent=String(i+1);marker.style.left=radarAreas[name][0]+'%';marker.style.top=radarAreas[name][1]+'%';marker.setAttribute('aria-label','Search area '+(i+1)+': '+name);
+  const activate=()=>{map.querySelectorAll('.radar-marker').forEach(el=>el.classList.remove('is-active'));marker.classList.add('is-active');$('spriteRadarStatus').textContent='Search area '+(i+1)+': '+name;};marker.onclick=activate;map.append(marker);
+  const li=document.createElement('li'),button=document.createElement('button');button.type='button';button.textContent=name;button.onclick=()=>{activate();marker.focus();};li.append(button);list.append(li);
+ });
+ $('spriteRadarDialog').showModal();
+}
+$('closeSpriteRadar').onclick=()=>$('spriteRadarDialog').close();
+$('spriteRadarMap').querySelector('img').onerror=()=>{$('spriteRadarStatus').textContent='Map image could not load. Use the location list or the live map link below.';};
 
 function render(){
  renderDailyQuests();
@@ -664,7 +735,8 @@ function render(){
  return f.name.toLowerCase().includes(q)&&
  (filter==="all"||
  (filter==="owned"&&n>0)||
- (filter==="missing"&&n<total));
+ (filter==="missing"&&n<total)||
+ (filter==="pinned"&&familyPinned(f)));
  }).sort((a,b)=>{
   const direction=sortOrder==="newest"?-1:1;
   if(a.release&&b.release&&a.release!==b.release)return direction*(a.release-b.release);
@@ -723,7 +795,7 @@ function render(){
  button.className="view";
  button.textContent="Explore variants →";
  body.append(title,badges,count,sub,mastery,mini,button);
- card.append(art,body);
+ card.append(art,body,pinButton(familyPinId(f),f.name+" family"));
  card.onclick=()=>openFamily(f);
  $("grid").append(card);
  }
@@ -744,6 +816,7 @@ function showFamily(){
  const h=document.createElement("h2");
  h.textContent=f.name+" — "+amount(f)+"/"+f.variants.length;
  root.append(h);
+ const familyPin=pinButton(familyPinId(f),f.name+" family");familyPin.classList.add("detail-pin");root.append(familyPin);
  const art=document.createElement("div");
  art.className="detail-art";
  const baseVariant=f.variants.find(v=>spriteVariantTheme(v.name)==="base")||f.variants[0];
@@ -791,6 +864,7 @@ function showFamily(){
  infoButton.setAttribute('aria-haspopup','dialog');
  infoButton.onclick=()=>infoDialog.showModal();
  art.append(infoButton);
+ const radar=document.createElement('button');radar.type='button';radar.className='sprite-info-button sprite-radar-button';radar.innerHTML=radarIcon;radar.setAttribute('aria-label','Where to find '+f.name);radar.setAttribute('aria-haspopup','dialog');radar.onclick=()=>openSpriteRadar(f);art.append(radar);
  for(const v of f.variants){
  const row=document.createElement("div");
  row.className="variant";
@@ -802,6 +876,7 @@ function showFamily(){
  name.className="variant-name";
  name.textContent=v.name;
  info.append(name);
+ info.append(pinButton(v.id,v.name));
  const costLabel=document.createElement('div');
  costLabel.className='variant-cost';
  costLabel.textContent=v.summonCost===null?'Summon cost not available':v.summonCost.toLocaleString('en-US')+' Sprite Dust to summon';
