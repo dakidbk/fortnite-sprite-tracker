@@ -330,6 +330,7 @@ input::placeholder{color:#8399b8}
 .radar-marker:focus-visible,.radar-marker.is-active{outline:4px solid #ffe46c;outline-offset:4px;background:#5a4600}
 @media(max-width:420px){.quest-actions{justify-content:flex-end;max-width:115px}.quest-actions button{padding:8px 5px;font-size:11px}.filters{gap:2px}.radar-marker{width:32px;height:32px}}
 #siteUpdatesDialog h2{padding-right:35px}#siteUpdatesDialog .sprite-info-close{position:sticky;float:right;top:0;z-index:2}#siteUpdatesDialog li{margin:12px 0}
+.pin-button:disabled{opacity:.45;cursor:not-allowed}.status-pill.pinned{border-color:#c7a54d;background:#4a3b20;color:#ffe7a0}
 </style>
 </head>
 <body>
@@ -369,6 +370,7 @@ input::placeholder{color:#8399b8}
 <h3>Recent changes</h3>
 <ul>
 <li>Daily Quests now suggest <strong>CH7S4 Sprites only</strong> and replace saved picks from older seasons.</li>
+<li>Pinned Sprites appear first on the home page, with a maximum of <strong>3 pins per collection</strong>.</li>
 <li>Radar buttons now appear <strong>only on Sprite detail screens</strong>, keeping Daily Quests focused on collection progress.</li>
 <li>Pin buttons now appear <strong>only inside Sprite details</strong>, including individual variants. The home page keeps the Pinned filter.</li>
 <li>Quests adapt to your active collection, show fewer suggestions when fewer variants are missing, and keep completed quests visible for the rest of the day.</li>
@@ -699,13 +701,24 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 // Wishlist pins are scoped to the active collection and kept on this browser.
 function pinKey(){return 'spritePinsV1:'+ownedStorageKey;}
-function readPins(){try{const pins=JSON.parse(localStorage.getItem(pinKey())||'[]');return new Set(Array.isArray(pins)?pins.filter(id=>typeof id==='string'):[]);}catch{return new Set();}}
+const maxSpritePins=3;
+function readPins(){
+ try{
+  const raw=JSON.parse(localStorage.getItem(pinKey())||'[]');
+  const pins=[...new Set(Array.isArray(raw)?raw.filter(id=>typeof id==='string'):[])];
+  const limited=pins.slice(0,maxSpritePins);
+  if(pins.length>maxSpritePins)localStorage.setItem(pinKey(),JSON.stringify(limited));
+  return new Set(limited);
+ }catch{return new Set();}
+}
 function familyPinId(f){return 'family:'+f.season+':'+f.name;}
 function familyPinned(f){const pins=readPins();return pins.has(familyPinId(f))||f.variants.some(v=>pins.has(v.id));}
 function pinButton(id,label){
  const key=pinKey(),button=document.createElement('button');button.type='button';button.className='pin-button';
- const pinned=readPins().has(id);button.textContent=pinned?'★ Pinned':'☆ Pin';button.setAttribute('aria-pressed',String(pinned));button.setAttribute('aria-label',(pinned?'Unpin ':'Pin ')+label);
- button.onclick=event=>{event.stopPropagation();if(key!==pinKey()||questCollectionLoading)return;const pins=readPins();if(pins.has(id))pins.delete(id);else pins.add(id);try{localStorage.setItem(key,JSON.stringify([...pins]));}catch{return;}render();if(selected)showFamily();};
+ const pins=readPins(),pinned=pins.has(id);button.disabled=!pinned&&pins.size>=maxSpritePins;
+ button.title=button.disabled?'You can pin up to 3. Unpin a Sprite first.':(pinned?'Unpin this Sprite':'Pin this Sprite');
+ button.textContent=pinned?'★ Pinned':'☆ Pin';button.setAttribute('aria-pressed',String(pinned));button.setAttribute('aria-label',(pinned?'Unpin ':'Pin ')+label);
+ button.onclick=event=>{event.stopPropagation();if(key!==pinKey()||questCollectionLoading)return;const pins=readPins();if(pins.has(id))pins.delete(id);else{if(pins.size>=maxSpritePins)return;pins.add(id);}try{localStorage.setItem(key,JSON.stringify([...pins]));}catch{return;}render();if(selected)showFamily();};
  return button;
 }
 const radarIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><path d="M12 12 19 5M12 3v3M3 12h3M12 18v3M18 12h3"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>';
@@ -759,6 +772,7 @@ function render(){
  (filter==="missing"&&n<total)||
  (filter==="pinned"&&familyPinned(f)));
  }).sort((a,b)=>{
+  const pinOrder=Number(familyPinned(b))-Number(familyPinned(a));if(pinOrder)return pinOrder;
   const direction=sortOrder==="newest"?-1:1;
   if(a.release&&b.release&&a.release!==b.release)return direction*(a.release-b.release);
   const seasonOrder=compareSeasons(a.season,b.season);
@@ -797,6 +811,7 @@ function render(){
  ownedBadge.className="status-pill "+(n?"owned":"missing");
  ownedBadge.textContent=n?"✓ Owned "+n:"○ Missing";
  badges.append(ownedBadge);
+ if(familyPinned(f)){const pinBadge=document.createElement("span");pinBadge.className="status-pill pinned";pinBadge.textContent="★ Pinned";badges.append(pinBadge);}
  if(n<total&&n>0){const missingBadge=document.createElement("span");missingBadge.className="status-pill missing";missingBadge.textContent="○ Missing "+(total-n);badges.append(missingBadge);}
  const masteredCount=f.variants.filter(isMastered).length;
  if(masteredCount){const masteredBadge=document.createElement("span");masteredBadge.className="status-pill mastered";masteredBadge.textContent="★ Mastered "+masteredCount;badges.append(masteredBadge);}
@@ -838,6 +853,7 @@ function showFamily(){
  h.textContent=f.name+" — "+amount(f)+"/"+f.variants.length;
  root.append(h);
  const familyPin=pinButton(familyPinId(f),f.name+" family");familyPin.classList.add("detail-pin");root.append(familyPin);
+ const pinStatus=document.createElement("p");pinStatus.className="small";pinStatus.setAttribute("role","status");pinStatus.textContent=readPins().size+" / 3 pins used. "+(readPins().size>=maxSpritePins?"Unpin a Sprite before adding another.":"Pinned Sprites appear first on the home page.");root.append(pinStatus);
  const art=document.createElement("div");
  art.className="detail-art";
  const baseVariant=f.variants.find(v=>spriteVariantTheme(v.name)==="base")||f.variants[0];
