@@ -329,12 +329,13 @@ input::placeholder{color:#8399b8}
 .radar-places{padding-left:24px}.radar-places button{background:transparent;color:#9eefff;border:0;text-align:left;font:inherit;min-height:44px;cursor:pointer;text-decoration:underline}
 .radar-marker:focus-visible,.radar-marker.is-active{outline:4px solid #ffe46c;outline-offset:4px;background:#5a4600}
 @media(max-width:420px){.quest-actions{justify-content:flex-end;max-width:115px}.quest-actions button{padding:8px 5px;font-size:11px}.filters{gap:2px}.radar-marker{width:32px;height:32px}}
+#siteUpdatesDialog h2{padding-right:35px}#siteUpdatesDialog .sprite-info-close{position:sticky;float:right;top:0;z-index:2}#siteUpdatesDialog li{margin:12px 0}
 </style>
 </head>
 <body>
 <header class="season-hero">
  <button type="button" id="trackerMenuToggle" aria-label="Open menu" aria-haspopup="true" aria-expanded="false" aria-controls="trackerMenu">☰</button>
- <nav id="trackerMenu" aria-label="Site menu" hidden><button type="button" id="openTrackerAccount" aria-haspopup="dialog" aria-controls="trackerAccountDialog">Account</button><button type="button" id="openTradeInfo">Trade</button><button type="button" id="openCheatCodes" aria-haspopup="dialog" aria-controls="cheatCodesDialog">Cheat Codes</button></nav>
+ <nav id="trackerMenu" aria-label="Site menu" hidden><button type="button" id="openTrackerAccount" aria-haspopup="dialog" aria-controls="trackerAccountDialog">Account</button><button type="button" id="openTradeInfo">Trade</button><button type="button" id="openCheatCodes" aria-haspopup="dialog" aria-controls="cheatCodesDialog">Cheat Codes</button><button type="button" id="openSiteUpdates" aria-haspopup="dialog" aria-controls="siteUpdatesDialog">What’s New</button></nav>
  <div class="hero-content">
   <div class="hero-kicker"><span class="hero-live-dot"></span> CHAPTER 7 · SEASON 4 · OVERRIDE</div>
   <div class="hero-event">🎃 FORTNITEMARES 2026</div>
@@ -353,6 +354,26 @@ input::placeholder{color:#8399b8}
 <p id="spriteRadarStatus" class="small" role="status" aria-live="polite"></p><ol id="spriteRadarPlaces" class="radar-places"></ol>
 <p class="small">Numbered circles mark suggested search areas, not guaranteed spawns. Loot and special variants can have extra requirements. This map is a Chapter 7 Season 4 snapshot from October 18, 2026.</p>
 <p class="small">Sources: <a href="https://fortnite-api.com/" target="_blank" rel="noopener noreferrer">Map: Fortnite-API / Epic Games</a> · <a href="https://beebom.com/fortnite-cheat-master-sprites-locations-powers/" target="_blank" rel="noopener noreferrer">Sprite search areas</a> · <a href="https://www.digitaltq.com/fortnite-sprites-best-routes-locations" target="_blank" rel="noopener noreferrer">General collection routes</a> · <a href="https://fortnite.gg/" target="_blank" rel="noopener noreferrer">Open live interactive map</a></p>
+</section></dialog>
+<dialog id="siteUpdatesDialog" class="sprite-info-dialog" aria-labelledby="siteUpdatesTitle"><section class="sprite-guide">
+<button type="button" id="closeSiteUpdates" class="sprite-info-close" aria-label="Close site updates">×</button>
+<h2 id="siteUpdatesTitle">What’s New</h2>
+<p class="small"><time datetime="2026-10-18">October 18, 2026</time> · Sprite Tracker update</p>
+<h3>New additions</h3>
+<ul>
+<li><strong>Daily Quests:</strong> Get up to three suggestions from your missing Chapter 7 Season 4 Sprite variants. Picks stay the same for the day and reset at local midnight. Complete marks a Sprite Owned using your collection’s usual save and account sync.</li>
+<li><strong>Cheat Codes:</strong> Find 55 published Fortnite Lobby Hack codes in the ☰ menu. Search codes or rewards, copy a code, and check story requirements before entering it in Fortnite’s Admin Panel.</li>
+<li><strong>Pins:</strong> Pin a family or individual variant from its Sprite detail screen. Use the Pinned filter on the home page to see your picks. Pins stay in this browser and are separate for each collection.</li>
+<li><strong>Sprite radar:</strong> Tap the radar icon beside ⓘ on a Sprite’s detail screen, or in Daily Quests, to open a Chapter 7 Season 4 map with suggested search areas and available Lobby Hack options.</li>
+</ul>
+<h3>Recent changes</h3>
+<ul>
+<li>Daily Quests now suggest <strong>CH7S4 Sprites only</strong> and replace saved picks from older seasons.</li>
+<li>Pin buttons now appear <strong>only inside Sprite details</strong>, including individual variants. The home page keeps the Pinned filter.</li>
+<li>Quests adapt to your active collection, show fewer suggestions when fewer variants are missing, and keep completed quests visible for the rest of the day.</li>
+<li>New screens and controls fit mobile layouts, with search, readable labels, and touch-friendly buttons.</li>
+</ul>
+<p class="small">Radar circles are suggested areas, not guaranteed spawns. The map is dated October 18, 2026. Code availability can change; check the sources linked in Cheat Codes and radar for more details.</p>
 </section></dialog>
 <dialog id="cheatCodesDialog" class="sprite-info-dialog" aria-labelledby="cheatCodesTitle"><section class="sprite-guide">
 <button type="button" id="closeCheatCodes" class="sprite-info-close" aria-label="Close cheat codes">×</button>
@@ -1436,6 +1457,8 @@ function renderCheatCodes(){
   }
  }
 }
+$('openSiteUpdates').onclick=()=>{closeTrackerMenu();$('siteUpdatesDialog').showModal();};
+$('closeSiteUpdates').onclick=()=>$('siteUpdatesDialog').close();
 $('openCheatCodes').onclick=()=>{closeTrackerMenu();renderCheatCodes();$('cheatCodesDialog').showModal();};
 $('closeCheatCodes').onclick=()=>$('cheatCodesDialog').close();
 $('cheatSearch').oninput=renderCheatCodes;
