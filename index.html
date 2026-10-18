@@ -374,7 +374,7 @@ input::placeholder{color:#8399b8}
 <div id="newAlert" class="new-alert" role="status" aria-live="polite"><span id="newAlertText"></span><button type="button" id="showNewButton">View new</button></div>
 <section id="dailyQuests" class="daily-quests" aria-labelledby="dailyQuestTitle">
 <h2 id="dailyQuestTitle">Daily Quests</h2>
-<p class="small">Collect today's suggested missing variants. Complete marks them Owned. Resets at local midnight.</p>
+<p class="small">Collect today's suggested missing Chapter 7 Season 4 variants. Complete marks them Owned. Resets at local midnight.</p>
 <p id="dailyQuestStatus" class="small" role="status" aria-live="polite">Loading your quests…</p>
 <div id="dailyQuestList" class="quest-list"></div>
 </section>
@@ -620,7 +620,8 @@ function renderDailyQuests(){
  if(questsLocked()){status.textContent='Waiting for your account collection. Retry saving under Account if needed.';return;}
  if(!families.length){status.textContent='Quests will appear when the Sprite catalog loads.';return;}
  const day=questDay(),key='spriteDailyQuestsV1:'+ownedStorageKey;
- const all=new Map(families.flatMap(f=>f.variants).map(v=>[v.id,v]));
+ const questFamilies=families.filter(f=>String(f.season).toUpperCase()==='CH7S4');
+ const all=new Map(questFamilies.flatMap(f=>f.variants).map(v=>[v.id,v]));
  let state=dailyQuestCache.get(key);
  if(!state){try{state=JSON.parse(localStorage.getItem(key)||'null');}catch{}}
  if(!state||state.day!==day||!Array.isArray(state.ids))state={day,ids:[]};
@@ -632,7 +633,7 @@ function renderDailyQuests(){
  dailyQuestCache.set(key,state);
  try{localStorage.setItem(key,JSON.stringify(state));}catch{}
  const completed=state.ids.filter(id=>owned(all.get(id))).length;
- status.textContent=state.ids.length?completed+' / '+state.ids.length+' completed today':'All Sprites owned! Check back after new variants arrive.';
+ status.textContent=state.ids.length?completed+' / '+state.ids.length+' completed today':(all.size?'All Chapter 7 Season 4 Sprites owned! Check back after new variants arrive.':'No Chapter 7 Season 4 Sprites available in the catalog yet.');
  for(const id of state.ids){
   const v=all.get(id),card=document.createElement('article');card.className='quest-card';
   if(v.image)card.append(makeImage(v.image,v.name));
