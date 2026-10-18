@@ -364,11 +364,12 @@ input::placeholder{color:#8399b8}
 <li><strong>Daily Quests:</strong> Get up to three suggestions from your missing Chapter 7 Season 4 Sprite variants. Picks stay the same for the day and reset at local midnight. Complete marks a Sprite Owned using your collection’s usual save and account sync.</li>
 <li><strong>Cheat Codes:</strong> Find 55 published Fortnite Lobby Hack codes in the ☰ menu. Search codes or rewards, copy a code, and check story requirements before entering it in Fortnite’s Admin Panel.</li>
 <li><strong>Pins:</strong> Pin a family or individual variant from its Sprite detail screen. Use the Pinned filter on the home page to see your picks. Pins stay in this browser and are separate for each collection.</li>
-<li><strong>Sprite radar:</strong> Tap the radar icon beside ⓘ on a Sprite’s detail screen, or in Daily Quests, to open a Chapter 7 Season 4 map with suggested search areas and available Lobby Hack options.</li>
+<li><strong>Sprite radar:</strong> Tap the radar icon beside ⓘ on a Sprite’s detail screen to open a Chapter 7 Season 4 map with suggested search areas and available Lobby Hack options.</li>
 </ul>
 <h3>Recent changes</h3>
 <ul>
 <li>Daily Quests now suggest <strong>CH7S4 Sprites only</strong> and replace saved picks from older seasons.</li>
+<li>Radar buttons now appear <strong>only on Sprite detail screens</strong>, keeping Daily Quests focused on collection progress.</li>
 <li>Pin buttons now appear <strong>only inside Sprite details</strong>, including individual variants. The home page keeps the Pinned filter.</li>
 <li>Quests adapt to your active collection, show fewer suggestions when fewer variants are missing, and keep completed quests visible for the rest of the day.</li>
 <li>New screens and controls fit mobile layouts, with search, readable labels, and touch-friendly buttons.</li>
@@ -690,8 +691,7 @@ function renderDailyQuests(){
    saved[v.id]=1;store();render();if(selected)showFamily();
   };
   const actions=document.createElement('div');actions.className='quest-actions';button.className='quest-complete';
-  const find=document.createElement('button');find.type='button';find.className='find-button';find.innerHTML=radarIcon;find.setAttribute('aria-label','Where to find '+v.name);find.onclick=()=>{const family=families.find(f=>f.variants.some(item=>item.id===v.id));if(family)openSpriteRadar(family,v);};
-  actions.append(button,find);card.append(name,actions);root.append(card);
+  actions.append(button);card.append(name,actions);root.append(card);
  }
 }
 setInterval(()=>{if([...dailyQuestCache.values()].some(state=>state.day!==questDay()))renderDailyQuests();},30000);
