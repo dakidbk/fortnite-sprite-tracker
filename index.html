@@ -321,7 +321,7 @@ input::placeholder{color:#8399b8}
 .pin-button,.find-button{border:1px solid #42698c!important;border-radius:10px;background:#243e5c!important;color:#d9f6ff!important;min-height:44px;padding:9px 12px;font-weight:800;cursor:pointer}
 .pin-button[aria-pressed="true"]{color:#ffe7a0!important;border-color:#c7a54d!important;background:#4a3b20!important}
 .pin-button:focus-visible,.find-button:focus-visible{outline:3px solid #80eaff;outline-offset:3px}
-.card .pin-button{position:absolute;top:10px;right:10px;z-index:3}.detail-pin{margin:0 0 14px}.variant .pin-button{margin-top:9px}
+.detail-pin{margin:0 0 14px}.variant .pin-button{margin-top:9px}
 .quest-actions svg{width:20px;height:20px}.quest-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;width:100%}.quest-actions button{min-width:44px!important;width:auto!important}.quest-actions .quest-complete{flex:1 0 100%;}
 #spriteRadarDialog{max-width:860px}#spriteRadarDialog .sprite-info-close{position:sticky;float:right;top:0;z-index:2}#spriteRadarDialog h2{padding-right:36px}
 .radar-map{position:relative;width:100%;background:#0d2847;border-radius:12px;overflow:hidden;aspect-ratio:1}.radar-map img{display:block;width:100%;height:100%;object-fit:contain}
@@ -670,7 +670,7 @@ function renderDailyQuests(){
   };
   const actions=document.createElement('div');actions.className='quest-actions';button.className='quest-complete';
   const find=document.createElement('button');find.type='button';find.className='find-button';find.innerHTML=radarIcon;find.setAttribute('aria-label','Where to find '+v.name);find.onclick=()=>{const family=families.find(f=>f.variants.some(item=>item.id===v.id));if(family)openSpriteRadar(family,v);};
-  actions.append(button,pinButton(v.id,v.name),find);card.append(name,actions);root.append(card);
+  actions.append(button,find);card.append(name,actions);root.append(card);
  }
 }
 setInterval(()=>{if([...dailyQuestCache.values()].some(state=>state.day!==questDay()))renderDailyQuests();},30000);
@@ -795,7 +795,7 @@ function render(){
  button.className="view";
  button.textContent="Explore variants →";
  body.append(title,badges,count,sub,mastery,mini,button);
- card.append(art,body,pinButton(familyPinId(f),f.name+" family"));
+ card.append(art,body);
  card.onclick=()=>openFamily(f);
  $("grid").append(card);
  }
