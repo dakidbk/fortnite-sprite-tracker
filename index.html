@@ -331,12 +331,13 @@ input::placeholder{color:#8399b8}
 @media(max-width:420px){.quest-actions{justify-content:flex-end;max-width:115px}.quest-actions button{padding:8px 5px;font-size:11px}.filters{gap:2px}.radar-marker{width:32px;height:32px}}
 #siteUpdatesDialog h2{padding-right:35px}#siteUpdatesDialog .sprite-info-close{position:sticky;float:right;top:0;z-index:2}#siteUpdatesDialog li{margin:12px 0}
 .pin-button:disabled{opacity:.45;cursor:not-allowed}.status-pill.pinned{border-color:#c7a54d;background:#4a3b20;color:#ffe7a0}
+#dataWatchDialog h2{padding-right:35px}#dataWatchDialog .sprite-info-close{position:sticky;float:right;top:0;z-index:2}.data-change{padding:12px 0;border-bottom:1px solid var(--border)}.data-change p{margin:5px 0}.data-change strong{overflow-wrap:anywhere}.data-watch-tag{color:#9eefff;font-size:11px;font-weight:850}
 </style>
 </head>
 <body>
 <header class="season-hero">
  <button type="button" id="trackerMenuToggle" aria-label="Open menu" aria-haspopup="true" aria-expanded="false" aria-controls="trackerMenu">☰</button>
- <nav id="trackerMenu" aria-label="Site menu" hidden><button type="button" id="openTrackerAccount" aria-haspopup="dialog" aria-controls="trackerAccountDialog">Account</button><button type="button" id="openTradeInfo">Trade</button><button type="button" id="openCheatCodes" aria-haspopup="dialog" aria-controls="cheatCodesDialog">Cheat Codes</button><button type="button" id="openSiteUpdates" aria-haspopup="dialog" aria-controls="siteUpdatesDialog">What’s New</button></nav>
+ <nav id="trackerMenu" aria-label="Site menu" hidden><button type="button" id="openTrackerAccount" aria-haspopup="dialog" aria-controls="trackerAccountDialog">Account</button><button type="button" id="openTradeInfo">Trade</button><button type="button" id="openCheatCodes" aria-haspopup="dialog" aria-controls="cheatCodesDialog">Cheat Codes</button><button type="button" id="openSiteUpdates" aria-haspopup="dialog" aria-controls="siteUpdatesDialog">What’s New</button><button type="button" id="openDataWatch" aria-haspopup="dialog" aria-controls="dataWatchDialog">Game Data Watch</button></nav>
  <div class="hero-content">
   <div class="hero-kicker"><span class="hero-live-dot"></span> CHAPTER 7 · SEASON 4 · OVERRIDE</div>
   <div class="hero-event">🎃 FORTNITEMARES 2026</div>
@@ -356,11 +357,19 @@ input::placeholder{color:#8399b8}
 <p class="small">Numbered circles mark suggested search areas, not guaranteed spawns. Loot and special variants can have extra requirements. This map is a Chapter 7 Season 4 snapshot from October 18, 2026.</p>
 <p class="small">Sources: <a href="https://fortnite-api.com/" target="_blank" rel="noopener noreferrer">Map: Fortnite-API / Epic Games</a> · <a href="https://beebom.com/fortnite-cheat-master-sprites-locations-powers/" target="_blank" rel="noopener noreferrer">Sprite search areas</a> · <a href="https://www.digitaltq.com/fortnite-sprites-best-routes-locations" target="_blank" rel="noopener noreferrer">General collection routes</a> · <a href="https://fortnite.gg/" target="_blank" rel="noopener noreferrer">Open live interactive map</a></p>
 </section></dialog>
+<dialog id="dataWatchDialog" class="sprite-info-dialog" aria-labelledby="dataWatchTitle"><section class="sprite-guide">
+<button type="button" id="closeDataWatch" class="sprite-info-close" aria-label="Close Game Data Watch">×</button><h2 id="dataWatchTitle">Game Data Watch</h2>
+<p>Compare the published Sprite catalog between checks to spot new variants, changed details, and entries no longer listed.</p>
+<p class="small">Source: <a href="https://fn-api.cc/" target="_blank" rel="noopener noreferrer">FN API</a>, a community data service. This does not inspect your Fortnite installation or unreleased game files. Catalog changes do not confirm future plans or in-game availability.</p>
+<button type="button" id="checkDataWatch" class="find-button">Check now</button><p id="dataWatchStatus" role="status" aria-live="polite"></p><div id="dataWatchSummary"></div><div id="dataWatchHistory"></div>
+<p class="small">Checks run when you load or refresh the Sprite catalog, or press Check now. History is stored in this browser, shared across your collections. The first successful check creates a baseline; it cannot show changes from before that check. No background monitoring runs when this site is closed.</p>
+</section></dialog>
 <dialog id="siteUpdatesDialog" class="sprite-info-dialog" aria-labelledby="siteUpdatesTitle"><section class="sprite-guide">
 <button type="button" id="closeSiteUpdates" class="sprite-info-close" aria-label="Close site updates">×</button>
 <h2 id="siteUpdatesTitle">What’s New</h2>
 <p class="small"><time datetime="2026-10-18">October 18, 2026</time> · Sprite Tracker update</p>
 <h3>New additions</h3>
+<ul><li><strong>Game Data Watch:</strong> Compare published Sprite catalog snapshots and view new, changed, or unlisted entries from the ☰ menu. Findings are data changes, not confirmed future announcements. Added October 25, 2026.</li></ul>
 <ul>
 <li><strong>Daily Quests:</strong> Get up to three suggestions from your missing Chapter 7 Season 4 Sprite variants. Picks stay the same for the day and reset at local midnight. Complete marks a Sprite Owned using your collection’s usual save and account sync.</li>
 <li><strong>Cheat Codes:</strong> Find 55 published Fortnite Lobby Hack codes in the ☰ menu. Search codes or rewards, copy a code, and check story requirements before entering it in Fortnite’s Admin Panel.</li>
@@ -555,6 +564,7 @@ function prepare(data){
    if(!map.has(key))map.set(key,{
     name:base+" Sprite",season:seasonName,
     image:imageOf(v)||imageOf(s),variants:[],release:0,position:map.size,
+    description:typeof s.description==='string'?s.description:'',
     acquisitionHint:typeof s.acquisitionHint==='string'?s.acquisitionHint.trim():''
    });
    const family=map.get(key);
@@ -981,9 +991,48 @@ document.querySelectorAll("[data-filter]").forEach(b=>{
  render();
  };
 });
+const dataWatchKey='spriteDataWatchV1';
+let dataWatchState=null,dataWatchError='';
+try{const stored=JSON.parse(localStorage.getItem(dataWatchKey)||'null');if(stored&&stored.snapshot&&typeof stored.snapshot==='object'&&!Array.isArray(stored.snapshot)&&Array.isArray(stored.history))dataWatchState=stored;}catch{}
+function recordDataWatch(list){
+ const snapshot=Object.fromEntries(list.flatMap(f=>f.variants.map(v=>[v.id,{name:v.name,season:f.season,image:v.image,rarity:v.rarity,cost:v.summonCost,hint:f.acquisitionHint,ability:f.description||''}])));
+ const checkedAt=new Date().toISOString(),previous=dataWatchState?.snapshot,changes=[];
+ const labels={name:'Name',season:'Season',image:'Image',rarity:'Rarity',cost:'Summon cost',hint:'Acquisition clue',ability:'Ability description'};
+ if(previous){
+  for(const [id,row] of Object.entries(snapshot)){
+   if(!Object.hasOwn(previous,id)){changes.push({kind:'Added to catalog',name:row.name,detail:row.season});continue;}
+   const fields=Object.keys(labels).filter(field=>JSON.stringify(previous[id][field]??null)!==JSON.stringify(row[field]??null));
+   if(fields.length)changes.push({kind:'Catalog details changed',name:row.name,detail:fields.map(field=>labels[field]+': '+String(previous[id][field]??'not listed')+' → '+String(row[field]??'not listed')).join(' · ')});
+  }
+  for(const [id,row] of Object.entries(previous))if(!Object.hasOwn(snapshot,id))changes.push({kind:'No longer listed',name:String(row.name||id),detail:'Missing from this catalog response. This does not confirm removal from Fortnite.'});
+ }
+ const history=dataWatchState?.history||[];
+ if(changes.length)history.unshift({at:checkedAt,changes:changes.slice(0,150)});
+ dataWatchState={snapshot,checkedAt,baselineAt:dataWatchState?.baselineAt||checkedAt,history:history.slice(0,12)};
+ dataWatchError='';try{localStorage.setItem(dataWatchKey,JSON.stringify(dataWatchState));}catch{dataWatchError='History could not be saved in this browser; this check is available until you leave the page.';}
+ renderDataWatch();
+}
+function renderDataWatch(){
+ const status=$('dataWatchStatus'),summary=$('dataWatchSummary'),history=$('dataWatchHistory');summary.replaceChildren();history.replaceChildren();
+ $('checkDataWatch').disabled=refreshing;
+ status.textContent=dataWatchError||(refreshing?'Checking the published catalog…':(dataWatchState?'Last successful check: '+new Date(dataWatchState.checkedAt).toLocaleString():'No successful catalog check yet.'));
+ if(!dataWatchState)return;
+ const count=document.createElement('p');count.textContent=Object.keys(dataWatchState.snapshot).length+' catalog variants · Baseline: '+new Date(dataWatchState.baselineAt).toLocaleString();summary.append(count);
+ if(!dataWatchState.history.length){const empty=document.createElement('p');empty.textContent='No changes recorded since this browser’s baseline.';history.append(empty);return;}
+ const heading=document.createElement('h3');heading.textContent='Recent catalog changes';history.append(heading);
+ for(const batch of dataWatchState.history){
+  const title=document.createElement('h4');title.textContent=new Date(batch.at).toLocaleString();history.append(title);
+  for(const change of batch.changes){const row=document.createElement('article');row.className='data-change';const tag=document.createElement('p');tag.className='data-watch-tag';tag.textContent=change.kind+' · DATA FINDING';const name=document.createElement('strong');name.textContent=change.name;const detail=document.createElement('p');detail.className='small';detail.textContent=change.detail;row.append(tag,name,detail);history.append(row);}
+ }
+}
+$('openDataWatch').onclick=()=>{closeTrackerMenu();renderDataWatch();$('dataWatchDialog').showModal();};
+$('closeDataWatch').onclick=()=>$('dataWatchDialog').close();
+$('checkDataWatch').onclick=()=>void refreshSprites(false);
+
 async function refreshSprites(isManual=false){
  if(refreshing)return;
  refreshing=true;
+ renderDataWatch();
  if(isManual){$("loadingScreen").classList.add("visible");document.body.style.overflow="hidden";}
  $("syncStatus").textContent="Checking Sprite catalog…";
  const start=Date.now();
@@ -994,6 +1043,7 @@ async function refreshSprites(isManual=false){
   const updated=prepare(data);
   if(!updated.length)throw Error("No Sprites returned");
   families=updated;
+  recordDataWatch(updated);
   updateNewSpriteAlerts(updated);
   const previousSeason=season;
   setupSeasons();
@@ -1008,11 +1058,13 @@ async function refreshSprites(isManual=false){
   if(isManual)await new Promise(resolve=>setTimeout(resolve,Math.max(0,2100-(Date.now()-start))));
   $("syncStatus").textContent="";
  }catch(error){
+  dataWatchError="Catalog check failed. Your last successful snapshot and history are kept. Try again.";
   $("syncStatus").textContent="Could not refresh Sprites. Try again.";
   if(!families.length)$("message").textContent="Could not load Sprite data. Please try refreshing.";
  }finally{
   if(isManual){$("loadingScreen").classList.remove("visible");document.body.style.overflow=selected?"hidden":"";}
   refreshing=false;
+  renderDataWatch();
  }
 }
 $("showNewButton").onclick=()=>{showNewOnly=!showNewOnly;season="all";$("seasonSelect").value="all";$("showNewButton").textContent=showNewOnly?"Show all":"View new";render();};
