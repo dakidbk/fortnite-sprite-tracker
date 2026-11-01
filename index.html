@@ -571,6 +571,22 @@ const supplementalSpriteNames=[
  ["Lil' Squibbly",true],["Lil' Flacko",true],["Lil' Uzi Vert Jr.",true],
  ["Plundarrgh",true],["Transponder Snail",false]
 ];
+// Actual base Sprite icon URLs from Fortnite.GG; used until FN API has this season.
+const supplementalSpriteArt={
+ "Halfpeel'd":"https://fortnite.gg/img/x/sprites/icons/T_Icon_BR_Creature_Sprite_PeelyBones_L.webp",
+ "Re-Pete":"https://fortnite.gg/img/x/sprites/icons/T_Icon_BR_Creature_Sprite_Parrot_L.webp",
+ "Barry O'Fish":"https://fortnite.gg/img/x/sprites/icons/T_Icon_BR_Creature_Sprite_BarrelOfFish_L.webp",
+ "Chester":"https://fortnite.gg/img/x/sprites/icons/T_Icon_BR_Creature_Sprite_TreasureChest_L.webp",
+ "Exmarks":"https://fortnite.gg/img/x/sprites/icons/T_Icon_BR_Creature_Sprite_TreasureMap_L.webp",
+ "Wayfinder":"https://fortnite.gg/img/x/sprites/icons/T_Icon_BR_Creature_Sprite_Compass_L.webp",
+ "Kelper":"https://fortnite.gg/img/x/sprites/icons/T_Icon_BR_Creature_Sprite_UnbotheredFish_L.webp",
+ "Sweet Dreams":"https://fortnite.gg/img/x/sprites/icons/T_Icon_BR_Creature_Sprite_StarLight_L.webp",
+ "Lil' Squibbly":"https://fortnite.gg/img/x/sprites/icons/T_Icon_BR_Creature_Sprite_SquibblySprite_L.webp",
+ "Lil' Flacko":"https://fortnite.gg/img/x/sprites/icons/T_Icon_BR_Creature_Sprite_PlaymakerBrewery_L.webp",
+ "Lil' Uzi Vert Jr.":"https://fortnite.gg/img/x/sprites/icons/T_Icon_BR_Creature_Sprite_RookGecko_L.webp",
+ "Plundarrgh":"https://fortnite.gg/img/x/sprites/icons/T_Icon_BR_Creature_Sprite_CoinPile_L.webp",
+ "Transponder Snail":"https://fortnite.gg/img/x/sprites/icons/T_Icon_BR_Creature_Sprite_FeedJet_L.webp"
+};
 function addSupplementalSprites(list){
  const existing=new Set(list.flatMap(f=>f.variants.map(v=>v.name.toLowerCase())));
  const extras=[];
@@ -578,9 +594,9 @@ function addSupplementalSprites(list){
   const names=[base,...(hasVariants?["Cursed "+base,"Fortune "+base]:[])];
   const missing=names.filter(name=>!existing.has(name.toLowerCase()));
   if(!missing.length)continue;
-  extras.push({name:base+" Sprite",season:"C7 MS",image:"",
-   variants:missing.map(name=>({id:"supplemental:"+name.toLowerCase(),name,image:"",summonCost:null,rarity:""})),
-   release:0,position:list.length+extras.length,description:"Listed on Fortnite.GG. Artwork is pending FN API data.",acquisitionHint:""});
+  extras.push({name:base+" Sprite",season:"C7 MS",image:supplementalSpriteArt[base]||"",
+   variants:missing.map(name=>({id:"supplemental:"+name.toLowerCase(),name,image:supplementalSpriteArt[base]||"",summonCost:null,rarity:""})),
+   release:0,position:list.length+extras.length,description:"Listed on Fortnite.GG. Variant-specific art will update when available from the catalog.",acquisitionHint:""});
  }
  return list.concat(extras);
 }
