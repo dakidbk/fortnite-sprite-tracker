@@ -556,6 +556,27 @@ function seasonOf(s,v){
  }
  return "Season unknown";
 }
+// Verified on Fortnite.GG; supplemental names appear only when FN API has not yet indexed them.
+// Do not invent images, variant IDs, rarity, or individual season assignments.
+const supplementalSpriteNames=[
+ ["Halfpeel'd",true],["Re-Pete",true],["Barry O'Fish",true],["Chester",true],
+ ["Exmarks",true],["Wayfinder",true],["Kelper",true],["Sweet Dreams",false],
+ ["Lil' Squibbly",true],["Lil' Flacko",true],["Lil' Uzi Vert Jr.",true],
+ ["Plundarrgh",true],["Transponder Snail",false]
+];
+function addSupplementalSprites(list){
+ const existing=new Set(list.flatMap(f=>f.variants.map(v=>v.name.toLowerCase())));
+ const extras=[];
+ for(const [base,hasVariants] of supplementalSpriteNames){
+  const names=[base,...(hasVariants?["Cursed "+base,"Fortune "+base]:[])];
+  const missing=names.filter(name=>!existing.has(name.toLowerCase()));
+  if(!missing.length)continue;
+  extras.push({name:base+" Sprite",season:"New Sprites · season pending",image:"",
+   variants:missing.map(name=>({id:"supplemental:"+name.toLowerCase(),name,image:"",summonCost:null,rarity:""})),
+   release:0,position:list.length+extras.length,description:"Listed on Fortnite.GG. Artwork and exact season are pending FN API data.",acquisitionHint:""});
+ }
+ return list.concat(extras);
+}
 function prepare(data){
  const map=new Map();
  for(const s of getList(data)){
@@ -1051,7 +1072,7 @@ async function refreshSprites(isManual=false){
   const data=await response.json();
   const updated=prepare(data);
   if(!updated.length)throw Error("No Sprites returned");
-  families=updated;
+  families=addSupplementalSprites(updated);
   recordDataWatch(updated);
   updateNewSpriteAlerts(updated);
   const previousSeason=season;
