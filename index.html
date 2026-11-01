@@ -340,6 +340,19 @@ body[data-season-theme="chapter7"]{background-image:radial-gradient(ellipse 110%
 header{background:linear-gradient(130deg,#1e3354e8,#10172be8 75%);backdrop-filter:blur(5px)}
 @media(prefers-reduced-motion:reduce){body::before{animation:none}}
 .sprite-art-unavailable{position:relative}.sprite-art-unavailable::after{content:"Artwork updating";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;letter-spacing:.04em;color:#b5cbe6;pointer-events:none;text-align:center;padding:8px}
+/* Visible seasonal hero redesign; override legacy Fortnitemares purple/green header. */
+body .season-hero{background:radial-gradient(ellipse at 85% 12%,rgba(52,215,238,.33),transparent 47%),radial-gradient(ellipse at 10% 100%,rgba(87,129,255,.25),transparent 55%),linear-gradient(125deg,#08273d,#102b46 50%,#0b172b);border-bottom:4px solid #5de8ff}
+body .season-hero::before{background:repeating-linear-gradient(145deg,transparent 0 72px,rgba(120,225,255,.06) 73px 74px)}
+body .season-hero h1::first-letter{color:#5de8ff}
+body .hero-kicker{border-color:#66eaff80;background:#0a3446;color:#a9f5ff}
+body .hero-live-dot{background:#5de8ff;box-shadow:0 0 12px #5de8ff}
+body .hero-event{color:#8feaff}
+body .hero-code{border-color:#5de8ff;background:#071e30}
+body .hero-code strong{color:#9af0ff}
+body .hero-code button{background:#67e5ff;color:#062437}
+body[data-season-theme="mini"] .season-hero{background:radial-gradient(ellipse at 85% 10%,rgba(255,126,204,.35),transparent 48%),radial-gradient(ellipse at 8% 100%,rgba(80,223,224,.24),transparent 54%),linear-gradient(125deg,#2d1546,#182846 55%,#0a2434);border-bottom-color:#e9a5ff}
+body[data-season-theme="mini"] .hero-kicker{border-color:#efaaff88;color:#ffe1ff;background:#3c2450}
+body[data-season-theme="mini"] .hero-event{color:#ffbce9}
 </style>
 </head>
 <body>
