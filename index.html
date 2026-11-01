@@ -353,6 +353,26 @@ body .hero-code button{background:#67e5ff;color:#062437}
 body[data-season-theme="mini"] .season-hero{background:radial-gradient(ellipse at 85% 10%,rgba(255,126,204,.35),transparent 48%),radial-gradient(ellipse at 8% 100%,rgba(80,223,224,.24),transparent 54%),linear-gradient(125deg,#2d1546,#182846 55%,#0a2434);border-bottom-color:#e9a5ff}
 body[data-season-theme="mini"] .hero-kicker{border-color:#efaaff88;color:#ffe1ff;background:#3c2450}
 body[data-season-theme="mini"] .hero-event{color:#ffbce9}
+/* Treasure Hunters 2026: warm pirate chest, antique brass and parchment palette. */
+:root{--bg:#100e0c;--surface:#241b15;--surface2:#33271c;--border:rgba(230,180,92,.26);--text:#fff4da;--muted:#c5b397;--accent:#f3c66d}
+body,body[data-season-theme="mini"],body[data-season-theme="chapter7"]{background-color:#100e0c;background-image:radial-gradient(ellipse 95% 40% at 80% 0%,rgba(177,113,30,.25),transparent 75%),radial-gradient(ellipse 80% 60% at 0% 35%,rgba(85,59,30,.23),transparent 70%),repeating-linear-gradient(100deg,transparent 0 85px,rgba(210,160,80,.018) 86px 87px),linear-gradient(155deg,#25190f,#100e0c 60%,#18140e)}
+body .season-hero,body[data-season-theme="mini"] .season-hero{background:radial-gradient(ellipse at 85% 10%,rgba(245,186,75,.27),transparent 52%),radial-gradient(ellipse at 5% 100%,rgba(95,56,22,.48),transparent 52%),repeating-linear-gradient(0deg,transparent 0 37px,rgba(0,0,0,.09) 38px 40px),linear-gradient(120deg,#26160d,#49301b 52%,#19130e);border-bottom:4px solid #d9a64b}
+body .season-hero::before{background:repeating-linear-gradient(90deg,transparent 0 125px,rgba(247,188,87,.05) 126px 128px)}
+body .season-hero h1::first-letter{color:#f7cf77}
+body .hero-kicker,body[data-season-theme="mini"] .hero-kicker{border-color:#dcb66a;background:#2c2014;color:#ffe3a1}
+body .hero-live-dot{background:#f5c661;box-shadow:0 0 12px #eab95b}
+body .hero-event,body[data-season-theme="mini"] .hero-event{color:#f3d59a}
+body .hero-code{border-color:#c99946;background:#1c170fe8}
+body .hero-code strong{color:#ffd47e}
+body .hero-code button{background:linear-gradient(#ffe19b,#e9ae4d);color:#30200d}
+body .daily-quests,body .panel{background:linear-gradient(135deg,#342619,#1d1916);border-color:#8e6a39}
+body .daily-quests h2,body .big{color:#f2c56d}
+body #seasonSelect,body #sortSelect,body input{background:#241e19;border-color:#8b6b43;color:#fff1d6}
+body #trackerMenuToggle{background:#2b2117;border-color:#d3a65b;color:#ffdfa1}
+body #trackerMenu{background:#251d15;border-color:#a57c42}
+body #trackerMenu button:hover,body #trackerMenu button:focus-visible{background:#4b3520}
+body .quest-card{background:#2b211a;border-color:#745634}
+body .quest-card button{background:#e6b45c;color:#26190c}
 </style>
 </head>
 <body>
@@ -360,8 +380,8 @@ body[data-season-theme="mini"] .hero-event{color:#ffbce9}
  <button type="button" id="trackerMenuToggle" aria-label="Open menu" aria-haspopup="true" aria-expanded="false" aria-controls="trackerMenu">☰</button>
  <nav id="trackerMenu" aria-label="Site menu" hidden><button type="button" id="openTrackerAccount" aria-haspopup="dialog" aria-controls="trackerAccountDialog">Account</button><button type="button" id="openTradeInfo">Trade</button><button type="button" id="openCheatCodes" aria-haspopup="dialog" aria-controls="cheatCodesDialog">Cheat Codes</button><button type="button" id="openSiteUpdates" aria-haspopup="dialog" aria-controls="siteUpdatesDialog">Latest Updates</button><button type="button" id="openDataWatch" aria-haspopup="dialog" aria-controls="dataWatchDialog">Game Data Watch</button></nav>
  <div class="hero-content">
-  <div class="hero-kicker"><span class="hero-live-dot"></span> CHAPTER 7 · SPRITE COLLECTION</div>
-  <div class="hero-event">✦ CURRENT SEASON · SPRITE TRACKER</div>
+  <div class="hero-kicker"><span class="hero-live-dot"></span> FORTNITE · TREASURE HUNTERS</div>
+  <div class="hero-event">🏴‍☠️ TREASURE HUNTERS · MINI SEASON</div>
   <h1>SPRITE<br>TRACKER</h1>
   <p>COLLECT THE SPRITES. MASTER EVERY VARIANT.</p>
   <div class="hero-code"><div><span class="hero-code-label">SUPPORT THE CREATOR</span><strong>DAKIDBK</strong></div><button type="button" id="copyCreatorCode" aria-label="Copy creator code DAKIDBK">⧉ COPY CODE</button></div>
