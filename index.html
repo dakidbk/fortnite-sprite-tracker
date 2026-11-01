@@ -643,22 +643,18 @@ function updateNewSpriteAlerts(list){
 function setupSeasons(){
  const select=$("seasonSelect");
  const names=[...new Set(families.map(f=>f.season))].sort((a,b)=>{
-  if(a==="Season unknown")return 1;
-  if(b==="Season unknown")return -1;
+  const parse=name=>{const m=String(name).match(/(?:ch(?:apter)?\s*)(\d+)\s*(?:s(?:eason)?\s*(\d+)|(?:mini\s*season|ms))/i);return m?[Number(m[1]),m[2]?Number(m[2]):0]:null;};
+  const x=parse(a),y=parse(b);
+  if(x&&y)return y[0]-x[0]||y[1]-x[1];
+  if(x)return -1;if(y)return 1;
+  if(a==="Season unknown")return 1;if(b==="Season unknown")return -1;
   return b.localeCompare(a,undefined,{numeric:true});
  });
  select.replaceChildren();
- const all=document.createElement("option");
- all.value="all";all.textContent="All seasons (combined)";
- select.append(all);
- for(const name of names){
-  const option=document.createElement("option");
-  option.value=name;option.textContent=name;
-  select.append(option);
- }
- const current=names.find(n=>/^(?:C7\s*MS|Chapter\s*7\s*Mini\s*Season)$/i.test(n));
- season=current||"all";
- select.value=season;
+ select.add(new Option("All seasons (combined)","all"));
+ const current=names.find(n=>/^(?:ch(?:apter)?\s*\d+\s*(?:s(?:eason)?\s*\d+|ms|mini\s*season))$/i.test(n))||names.find(n=>n!=="Season unknown");
+ for(const name of names)select.add(new Option(name===current?name+" · Latest":name,name));
+ season=current||"all";select.value=season;
 }
 function owned(v){return !!saved[v.id]}
 function isMastered(v){return owned(v)&&!!mastered[v.id]}
@@ -1076,7 +1072,7 @@ async function refreshSprites(isManual=false){
   updateNewSpriteAlerts(updated);
   const previousSeason=season;
   setupSeasons();
-  if(previousSeason!=="all"&&[...$("seasonSelect").options].some(o=>o.value===previousSeason)){
+  if(previousSeason!=="all"&&previousSeason!==season&&[...$("seasonSelect").options].some(o=>o.value===previousSeason)){
    season=previousSeason;$("seasonSelect").value=season;
   }
   render();
