@@ -640,10 +640,12 @@ function updateNewSpriteAlerts(list){
  $("newAlertText").textContent=count?("NEW: "+count+" new Sprite variant"+(count===1?"":"s")+" found!"):"";
  if(!count)showNewOnly=false;
 }
+// Keep known Sprite seasons visible even if the upstream catalog omits one.
+const knownSpriteSeasons=["Ch7S4","CH7S3","C7 MS"];
 function setupSeasons(){
  const select=$("seasonSelect");
- const names=[...new Set(families.map(f=>f.season))].sort((a,b)=>{
-  const parse=name=>{const m=String(name).match(/(?:ch(?:apter)?\s*)(\d+)\s*(?:s(?:eason)?\s*(\d+)|(?:mini\s*season|ms))/i);return m?[Number(m[1]),m[2]?Number(m[2]):0]:null;};
+ const names=[...new Set([...knownSpriteSeasons,...families.map(f=>f.season)])].sort((a,b)=>{
+  const parse=name=>{const m=String(name).match(/(?:ch(?:apter)?\s*|c)(\d+)\s*(?:s(?:eason)?\s*(\d+)|(?:mini\s*season|ms))/i);return m?[Number(m[1]),m[2]?Number(m[2]):0]:null;};
   const x=parse(a),y=parse(b);
   if(x&&y)return y[0]-x[0]||y[1]-x[1];
   if(x)return -1;if(y)return 1;
@@ -652,7 +654,7 @@ function setupSeasons(){
  });
  select.replaceChildren();
  select.add(new Option("All seasons (combined)","all"));
- const current=names.find(n=>/^(?:ch(?:apter)?\s*\d+\s*(?:s(?:eason)?\s*\d+|ms|mini\s*season))$/i.test(n))||names.find(n=>n!=="Season unknown");
+ const current=names.find(n=>/^(?:ch(?:apter)?\s*|c)\d+\s*(?:s(?:eason)?\s*\d+|ms|mini\s*season)$/i.test(n))||names.find(n=>n!=="Season unknown");
  for(const name of names)select.add(new Option(name===current?name+" · Latest":name,name));
  season=current||"all";select.value=season;
 }
