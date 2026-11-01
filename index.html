@@ -332,7 +332,7 @@ input::placeholder{color:#8399b8}
 #siteUpdatesDialog h2{padding-right:35px}#siteUpdatesDialog .sprite-info-close{position:sticky;float:right;top:0;z-index:2}#siteUpdatesDialog li{margin:12px 0}
 .pin-button:disabled{opacity:.45;cursor:not-allowed}.status-pill.pinned{border-color:#c7a54d;background:#4a3b20;color:#ffe7a0}
 #dataWatchDialog h2{padding-right:35px}#dataWatchDialog .sprite-info-close{position:sticky;float:right;top:0;z-index:2}.data-change{padding:12px 0;border-bottom:1px solid var(--border)}.data-change p{margin:5px 0}.data-change strong{overflow-wrap:anywhere}.data-watch-tag{color:#9eefff;font-size:11px;font-weight:850}
-</style>
+.catalog-update-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 18px;padding:12px 14px;border:1px solid #345879;border-radius:14px;background:linear-gradient(120deg,#183451,#15243c);color:#c5e7ff;font-size:12px;font-weight:700}.catalog-update-bar button{flex:none;border:1px solid #58c8ef;border-radius:10px;background:#205678;color:#fff;padding:10px 12px;font-weight:800;cursor:pointer}@media(max-width:480px){.catalog-update-bar{flex-direction:column;align-items:stretch}.catalog-update-bar button{width:100%}}</style>
 </head>
 <body>
 <header class="season-hero">
@@ -431,7 +431,7 @@ input::placeholder{color:#8399b8}
 <p id="dailyQuestStatus" class="small" role="status" aria-live="polite">Loading your quests…</p>
 <div id="dailyQuestList" class="quest-list"></div>
 </section>
-<div class="season-label">SPRITE SEASON</div>
+<div class="catalog-update-bar"><span>Sprite catalog updates from Fortnite data</span><button type="button" id="refreshSpriteCatalog">↻ Check for new Sprites</button></div><div class="season-label">SPRITE SEASON</div>
 <select id="seasonSelect" aria-label="Choose Sprite season"><option value="all">All seasons</option></select>
 <label class="season-label" for="sortSelect" style="display:block">SORT SPRITES</label>
 <select id="sortSelect" aria-label="Sort Sprites by newest additions"><option value="newest">Newest → Oldest</option><option value="oldest">Oldest → Newest</option></select>
@@ -1028,10 +1028,15 @@ function renderDataWatch(){
 $('openDataWatch').onclick=()=>{closeTrackerMenu();renderDataWatch();$('dataWatchDialog').showModal();};
 $('closeDataWatch').onclick=()=>$('dataWatchDialog').close();
 $('checkDataWatch').onclick=()=>void refreshSprites(false);
+$('refreshSpriteCatalog').onclick=()=>void refreshSprites(false);
+setInterval(()=>{if(!document.hidden)void refreshSprites(false);},10*60*1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastCatalogCheck>5*60*1000)void refreshSprites(false);});
+let lastCatalogCheck=0;
 
 async function refreshSprites(isManual=false){
  if(refreshing)return;
  refreshing=true;
+ lastCatalogCheck=Date.now();
  renderDataWatch();
  if(isManual){$("loadingScreen").classList.add("visible");document.body.style.overflow="hidden";}
  $("syncStatus").textContent="Checking Sprite catalog…";
