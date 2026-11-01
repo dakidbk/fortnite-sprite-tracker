@@ -571,9 +571,9 @@ function addSupplementalSprites(list){
   const names=[base,...(hasVariants?["Cursed "+base,"Fortune "+base]:[])];
   const missing=names.filter(name=>!existing.has(name.toLowerCase()));
   if(!missing.length)continue;
-  extras.push({name:base+" Sprite",season:"New Sprites · season pending",image:"",
+  extras.push({name:base+" Sprite",season:"C7 MS",image:"",
    variants:missing.map(name=>({id:"supplemental:"+name.toLowerCase(),name,image:"",summonCost:null,rarity:""})),
-   release:0,position:list.length+extras.length,description:"Listed on Fortnite.GG. Artwork and exact season are pending FN API data.",acquisitionHint:""});
+   release:0,position:list.length+extras.length,description:"Listed on Fortnite.GG. Artwork is pending FN API data.",acquisitionHint:""});
  }
  return list.concat(extras);
 }
@@ -656,9 +656,8 @@ function setupSeasons(){
   option.value=name;option.textContent=name;
   select.append(option);
  }
- const known=names.filter(n=>n!=="Season unknown");
- // Prefer a known season when one exists, to avoid mixing older and newer Sprites.
- season="all";
+ const current=names.find(n=>/^(?:C7\s*MS|Chapter\s*7\s*Mini\s*Season)$/i.test(n));
+ season=current||"all";
  select.value=season;
 }
 function owned(v){return !!saved[v.id]}
@@ -1077,7 +1076,7 @@ async function refreshSprites(isManual=false){
   updateNewSpriteAlerts(updated);
   const previousSeason=season;
   setupSeasons();
-  if([...$("seasonSelect").options].some(o=>o.value===previousSeason)){
+  if(previousSeason!=="all"&&[...$("seasonSelect").options].some(o=>o.value===previousSeason)){
    season=previousSeason;$("seasonSelect").value=season;
   }
   render();
