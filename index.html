@@ -339,6 +339,7 @@ body[data-season-theme="mini"]{background-image:radial-gradient(ellipse 100% 50%
 body[data-season-theme="chapter7"]{background-image:radial-gradient(ellipse 110% 44% at 75% 4%,rgba(61,162,227,.28),transparent 75%),radial-gradient(ellipse 90% 50% at 10% 30%,rgba(116,84,205,.18),transparent 74%),linear-gradient(155deg,#112d43,#080d19 55%,#0c1529)}
 header{background:linear-gradient(130deg,#1e3354e8,#10172be8 75%);backdrop-filter:blur(5px)}
 @media(prefers-reduced-motion:reduce){body::before{animation:none}}
+.sprite-art-unavailable{position:relative}.sprite-art-unavailable::after{content:"Artwork updating";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;letter-spacing:.04em;color:#b5cbe6;pointer-events:none;text-align:center;padding:8px}
 </style>
 </head>
 <body>
@@ -669,7 +670,7 @@ function updateSeasonBackdrop(){const current=String(season==="all"?$("seasonSel
 function setupSeasons(){
  const select=$("seasonSelect");
  const names=[...new Set([...knownSpriteSeasons,...families.map(f=>f.season)])].sort((a,b)=>{
-  const parse=name=>{const m=String(name).match(/(?:ch(?:apter)?\s*|c)(\d+)\s*(?:s(?:eason)?\s*(\d+)|(?:mini\s*season|ms))/i);return m?[Number(m[1]),m[2]?Number(m[2]):0]:null;};
+  const parse=name=>{const m=String(name).match(/(?:ch(?:apter)?\s*|c)(\d+)\s*(?:s(?:eason)?\s*(\d+)|(?:mini\s*season|ms))/i);return m?[Number(m[1]),m[2]?Number(m[2]):99]:null;};
   const x=parse(a),y=parse(b);
   if(x&&y)return y[0]-x[0]||y[1]-x[1];
   if(x)return -1;if(y)return 1;
@@ -678,7 +679,7 @@ function setupSeasons(){
  });
  select.replaceChildren();
  select.add(new Option("All seasons (combined)","all"));
- const current=names.find(n=>/^(?:ch(?:apter)?\s*|c)\d+\s*(?:s(?:eason)?\s*\d+|ms|mini\s*season)$/i.test(n))||names.find(n=>n!=="Season unknown");
+ const current=names.find(n=>/^(?:c7\s*ms|chapter\s*7\s*mini\s*season)$/i.test(n))||names.find(n=>/^(?:ch(?:apter)?\s*|c)\d+\s*(?:s(?:eason)?\s*\d+|ms|mini\s*season)$/i.test(n))||names.find(n=>n!=="Season unknown");
  for(const name of names)select.add(new Option(name===current?name+" · Latest":name,name));
  season=current||"all";select.value=season;updateSeasonBackdrop();
 }
@@ -702,6 +703,7 @@ function makeImage(src,alt){
  img.loading="lazy";
  img.decoding="async";
  img.addEventListener("load",()=>{if(img.naturalWidth&&img.naturalWidth<180)img.classList.add("low-res")},{once:true});
+ img.addEventListener("error",()=>{const holder=img.parentElement;if(holder){holder.classList.add("sprite-art-unavailable");holder.setAttribute("title","Artwork temporarily unavailable");}img.remove();},{once:true});
  return img;
 }
 // Persist today's picks separately for each guest/account collection; ownership stays authoritative.
