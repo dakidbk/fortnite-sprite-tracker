@@ -345,10 +345,10 @@ header{background:linear-gradient(130deg,#1e3354e8,#10172be8 75%);backdrop-filte
 <body>
 <header class="season-hero">
  <button type="button" id="trackerMenuToggle" aria-label="Open menu" aria-haspopup="true" aria-expanded="false" aria-controls="trackerMenu">☰</button>
- <nav id="trackerMenu" aria-label="Site menu" hidden><button type="button" id="openTrackerAccount" aria-haspopup="dialog" aria-controls="trackerAccountDialog">Account</button><button type="button" id="openTradeInfo">Trade</button><button type="button" id="openCheatCodes" aria-haspopup="dialog" aria-controls="cheatCodesDialog">Cheat Codes</button><button type="button" id="openSiteUpdates" aria-haspopup="dialog" aria-controls="siteUpdatesDialog">What’s New</button><button type="button" id="openDataWatch" aria-haspopup="dialog" aria-controls="dataWatchDialog">Game Data Watch</button></nav>
+ <nav id="trackerMenu" aria-label="Site menu" hidden><button type="button" id="openTrackerAccount" aria-haspopup="dialog" aria-controls="trackerAccountDialog">Account</button><button type="button" id="openTradeInfo">Trade</button><button type="button" id="openCheatCodes" aria-haspopup="dialog" aria-controls="cheatCodesDialog">Cheat Codes</button><button type="button" id="openSiteUpdates" aria-haspopup="dialog" aria-controls="siteUpdatesDialog">Latest Updates</button><button type="button" id="openDataWatch" aria-haspopup="dialog" aria-controls="dataWatchDialog">Game Data Watch</button></nav>
  <div class="hero-content">
-  <div class="hero-kicker"><span class="hero-live-dot"></span> CHAPTER 7 · SEASON 4 · OVERRIDE</div>
-  <div class="hero-event">🎃 FORTNITEMARES 2026</div>
+  <div class="hero-kicker"><span class="hero-live-dot"></span> CHAPTER 7 · SPRITE COLLECTION</div>
+  <div class="hero-event">✦ CURRENT SEASON · SPRITE TRACKER</div>
   <h1>SPRITE<br>TRACKER</h1>
   <p>COLLECT THE SPRITES. MASTER EVERY VARIANT.</p>
   <div class="hero-code"><div><span class="hero-code-label">SUPPORT THE CREATOR</span><strong>DAKIDBK</strong></div><button type="button" id="copyCreatorCode" aria-label="Copy creator code DAKIDBK">⧉ COPY CODE</button></div>
@@ -435,7 +435,7 @@ header{background:linear-gradient(130deg,#1e3354e8,#10172be8 75%);backdrop-filte
 <div id="newAlert" class="new-alert" role="status" aria-live="polite"><span id="newAlertText"></span><button type="button" id="showNewButton">View new</button></div>
 <section id="dailyQuests" class="daily-quests" aria-labelledby="dailyQuestTitle">
 <h2 id="dailyQuestTitle">Daily Quests</h2>
-<p class="small">Collect today's suggested missing Chapter 7 Season 4 variants. Complete marks them Owned. Resets at local midnight.</p>
+<p class="small">Collect today's suggested missing Sprites from your selected season. Complete marks them Owned. Resets at local midnight.</p>
 <p id="dailyQuestStatus" class="small" role="status" aria-live="polite">Loading your quests…</p>
 <div id="dailyQuestList" class="quest-list"></div>
 </section>
@@ -723,7 +723,8 @@ function renderDailyQuests(){
  if(questsLocked()){status.textContent='Waiting for your account collection. Retry saving under Account if needed.';return;}
  if(!families.length){status.textContent='Quests will appear when the Sprite catalog loads.';return;}
  const day=questDay(),key='spriteDailyQuestsV1:'+ownedStorageKey;
- const questFamilies=families.filter(f=>String(f.season).toUpperCase()==='CH7S4');
+ const questSeason=season==='all'?($('seasonSelect').options[1]?.value||''):season;
+ const questFamilies=families.filter(f=>String(f.season).toLowerCase()===String(questSeason).toLowerCase());
  const all=new Map(questFamilies.flatMap(f=>f.variants).map(v=>[v.id,v]));
  let state=dailyQuestCache.get(key);
  if(!state){try{state=JSON.parse(localStorage.getItem(key)||'null');}catch{}}
@@ -736,7 +737,7 @@ function renderDailyQuests(){
  dailyQuestCache.set(key,state);
  try{localStorage.setItem(key,JSON.stringify(state));}catch{}
  const completed=state.ids.filter(id=>owned(all.get(id))).length;
- status.textContent=state.ids.length?completed+' / '+state.ids.length+' completed today':(all.size?'All Chapter 7 Season 4 Sprites owned! Check back after new variants arrive.':'No Chapter 7 Season 4 Sprites available in the catalog yet.');
+ status.textContent=state.ids.length?completed+' / '+state.ids.length+' completed today':(all.size?'All Sprites for this season owned! Check back after new variants arrive.':'No Sprites for this season available in the catalog yet.');
  for(const id of state.ids){
   const v=all.get(id),card=document.createElement('article');card.className='quest-card';
   if(v.image)card.append(makeImage(v.image,v.name));
