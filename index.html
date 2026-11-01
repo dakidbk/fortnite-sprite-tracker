@@ -540,6 +540,10 @@ function getList(data){
 }
 function seasonOf(s,v){
  // Never infer a season from a Sprite's name or current calendar date.
+ // The Sprite API identifies season-specific catalogs through library IDs.
+ // Prefer these identifiers so newly released seasons appear even without a season field.
+ const library=[v.library,s.library,v.libraryId,s.libraryId,v.spriteLibrary,s.spriteLibrary,v.libraryName,s.libraryName].find(x=>typeof x==="string"&&/SpriteLibrary_Ch\d+(?:S\d+|MS)/i.test(x));
+ if(library){const match=library.match(/SpriteLibrary_Ch(\d+)(?:S(\d+)|(MS))/i);if(match)return match[3]?"Chapter "+match[1]+" Mini Season":"Chapter "+match[1]+" Season "+match[2];}
  const values=[v.season,s.season,v.introduction?.season,s.introduction?.season,
  v.introduced?.season,s.introduced?.season,v.releaseSeason,s.releaseSeason,
  v.battlePassSeason,s.battlePassSeason,v.chapterSeason,s.chapterSeason];
