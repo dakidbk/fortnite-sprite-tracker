@@ -8,6 +8,8 @@ const M = {
   oak: m('#a7835e', 0, 1, .25), walnut: m('#76583e', 0, 1, .25), copper: m('#ad8660', 0, 1, .41),
   sage: m('#728f80', 0, 1, .26), arcade: m('#98c8b3', .34), black: m('#1b221f'), chrome: m('#9da59b', 0, 1, .72)
 };
+const neon = m('#ff6051', 1.35);
+const aisleLight = m('#ffb078', 1.05);
 const random = seeded(9541);
 const pick = array => array[Math.floor(random() * array.length)];
 const rectangle = (x, z, w, d, height) => [x - w / 2, x + w / 2, z - d / 2, z + d / 2, height];
@@ -101,17 +103,22 @@ function controller(ctx, x, y, w, color, filled = false) {
 function storeSign() {
   return surface(1440, 220, (ctx, w, h) => {
     const face = ctx.createLinearGradient(0,0,0,h);
-    face.addColorStop(0,'#3e4540'); face.addColorStop(1,'#303631');
+    face.addColorStop(0,'#301b2a'); face.addColorStop(1,'#181520');
     ctx.fillStyle = face; ctx.fillRect(0,0,w,h);
-    ctx.fillStyle = '#7e887d'; ctx.fillRect(377,49,2,125);
-    ctx.fillStyle = '#4d6357'; ctx.fillRect(204,52,135,117);
-    controller(ctx,221,67,102,'#f2efe4');
-    ctx.font = `700 104px ${SIGN_FONT}`;
-    ctx.fillStyle = '#f3efe2';
-    ctx.fillText('GAME STORE',430,124,804);
-    ctx.font = `700 28px ${SIGN_FONT}`;
-    ctx.fillStyle = '#dec39a';
-    ctx.fillText('N O V E M B E R    /    H A R V E S T',436,170);
+    ctx.strokeStyle = '#743843'; ctx.lineWidth = 3;
+    ctx.strokeRect(17,17,w-34,h-34);
+    ctx.fillStyle = '#f56c58'; ctx.fillRect(31,42,6,136);
+    ctx.fillRect(w-37,42,6,136);
+    ctx.save();
+    ctx.shadowColor = '#ff533d'; ctx.shadowBlur = 26;
+    controller(ctx,132,57,135,'#ffab8d');
+    ctx.font = `900 116px ${SIGN_FONT}`;
+    ctx.fillStyle = '#fff0da';
+    ctx.fillText('GAME STORE',309,128,1010);
+    ctx.restore();
+    ctx.font = `700 31px ${SIGN_FONT}`;
+    ctx.fillStyle = '#ffc6a1';
+    ctx.fillText('A F T E R   H O U R S',319,178);
   });
 }
 
@@ -308,8 +315,9 @@ function clip(points, distance) {
 }
 
 function floorTiles(mesh) {
-  const outer = ['#7f827b','#85867e','#797d75','#81847e','#787d76','#878880','#7b7e76','#85877f'].map(c=>m(c,0,1,.24));
-  const inner = ['#a29e8e','#9b9a8c','#a4a090','#a9a495','#a09d90','#9d9c90'].map(c=>m(c,0,1,.27));
+  const outer = ['#747686','#7a788a','#666b80','#77778a','#6c7285','#83808e','#6c7082','#7e7d8c'].map(c=>m(c,0,1,.24));
+  const inner = ['#b1a18c','#a39483','#b0a391','#bdac96','#aa9b8d','#9e9284'].map(c=>m(c,0,1,.27));
+  const runner = [m('#6c484d',0,1,.24),m('#795157',0,1,.24)];
   const width = .715, depth = .718, gap = .017;
   const bands = [[DECK.back+.02, STORE.taperEnd], [STORE.taperEnd, STORE.taperStart], [STORE.taperStart, DECK.front-.02]];
   const edge = z => widthAt(z, DECK.frontHalf-.02, DECK.rearHalf-.02);
@@ -326,7 +334,10 @@ function floorTiles(mesh) {
           pts = clip(pts, ([x,z]) => DECK.front + porchCornerX - s*x - z);
         }
         if (pts.length < 3) continue;
-        const mat = back < -.14 && Math.abs((r+l)/2) < storeHalfWidth((back+front)/2) ? pick(inner) : pick(outer);
+        const center = Math.abs((r+l)/2);
+        const indoors = back < -.14 && center < storeHalfWidth((back+front)/2);
+        const base = indoors ? pick(inner) : pick(outer);
+        const mat = indoors && center < 1.12 && back > -16.75 ? runner[Math.abs(zi+xi)%2] : base;
         const uv = ([x,z])=>[(x-l)/width,(tileFront-z)/depth];
         for (let i=1; i<pts.length-1; i++) {
           const p = [pts[0],pts[i],pts[i+1]];
@@ -479,11 +490,12 @@ function storefront(mesh, glass, posters) {
   mesh.block(0,4.846,-3.23,7.52,.205,4.88,.08,M.dark);
   for (let i=1; i<4; i++) {
     const [x,z]=roof[i], [x2,z2]=roof[i+1];
-    beam(mesh,[x,4.366,z+.011],[x2,4.366,z2+.011],.023,M.copper);
-    beam(mesh,[x,4.111,z+.013],[x2,4.111,z2+.013],.014,M.steel);
+    beam(mesh,[x,4.366,z+.026],[x2,4.366,z2+.026],.031,neon);
+    beam(mesh,[x,4.111,z+.026],[x2,4.111,z2+.026],.018,aisleLight);
   }
   mesh.block(0,4.94,.79,9.35,1.27,.61,.07,M.dark);
-  posters.front(0,4.94,1.101,9.18,1.12,m('#ffffff',.82));
+  posters.front(0,4.94,1.101,9.18,1.12,M.white);
+  for (const y of [4.34,5.54]) mesh.box(0,y,1.111,9.22,.027,.027,neon);
 }
 
 function door(s) {
@@ -746,6 +758,9 @@ function interior(geo, cases, display, harvest, logos, labels, stock) {
     const y=z < STORE.taperStart ? 4.12 : 3.56;
     const span=storeHalfWidth(z)-.25;
     geo.box(0,y+.085,z,span*2,.115,.074,M.trim);
+    if (z < STORE.taperStart) {
+      for (const x of [-1.18,1.18]) geo.box(x,y-.055,z,.045,.032,1.80,aisleLight);
+    }
     const fixtures=z<STORE.taperStart ? [-.76,-.4,0,.4,.76] : [-.56,0,.56];
     for (const offset of fixtures) {
       const x=offset*span;
@@ -795,6 +810,7 @@ function interior(geo, cases, display, harvest, logos, labels, stock) {
   geo.block(x,1.126,z,w+.11,.12,d+.10,.048,M.ceramic);
   oakSlats(geo,x,.578,edge+.012,w-.15,.87,.13);
   geo.box(x,.14,edge+.018,w-.24,.16,.041,M.dark);
+  geo.box(x,.99,edge+.022,w-.18,.055,.046,neon);
   geo.box(x-.57,1.25,z-.10,.42,.042,.30,M.black);
   geo.box(x-.57,1.40,z-.13,.08,.29,.078,M.steel);
   geo.block(x-.57,1.62,z-.18,.63,.43,.094,.026,M.dark);
@@ -1034,14 +1050,15 @@ export function createWorld(renderer, coverAtlases) {
   }
   renderer.lights([
     [[-4.4,3.65,.95],'#ffd6a4',5.5,1.23],[[4.55,3.65,.97],'#ffe0b6',5.7,1.22],
-    [[0,3.68,1.19],'#ffe4bd',6.1,1.13],[[0,3.31,-2.90],'#fff1db',7.0,1.16],
+    [[0,3.68,1.19],'#ff9b86',6.9,1.16],[[0,3.31,-2.90],'#fff1db',7.0,1.16],
     [[-4.48,3.20,-3.3],'#fff0d6',6.0,1.13],[[4.0,3.23,-4.7],'#fff1db',6.3,1.14],
-    [[CABINET.x,2.49,CABINET.z+.54],'#b4d8c5',4.6,.78],[[0,2.34,6.00],'#bdcef2',7.0,.56],
+    [[CABINET.x,2.49,CABINET.z+.54],'#b4d8c5',4.6,.78],[[0,2.34,6.00],'#a9b8ff',8.0,.81],
     [[-porchRailX,1.42,porchRailFront-.13],'#ffd6a2',4.8,.94],[[porchRailX,1.42,porchRailFront-.13],'#ffd6a2',4.8,.94],
     [[-3.53,3.23,-.53],'#ffebd3',5.05,1.12],[[4.3,3.21,-.60],'#ffedd3',5.05,1.13],
     [[0,3.77,-7.30],'#fff0d9',6.4,1.20],[[0,3.85,-11.24],'#fff1d9',6.2,1.16],
     [[-6.74,3.73,-9.21],'#fff0d9',6.05,1.23],[[-7.31,3.56,-16.09],'#ffedd2',6.1,1.20],
-    [[6.15,3.76,-8.23],'#fff1da',6.0,1.15],[[6.16,3.63,-16.44],'#ffebd0',6.38,1.26]
+    [[6.15,3.76,-8.23],'#fff1da',6.0,1.15],[[6.16,3.63,-16.44],'#ffcdb3',6.38,1.30],
+    [[0,4.72,2.05],'#ff6558',8.3,1.18],[[SIGNAL_CABINET.x,2.62,SIGNAL_CABINET.z+.75],'#9d9aff',4.9,.9]
   ]);
   const upload=meshes=>meshes.map(part=>renderer.upload(part));
   return {

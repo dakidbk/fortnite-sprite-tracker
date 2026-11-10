@@ -253,7 +253,7 @@ void main() {
   vec3 key = normalize(mix(vec3(-.35,.86,.55),vec3(-.79,.35,.34),outside));
   float diffuse = max(0.,dot(N,key));
   vec3 base = texel.rgb;
-  vec3 ambient = mix(vec3(.67,.70,.69),vec3(.37,.44,.56),outside);
+  vec3 ambient = mix(vec3(.67,.70,.69),vec3(.35,.40,.59),outside);
   vec3 direct = mix(vec3(.36,.32,.27),vec3(.29,.20,.16),outside);
   vec3 c = base * (ambient + diffuse * direct);
   float reflectance = pow(max(0.,dot(N,normalize(key+V))),18.);
@@ -299,7 +299,7 @@ void main(){
 
   float west = pow(max(0.,dot(ray,vec3(-.43,0.,-.90))),12.);
   float band = (ray.y + .017) * 14.;
-  vec3 horizon = mix(vec3(.43,.34,.48),vec3(.89,.51,.35),west);
+  vec3 horizon = mix(vec3(.45,.31,.53),vec3(.95,.46,.37),west);
   vec3 c = mix(vec3(.115,.161,.27),horizon,.86 * exp(-band * band));
   c = mix(c,vec3(.082,.128,.235),smoothstep(.035,.155,ray.y));
   c = mix(vec3(.105,.137,.202),c,smoothstep(-.29,-.075,ray.y));
@@ -308,6 +308,9 @@ void main(){
   float wisps = exp(-cloud * cloud) * (.46 + .46 * sin(ray.x * 12. - ray.z));
   vec3 cloudColor = mix(vec3(.48,.40,.55),vec3(.83,.57,.48),west);
   c = mix(c,cloudColor,wisps * .33);
+  vec2 starGrid = vec2(atan(ray.x,-ray.z),ray.y) * vec2(205.,215.);
+  float star = step(.989,hash(floor(starGrid))) * (1. - smoothstep(.04,.26,length(fract(starGrid)-.5)));
+  c += vec3(.58,.68,.94) * star * smoothstep(.09,.26,ray.y);
   float noise = hash(floor(gl_FragCoord.xy)) - .5;
   pixel = vec4(c + noise*.011,1.);
 }`;

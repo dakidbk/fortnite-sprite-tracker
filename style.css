@@ -4,10 +4,10 @@
   --ink: #1b221e;
   --white: #f4f1e7;
   --muted: #c1c6ba;
-  --accent: #b8d1bf;
+  --accent: #ffd0a8;
   --sand: #dcc4a3;
   --line: #d8e3d434;
-  --panel: #232c27ed;
+  --panel: #231e2df2;
   --mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 *, *::before, *::after { box-sizing: border-box; }
@@ -28,14 +28,14 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .hud-top { top: 0; padding-block: max(20px, env(safe-area-inset-top)) 15px; }
 .hud-bottom { bottom: 0; padding-block: 15px max(21px, env(safe-area-inset-bottom)); }
 .brand { display: flex; gap: 12px; align-items: center; white-space: nowrap; }
-.brand-mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 11px; border: 1px solid var(--line); color: var(--white); background: #3d5045; box-shadow: 0 3px 14px #131b1766; }
+.brand-mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 11px; border: 1px solid var(--line); color: var(--white); background: linear-gradient(145deg, #a94648, #462637); box-shadow: 0 3px 20px #ff68534a; }
 .brand-mark svg, .loading-mark svg { width: 25px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.85; stroke-linecap: round; stroke-linejoin: round; }
 .brand-title { font-size: 16px; font-weight: 760; line-height: 1.1; letter-spacing: .09em; }
 .brand-sub { margin-top: 5px; font: 650 9px/1 var(--mono); letter-spacing: .23em; color: var(--muted); }
-.open-pill { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 100px; padding: 9px 13px; background: #25302acb; color: var(--white); font: 650 10px/1 var(--mono); text-transform: uppercase; letter-spacing: .12em; white-space: nowrap; }
+.open-pill { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 100px; padding: 9px 13px; background: #292338e8; color: var(--white); font: 650 10px/1 var(--mono); text-transform: uppercase; letter-spacing: .12em; white-space: nowrap; }
 .open-pill > span, .led { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .toolbar { display: flex; gap: 7px; pointer-events: auto; }
-.icon-button { display: grid; place-items: center; width: 39px; height: 39px; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: #252e29db; color: var(--white); cursor: pointer; transition: color .16s, background .16s, border-color .16s; }
+.icon-button { display: grid; place-items: center; width: 39px; height: 39px; padding: 0; border: 1px solid var(--line); border-radius: 10px; background: #2c2638e8; color: var(--white); cursor: pointer; transition: color .16s, background .16s, border-color .16s; }
 .icon-button:hover, .icon-button[aria-pressed=true] { color: #e0eedf; border-color: #b8d1bf8c; background: #45564b; }
 .icon-button svg, .zone svg, .collection-button svg, .objective svg, .primary-button svg, .touch-controls svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
 .objective { position: absolute; top: clamp(93px, 14vh, 124px); left: clamp(18px, 2.3vw, 36px); width: clamp(155px, 16vw, 229px); pointer-events: none; padding: 14px 14px 15px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); box-shadow: 0 8px 22px #19201b47; }
@@ -65,7 +65,7 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; min-height: 23
 .control-divider { height: 19px; width: 1px; background: var(--line); }
 .waypoint { position: absolute; display: grid; place-items: center; gap: 7px; transform: translate(-50%, -65%); z-index: 1; color: var(--accent); padding: 3px 7px; border: 0; background: transparent; cursor: pointer; }
 .waypoint-gem { display: block; width: 9px; height: 9px; transform: rotate(45deg); border: 1px solid #e9eee0; background: var(--accent); border-radius: 2px; box-shadow: 0 2px 7px #16221c92; }
-.waypoint-label { display: flex; align-items: center; gap: 7px; padding: 4px 9px 4px 4px; border: 1px solid #bed1c287; border-radius: 7px; background: #25322bf4; color: var(--white); font-size: 11px; font-weight: 700; white-space: nowrap; box-shadow: 0 3px 10px #151e19a0; }
+.waypoint-label { display: flex; align-items: center; gap: 7px; padding: 4px 9px 4px 4px; border: 1px solid #bed1c287; border-radius: 7px; background: #2c2538f4; color: var(--white); font-size: 11px; font-weight: 700; white-space: nowrap; box-shadow: 0 3px 10px #151e19a0; }
 .waypoint kbd { min-height: 18px; min-width: 18px; background: var(--accent); border-color: #e9eee0; color: #25352d; }
 .waypoint.hint { cursor: default; pointer-events: none; }
 .waypoint.hint .waypoint-label { padding: 5px 8px; border-color: var(--line); font: 700 9px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
@@ -75,7 +75,7 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; min-height: 23
 .load p { margin-top: 15px; font: 650 12px/1.5 var(--mono); }
 .loading-mark { display: grid; place-items: center; color: var(--accent); width: 52px; height: 52px; border: 1px solid var(--line); border-radius: 14px; background: #35463c; }
 .touch-controls { display: none; }
-.dialog { width: min(460px, calc(100vw - 26px)); max-height: calc(100dvh - 24px); margin: auto; overflow: auto; color: var(--white); background: linear-gradient(145deg, #303d34, #222b26 65%); border: 1px solid #a5b9aa63; border-radius: 16px; padding: 20px 23px 23px; box-shadow: 0 24px 86px #111915ca; }
+.dialog { width: min(460px, calc(100vw - 26px)); max-height: calc(100dvh - 24px); margin: auto; overflow: auto; color: var(--white); background: linear-gradient(145deg, #3b3046, #241f30 72%); border: 1px solid #a5b9aa63; border-radius: 16px; padding: 20px 23px 23px; box-shadow: 0 24px 86px #111915ca; }
 .dialog::backdrop { background: #151e19a1; backdrop-filter: blur(5px); }
 .dialog-head { display: flex; align-items: center; justify-content: space-between; }
 .dialog-head .micro { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); }
