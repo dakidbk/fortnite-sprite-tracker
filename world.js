@@ -1,6 +1,6 @@
 import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webgl.js';
 import { GAMES, LATEST_RELEASE, RARITIES, coverUV, coversPerAtlas } from './catalog.js';
-import { accessories, avatarPalette } from './cosmetics.js?v=stock-shop-6';
+import { accessories, avatarPalette } from './cosmetics.js?v=shop-drop-7';
 
 const M = {
   lamp: m('#fff0d8', 1.05), white: m('#ffffff', 1),

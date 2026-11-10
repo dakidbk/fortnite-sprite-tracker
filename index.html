@@ -7,8 +7,8 @@
   <meta name="description" content="Build a game collection in a 3D store and earn credits at two arcade cabinets.">
   <title>Game Store After Hours</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=stock-shop-6">
-  <script type="module" src="game.js?v=stock-shop-6"></script>
+  <link rel="stylesheet" href="style.css?v=shop-drop-7">
+  <script type="module" src="game.js?v=shop-drop-7"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -220,13 +220,16 @@
       <section id="menu-item-shop" class="wardrobe-panel item-shop-panel" hidden>
         <div class="menu-kicker">THE AFTER HOURS COLLECTION</div>
         <div class="shop-head"><h2 id="menu-item-shop-title">Item Shop</h2><div class="item-wallet"><span>STORE CREDITS</span><strong id="item-wallet"></strong></div></div>
-        <p>Pick an item to try it on.</p>
+        <div class="shop-meta"><span id="shop-inventory"></span><span id="shop-rotation" hidden>NEW FEATURED IN <strong id="shop-clock"></strong></span></div>
         <nav class="shop-categories" id="shop-categories" aria-label="Shop categories">
           <button type="button" data-category="featured">Featured</button>
           <button type="button" data-category="outfits">Outfits</button>
           <button type="button" data-category="accessories">Accessories</button>
+          <button type="button" data-category="bundles">Bundles</button>
+          <button type="button" data-category="locker">Locker</button>
         </nav>
-        <div class="shop-tiles" id="item-outfits" aria-label="Featured outfits"></div>
+        <div class="shop-tiles" id="item-outfits" aria-label="Shop listings"></div>
+        <p class="shop-empty" id="shop-empty" hidden>Your locker is empty. Buy a cosmetic to find it here.</p>
         <template id="shop-tile-template">
           <button class="shop-tile" type="button">
             <svg class="shop-tile-art" viewBox="0 0 128 128" aria-hidden="true">
@@ -244,10 +247,11 @@
             <span class="shop-tile-info"><span class="shop-tile-name"></span><span class="shop-tile-price"></span></span>
           </button>
         </template>
-        <div class="item-detail">
+        <div class="item-detail" id="item-detail">
           <div><div class="menu-kicker" id="item-type"></div><h3 id="item-name"></h3></div>
-          <strong id="item-price"></strong>
+          <div class="shop-price"><s id="item-original-price" hidden></s><strong id="item-price"></strong></div>
         </div>
+        <p id="item-contents" class="item-contents" hidden></p>
         <p id="item-status" role="status"></p>
         <div class="menu-footer">
           <button class="menu-small" id="menu-item-back" type="button">Back</button>

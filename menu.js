@@ -1,21 +1,31 @@
-import { accessories, outfits, shopItems, shopOutfits, skinTones, hairColors, savedLook } from './cosmetics.js?v=stock-shop-6';
+import { accessories, outfits, listings, listingQuote, shopBundles, shopItems, shopOutfits, skinTones, hairColors, savedLook } from './cosmetics.js?v=shop-drop-7';
 
 const storageKey = 'after-hours-character';
 const $ = id => document.getElementById(id);
 const money = value => value.toLocaleString('en-US')+' CR';
+const dayLength = 86400000;
+const itemIds = id => listings[id].items || [id];
+const wearingAll = (look,id) => itemIds(id).every(part => look[shopItems[part].slot] === part);
 
 export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscreen}) {
   const menu = $('start-menu');
   const home = $('menu-home'), character = $('menu-character'), options = $('menu-options'), store = $('menu-item-shop');
   let look = savedLook(read(storageKey),shop.state.cosmetics);
-  const catalogs = {featured:shopOutfits.slice(0,3),outfits:shopOutfits,accessories:Object.keys(accessories)};
-  let selected = {...look}, item = shopOutfits[0], category = 'featured', angle = 0;
+  const catalogs = {outfits:shopOutfits,accessories:Object.keys(accessories),bundles:Object.keys(shopBundles)};
+  let selected = {...look}, item, category = 'featured', angle = 0, day = 0, clock;
+  const featured = date => [
+    shopOutfits[date % shopOutfits.length],
+    catalogs.accessories[date % catalogs.accessories.length],
+    catalogs.bundles[date % catalogs.bundles.length]
+  ];
 
   function screen(panel, focus) {
     for (const section of [home,character,options,store]) section.hidden = section !== panel;
     menu.classList.toggle('wardrobe-open',panel === character || panel === store);
     menu.classList.toggle('item-shop-open',panel === store);
     $('menu-hints').hidden = panel !== home;
+    clearInterval(clock);
+    if (panel === store) clock = setInterval(updateRotation,1000);
     menu.setAttribute('aria-labelledby',panel.querySelector('h1,h2').id);
     menu.scrollTop = 0;
     focus.focus({preventScroll:true});
@@ -49,44 +59,83 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
     screen(character,$('menu-save-look'));
   }
 
+  function updateRotation() {
+    const now = Date.now(), today = Math.floor(now/dayLength);
+    if (today !== day && category === 'featured') showCategory(category);
+    day = today;
+    const remaining = Math.ceil(((today+1)*dayLength-now)/1000);
+    $('shop-clock').textContent = [Math.floor(remaining/3600),Math.floor(remaining/60)%60,remaining%60]
+      .map(value => String(value).padStart(2,'0')).join(':');
+  }
+
   function refreshShop() {
-    const entry = shopItems[item];
+    const entry = listings[item];
     const {credits,cosmetics} = shop.state;
-    const owned = cosmetics.includes(item);
-    const wearing = look[entry.slot] === item;
     $('item-wallet').textContent = money(credits);
+    $('shop-inventory').textContent = cosmetics.length+' / '+Object.keys(shopItems).length+' OWNED';
+    $('shop-empty').hidden = !!entry;
+    $('item-detail').hidden = !entry;
+    $('item-action').hidden = !entry;
+    if (!entry) {
+      $('item-contents').hidden = true;
+      $('item-status').textContent = '';
+      return;
+    }
+    const quote = listingQuote(item,cosmetics);
+    const owned = !quote.missing.length;
+    const wearing = wearingAll(look,item);
+    $('item-contents').hidden = !entry.items;
+    $('item-contents').textContent = entry.items?.map(id => shopItems[id].name).join(' + ') || '';
+    $('item-original-price').hidden = !entry.items || owned;
+    $('item-original-price').textContent = money(quote.regular);
     $('item-name').textContent = entry.name;
     $('item-type').textContent = entry.type;
-    $('item-price').textContent = owned ? 'OWNED' : money(entry.price);
+    $('item-price').textContent = owned ? 'OWNED' : money(quote.cost);
     for (const tile of $('item-outfits').children) {
       const id = tile.dataset.item;
-      const listing = shopItems[id];
-      const selected = id === item;
-      tile.setAttribute('aria-pressed',String(selected));
-      tile.querySelector('.shop-tile-price').textContent = look[listing.slot] === id ? 'EQUIPPED'
-        : cosmetics.includes(id) ? 'OWNED' : money(listing.price);
+      const tileQuote = listingQuote(id,cosmetics);
+      tile.setAttribute('aria-pressed',String(id === item));
+      tile.querySelector('.shop-tile-price').textContent = wearingAll(look,id) ? 'EQUIPPED'
+        : !tileQuote.missing.length ? 'OWNED' : money(tileQuote.cost);
     }
     const action = $('item-action');
-    action.textContent = wearing ? 'Equipped' : owned ? 'Equip '+entry.slot : 'Buy '+entry.slot+' · '+money(entry.price);
-    action.disabled = wearing || (!owned && credits < entry.price);
-    $('item-status').textContent = !owned && credits < entry.price ? 'Earn '+money(entry.price-credits)+' more in the arcade.' : '';
+    const kind = entry.items ? 'bundle' : entry.slot;
+    action.textContent = wearing ? 'Equipped' : owned ? 'Equip '+kind : 'Buy '+kind+' · '+money(quote.cost);
+    action.disabled = wearing || (!owned && credits < quote.cost);
+    $('item-status').textContent = !owned && credits < quote.cost ? 'Earn '+money(quote.cost-credits)+' more in the arcade.' : '';
   }
 
   function showCategory(next) {
     category = next;
-    const ids = catalogs[category];
-    if (!ids.includes(item)) item = ids[0];
+    day = Math.floor(Date.now()/dayLength);
+    const ids = category === 'featured' ? featured(day) : category === 'locker' ? shop.state.cosmetics : catalogs[category];
+    $('shop-rotation').hidden = category !== 'featured';
+    if (!ids.includes(item)) {
+      item = ids[0];
+      angle = item && itemIds(item).includes('backpack') ? Math.PI : 0;
+    }
     for (const tab of $('shop-categories').children) tab.setAttribute('aria-pressed',String(tab.dataset.category === category));
     $('item-outfits').dataset.category = category;
     $('item-outfits').replaceChildren(...ids.map((id,index) => {
-      const outfit = shopItems[id];
+      const entry = listings[id];
+      const outfit = shopItems[itemIds(id)[0]];
       const tile = $('shop-tile-template').content.firstElementChild.cloneNode(true);
       tile.dataset.item = id;
-      tile.querySelector('.shop-tile-label').hidden = category !== 'featured' || index !== 0;
+      const badge = tile.querySelector('.shop-tile-label');
+      badge.hidden = !entry.items && (category !== 'featured' || index !== 0);
+      badge.textContent = entry.items ? 'BUNDLE · SAVE 20%' : 'FEATURED';
+      const artIds = itemIds(id).map(part => shopItems[part].slot === 'outfit' ? 'outfit' : part);
       for (const drawing of tile.querySelectorAll('[data-art]')) {
-        if (drawing.dataset.art !== (outfit.slot === 'outfit' ? 'outfit' : id)) drawing.remove();
+        if (!artIds.includes(drawing.dataset.art)) drawing.remove();
+        else if (entry.items && drawing.dataset.art !== 'outfit') {
+          const accessory = shopItems[entry.items[1]];
+          drawing.setAttribute('transform','translate(64 45) scale(.46)');
+          drawing.style.setProperty('--coat',accessory.coat);
+          drawing.style.setProperty('--hood',accessory.hood);
+          drawing.style.setProperty('--trim',accessory.accent);
+        } else if (entry.items) drawing.setAttribute('transform','translate(-1 7) scale(.80)');
       }
-      tile.querySelector('.shop-tile-name').textContent = outfit.name;
+      tile.querySelector('.shop-tile-name').textContent = entry.name;
       tile.style.setProperty('--coat',outfit.coat);
       tile.style.setProperty('--hood',outfit.hood);
       tile.style.setProperty('--trim',outfit.accent);
@@ -94,8 +143,7 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
       tile.style.setProperty('--tile-glow',outfit.accent+'ad');
       tile.addEventListener('click',() => {
         item = id;
-        if (id === 'backpack') angle = Math.PI;
-        else angle = 0;
+        angle = itemIds(id).includes('backpack') ? Math.PI : 0;
         refreshShop();
       });
       return tile;
@@ -104,9 +152,16 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
   }
 
   function openShop() {
-    angle = item === 'backpack' ? Math.PI : 0;
     showCategory(category);
-    screen(store,$('item-outfits').querySelector('[aria-pressed=true]'));
+    angle = item && itemIds(item).includes('backpack') ? Math.PI : 0;
+    updateRotation();
+    screen(store,$('item-outfits').querySelector('[aria-pressed=true]') || $('shop-categories').querySelector('[aria-pressed=true]'));
+  }
+
+  function tryOn(id) {
+    const next = {...look};
+    if (id) for (const part of itemIds(id)) next[shopItems[part].slot] = part;
+    return next;
   }
 
   function equip(next) {
@@ -118,7 +173,8 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
   $('menu-shop-button').addEventListener('click',openShop);
   for (const tab of $('shop-categories').children) tab.addEventListener('click',() => {
     showCategory(tab.dataset.category);
-    angle = item === 'backpack' ? Math.PI : 0;
+    angle = item && itemIds(item).includes('backpack') ? Math.PI : 0;
+    updateRotation();
   });
   $('menu-options-button').addEventListener('click',() => screen(options,$('menu-sound')));
   $('menu-save-look').addEventListener('click',() => {
@@ -126,10 +182,11 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
     screen(home,$('menu-create'));
   });
   $('item-action').addEventListener('click',() => {
-    if (shop.state.cosmetics.includes(item)) {
-      equip({...look,[shopItems[item].slot]:item});
+    if (!item) return;
+    if (!listingQuote(item,shop.state.cosmetics).missing.length) {
+      equip(tryOn(item));
       refreshShop();
-      $('item-status').textContent = shopItems[item].name+' equipped.';
+      $('item-status').textContent = listings[item].name+' equipped.';
     } else if (shop.buyCosmetic(item)) {
       refreshShop();
       $('item-status').textContent = 'Purchased. Equip it here or in Create a Character.';
@@ -167,10 +224,16 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
     get preview() {
       if (!menu.open) return null;
       if (!character.hidden) return {look:selected,angle};
-      if (!store.hidden) return {look:{...look,[shopItems[item].slot]:item},angle};
+      if (!store.hidden) return {look:tryOn(item),angle};
       return null;
     },
-    refreshShop() { if (!store.hidden) refreshShop(); },
+    refreshShop() {
+      if (store.hidden) return;
+      const cards = [...$('item-outfits').children];
+      if (category === 'locker' && (cards.length !== shop.state.cosmetics.length ||
+        cards.some(card => !shop.state.cosmetics.includes(card.dataset.item)))) showCategory(category);
+      else refreshShop();
+    },
     show() { menu.showModal(); $('menu-play').focus(); }
   };
 }

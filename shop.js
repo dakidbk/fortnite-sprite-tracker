@@ -1,5 +1,5 @@
 import { GAMES, LATEST_RELEASE, RARITIES } from './catalog.js';
-import { shopItems } from './cosmetics.js?v=stock-shop-6';
+import { listingQuote, listings, shopItems } from './cosmetics.js?v=shop-drop-7';
 
 const PROFILE_KEY = 'after-hours-collection-v1';
 const STARTING_CREDITS = 120;
@@ -221,13 +221,13 @@ export function createShop({ beforeOpen, onChange, paintCover, announce }) {
     openCheckout,
     openCollection,
     buyCosmetic(id) {
-      if (!Object.hasOwn(shopItems,id)) return false;
+      if (!Object.hasOwn(listings,id)) return false;
       let purchased = false;
       commit(current => {
-        const cost = shopItems[id].price;
-        if (current.cosmetics.includes(id) || current.credits < cost) return current;
+        const {missing,cost} = listingQuote(id,current.cosmetics);
+        if (!missing.length || current.credits < cost) return current;
         purchased = true;
-        return {...current, credits:current.credits-cost, cosmetics:[...current.cosmetics,id]};
+        return {...current,credits:current.credits-cost,cosmetics:[...current.cosmetics,...missing]};
       });
       return purchased;
     },

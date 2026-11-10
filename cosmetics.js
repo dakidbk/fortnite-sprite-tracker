@@ -20,6 +20,20 @@ export const shopItems = Object.fromEntries([
   ...shopOutfits.map(id => [id,{...outfits[id],slot:'outfit'}]),
   ...Object.entries(accessories).map(([id,entry]) => [id,{...entry,slot:'accessory'}])
 ]);
+export const shopBundles = {
+  arcadePack: {name:'Arcade After Dark',type:'OUTFIT + VISOR',items:['neon','visor'],discount:.20},
+  collectorPack: {name:'Collector Crew',type:'OUTFIT + BACKPACK',items:['varsity','backpack'],discount:.20}
+};
+export const listings = {...shopItems,...shopBundles};
+
+export function listingQuote(id,owned) {
+  if (!Object.hasOwn(listings,id)) return {missing:[],regular:0,cost:0};
+  const entry = listings[id];
+  const missing = (entry.items || [id]).filter(item => !owned.includes(item));
+  const regular = missing.reduce((sum,item) => sum+shopItems[item].price,0);
+  return {missing,regular,cost:entry.discount ? Math.floor(regular*(1-entry.discount)) : regular};
+}
+
 export const skinTones = [
   {name:'Warm', skin:'#bf876d', lightSkin:'#d99d81'},
   {name:'Deep', skin:'#865342', lightSkin:'#aa715a'},
