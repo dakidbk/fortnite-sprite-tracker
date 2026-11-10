@@ -12,25 +12,25 @@ const random = seeded(9541);
 const pick = array => array[Math.floor(random() * array.length)];
 const rectangle = (x, z, w, d, height) => [x - w / 2, x + w / 2, z - d / 2, z + d / 2, height];
 const SIGN_FONT = 'Arial, "DejaVu Sans", sans-serif';
-export const STORE = { entryHalf: 6.15, rearHalf: 9.24, taperStart: -4.18, taperEnd: -8.56, back: -16.65 };
-export const CABINET = { x: .32, z: -15.32, approachZ: -14.22 };
-export const SIGNAL_CABINET = { x: 2.10, z: -15.32, approachZ: -14.22 };
-const DECK = { frontHalf: 9.48, rearHalf: 9.58, front: 7.70, back: STORE.back - .26, corner: 1.20 };
+export const STORE = { entryHalf: 6.15, rearHalf: 10.49, taperStart: -4.18, taperEnd: -8.56, back: -19.65 };
+export const CABINET = { x: .32, z: STORE.back + 1.33, approachZ: STORE.back + 2.43 };
+export const SIGNAL_CABINET = { x: 2.10, z: STORE.back + 1.33, approachZ: STORE.back + 2.43 };
+const DECK = { frontHalf: 9.48, rearHalf: STORE.rearHalf + .34, front: 7.70, back: STORE.back - .26, corner: 1.20 };
 const porchCornerX = DECK.frontHalf - DECK.corner;
 const porchCornerZ = DECK.front - DECK.corner;
 const porchRailX = DECK.frontHalf - .43;
 const porchRailFront = porchCornerZ - .07;
 const SHELVES = [
   [-5.54, -2.50, 1, 3.03], [5.53, -3.52, -1, 1.45],
-  [-8.58, -10.38, 1, 3.19], [-8.58, -14.04, 1, 3.42],
-  [8.58, -10.17, -1, 2.87], [8.58, -13.85, -1, 3.17],
-  [-6.67, -16.16, 0, 3.21], [-3.28, -16.16, 0, 3.21]
+  [-9.83, -10.60, 1, 3.19], [-9.83, -15.60, 1, 3.42],
+  [9.83, -10.40, -1, 2.87], [9.83, -15.40, -1, 3.17],
+  [-7.15, STORE.back + .49, 0, 3.21], [-3.76, STORE.back + .49, 0, 3.21]
 ];
-const GAME_TABLES = [[-3.89, -6.97, 2.74], [-3.89, -10.67, 2.74]];
+const GAME_TABLES = [[-3.89, -6.97, 2.74], [-3.89, -11.10, 2.74], [-3.89, -15.23, 2.74]];
 const SHELF_ROWS = 4;
 const DEMO = { x: 3.98, z: -7.82, w: 2.79, d: 1.10 };
-export const CHECKOUT = { x: 5.06, z: -12.19, w: 3.24, d: 1.12, approachZ: -11.08 };
-const RELEASE_POSTER = { x: 5.73, y: 2.51, z: STORE.back + .29, w: 3.96, h: 2.28 };
+export const CHECKOUT = { x: 5.85, z: -15.19, w: 4.18, d: 1.12, approachZ: -14.08 };
+const RELEASE_POSTER = { x: 5.85, y: 2.51, z: STORE.back + .29, w: 3.96, h: 2.28 };
 const POSTER_PRINT = { w: 1040, h: 600 };
 const POSTER_COVER = { left: 54, top: 48, w: 320, h: 504 };
 const PUMPKINS = [
@@ -741,7 +741,7 @@ function roomSign(geo,labels,index,x,y,z,w) {
 }
 
 function interior(geo, cases, display, harvest, logos, labels, stock) {
-  for (const z of [-1.6,-3.65,-5.55,-7.75,-10.05,-12.72,-15.17]) {
+  for (const z of [-1.6,-3.65,-5.55,-7.75,-10.05,-12.72,-15.17,-18.00]) {
     const y=z < STORE.taperStart ? 4.12 : 3.56;
     const span=storeHalfWidth(z)-.25;
     geo.box(0,y+.085,z,span*2,.115,.074,M.trim);
@@ -769,7 +769,7 @@ function interior(geo, cases, display, harvest, logos, labels, stock) {
     oakSlats(geo,x-s*.28,1.91,back+.107,.67,3.49,.11);
   }
   geo.box(arcadeCenter,3.69,back+.091,5.68,.037,.045,M.walnut);
-  roomSign(geo,labels,0,-5.05,3.39,back+.135,3.40);
+  roomSign(geo,labels,0,-5.45,3.39,back+.135,3.40);
   roomSign(geo,labels,1,arcadeCenter,3.40,back+.135,2.69);
   const poster=RELEASE_POSTER;
   geo.block(poster.x,poster.y,poster.z-.068,poster.w+.13,poster.h+.13,.13,.03,M.steel);
@@ -1036,8 +1036,8 @@ export function createWorld(renderer, coverAtlases) {
     [[-porchRailX,1.42,porchRailFront-.13],'#ffd6a2',4.8,.94],[[porchRailX,1.42,porchRailFront-.13],'#ffd6a2',4.8,.94],
     [[-3.53,3.23,-.53],'#ffebd3',5.05,1.12],[[4.3,3.21,-.60],'#ffedd3',5.05,1.13],
     [[0,3.77,-7.30],'#fff0d9',6.4,1.20],[[0,3.85,-11.24],'#fff1d9',6.2,1.16],
-    [[-6.74,3.73,-9.21],'#fff0d9',6.05,1.23],[[-6.71,3.56,-14.09],'#ffedd2',6.1,1.20],
-    [[6.15,3.76,-8.23],'#fff1da',6.0,1.15],[[5.46,3.63,-13.44],'#ffebd0',6.38,1.26]
+    [[-6.74,3.73,-9.21],'#fff0d9',6.05,1.23],[[-7.31,3.56,-16.09],'#ffedd2',6.1,1.20],
+    [[6.15,3.76,-8.23],'#fff1da',6.0,1.15],[[6.16,3.63,-16.44],'#ffebd0',6.38,1.26]
   ]);
   const upload=meshes=>meshes.map(part=>renderer.upload(part));
   return {
