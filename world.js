@@ -15,11 +15,12 @@ const SIGN_FONT = 'Arial, "DejaVu Sans", sans-serif';
 export const STORE = { entryHalf: 6.15, rearHalf: 10.49, taperStart: -4.18, taperEnd: -8.56, back: -19.65 };
 export const CABINET = { x: .32, z: STORE.back + 1.33, approachZ: STORE.back + 2.43 };
 export const SIGNAL_CABINET = { x: 2.10, z: STORE.back + 1.33, approachZ: STORE.back + 2.43 };
-const DECK = { frontHalf: 9.48, rearHalf: STORE.rearHalf + .34, front: 7.70, back: STORE.back - .26, corner: 1.20 };
+const DECK = { frontHalf: 10.55, rearHalf: STORE.rearHalf + .34, front: 9.40, back: STORE.back - .26, corner: 1.20 };
 const porchCornerX = DECK.frontHalf - DECK.corner;
 const porchCornerZ = DECK.front - DECK.corner;
 const porchRailX = DECK.frontHalf - .43;
 const porchRailFront = porchCornerZ - .07;
+const PORCH_BENCHES = [[-7.12, 3.18], [7.12, 3.18], [-7.12, 6.32], [7.12, 6.32]];
 const SHELVES = [
   [-5.54, -2.50, 1, 3.03], [5.53, -3.52, -1, 1.45],
   [-9.83, -10.60, 1, 3.19], [-9.83, -15.60, 1, 3.42],
@@ -384,7 +385,7 @@ function platform(mesh) {
     const [x,z]=pts[i], [x2,z2]=pts[i+1];
     beam(mesh,[x*.994,-.027,z*.995],[x2*.994,-.027,z2*.995],.025,M.stone);
   }
-  const rails=Array.from({length:5},(_,i)=>mix(-.13,porchRailFront,i/4));
+  const rails=Array.from({length:6},(_,i)=>mix(-.13,porchRailFront,i/5));
   for (const s of [-1,1]) {
     const x=s*porchRailX;
     for (const z of rails) {
@@ -587,8 +588,8 @@ function harvestPorch(mesh) {
   }
 }
 
-function bench(mesh) {
-  const x=5.68,z=2.03, wood=M.oak, end=m('#be996e',0,1,.25);
+function bench(mesh, x, z) {
+  const wood=M.oak, end=m('#be996e',0,1,.25);
   for (const s of [-1,1]) {
     const xx=x+s*1.13;
     mesh.block(xx,.26,z+.26,.13,.52,.16,.015,M.dark);
@@ -973,7 +974,8 @@ export function createWorld(renderer, coverAtlases) {
   const guide=new Mesh();
   const obstacles=[
     rectangle(-4.13,.08,5.14,.65,4.48),rectangle(4.13,.08,5.14,.65,4.48),
-    rectangle(-3.70,1.37,1.53,1.32,1.63),rectangle(3.54,1.37,1.53,1.32,1.63),rectangle(5.68,2.03,2.51,.78,1.06),
+    rectangle(-3.70,1.37,1.53,1.32,1.63),rectangle(3.54,1.37,1.53,1.32,1.63),
+    ...PORCH_BENCHES.map(([x,z])=>rectangle(x,z-.06,2.51,.86,1.06)),
     ...PUMPKINS.filter(([,y])=>y===0).map(([x,,z,r])=>rectangle(x,z,r*1.90,r*1.90,r*1.72)),
     rectangle(-3.92,-1.22,2.99,.96,1.74),rectangle(4.46,-1.31,2.28,.92,3.20),
     ...SHELVES.map(([x,z,turn,w])=>rectangle(x,z,turn ? .74 : w,turn ? w : .74,2.80)),
@@ -989,7 +991,10 @@ export function createWorld(renderer, coverAtlases) {
   planter(mesh,-3.70,1.37,12);
   planter(mesh,3.54,1.37,24);
   harvestPorch(mesh);
-  bench(mesh);
+  for (const [x,z] of PORCH_BENCHES) {
+    bench(mesh,x,z);
+    shadow.ground(x,.011,z,3.40,1.36,M.white);
+  }
   interior(mesh,{covers:cases,tags:rarityTags,titles:caseGames},display,harvest,logo,labels,stock);
   const cover=POSTER_COVER;
   const coverX=poster.x+poster.w*((cover.left+cover.w/2)/POSTER_PRINT.w-.5);
@@ -1004,7 +1009,6 @@ export function createWorld(renderer, coverAtlases) {
   mat.ground(0,.012,1.01,2.79,1.16,m('#f0eee4',.32));
   shadow.ground(-3.70,.009,1.39,2.34,1.93,M.white);
   shadow.ground(3.54,.009,1.39,2.34,1.93,M.white);
-  shadow.ground(5.68,.011,2.04,3.40,1.36,M.white);
   for (const [x,y,z,r] of PUMPKINS) {
     if (y===0) shadow.ground(x,.007,z,r*2.75,r*2.30,M.white);
   }
