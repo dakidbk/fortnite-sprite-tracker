@@ -431,7 +431,8 @@ export class Renderer {
     const gl = this.gl;
     mesh.vao = gl.createVertexArray();
     gl.bindVertexArray(mesh.vao);
-    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    mesh.buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, mesh.buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(mesh.data), gl.STATIC_DRAW);
     let index = 0;
     [3,3,4,2,2,1].forEach((size, attribute) => {
@@ -443,6 +444,11 @@ export class Renderer {
     mesh.data = null;
     gl.bindVertexArray(null);
     return mesh;
+  }
+  release(mesh) {
+    this.gl.deleteVertexArray(mesh.vao);
+    this.gl.deleteBuffer(mesh.buffer);
+    if (mesh.texture) this.gl.deleteTexture(mesh.texture);
   }
   target(width, height, withDepth) {
     const gl = this.gl;

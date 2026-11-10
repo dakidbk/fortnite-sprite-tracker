@@ -7,8 +7,8 @@
   <meta name="description" content="Build a game collection in a 3D store and earn credits at two arcade cabinets.">
   <title>Game Store After Hours</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=arcade-menu-3">
-  <script type="module" src="game.js?v=arcade-menu-3"></script>
+  <link rel="stylesheet" href="style.css?v=wardrobe-4">
+  <script type="module" src="game.js?v=wardrobe-4"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -200,34 +200,46 @@
         <div class="menu-list">
           <button class="menu-choice" id="menu-create" type="button"><small>01</small><span>Create a Character</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
           <button class="menu-choice menu-play" id="menu-play" type="button"><small>02</small><span>Play</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
-          <button class="menu-choice" id="menu-options-button" type="button"><small>03</small><span>Options</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+          <button class="menu-choice" id="menu-shop-button" type="button"><small>03</small><span>Item Shop</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+          <button class="menu-choice" id="menu-options-button" type="button"><small>04</small><span>Options</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
         </div>
       </section>
-      <section id="menu-character" hidden>
-        <div class="menu-kicker">PLAYER PROFILE</div>
+      <section id="menu-character" class="wardrobe-panel" hidden>
+        <div class="menu-kicker">PLAYER STUDIO</div>
         <h2 id="menu-character-title">Create a Character</h2>
-        <p>Pick a look for your night at the store.</p>
-        <div class="character-stage">
-          <svg id="character-preview" viewBox="0 0 140 168" role="img" aria-label="Selected character preview">
-            <ellipse cx="70" cy="153" rx="41" ry="8" fill="#0b0a16" opacity=".55"/>
-            <path d="M49 105h42l-4 43H73l-3-24-3 24H53z" fill="#26263b"/>
-            <path d="M51 144h16v9H45v-5zm22 0h16l6 4v5H73z" fill="#e7d9d0"/>
-            <path d="M51 61 36 69l-6 37 13 4 9-25h36l9 25 13-4-6-37-15-8z" fill="var(--hood)"/>
-            <path d="M49 68h42v43H49z" fill="var(--coat)"/>
-            <path d="M48 66l22 19 22-19-9-8H57z" fill="var(--accent)"/>
-            <path d="M51 37c0-16 38-16 38 0v15c0 12-10 18-19 18s-19-6-19-18z" fill="var(--skin)"/>
-            <path d="M47 42V26l8 2 5-11 8 7 13-9 2 10 10-2v19l-9-7-14 3-14-3z" fill="var(--hair)"/>
-            <path d="M59 47h5m12 0h5" stroke="#231c26" stroke-width="3" stroke-linecap="round"/>
-            <path d="M67 57h6" stroke="#52323b" stroke-width="2" stroke-linecap="round"/>
-            <path d="M70 84v25m-17-8h12m10 0h12" fill="none" stroke="var(--accent)" stroke-width="2"/>
-          </svg>
-        </div>
-        <div class="look-swatches" id="look-swatches" aria-label="Character styles"></div>
+        <p>Build your look and rotate the live preview.</p>
+        <fieldset class="wardrobe-group"><legend>Outfit</legend><div class="look-swatches" id="look-outfits"></div></fieldset>
+        <fieldset class="wardrobe-group"><legend>Skin tone</legend><div class="look-swatches" id="look-skins"></div></fieldset>
+        <fieldset class="wardrobe-group"><legend>Hair color</legend><div class="look-swatches" id="look-hair"></div></fieldset>
         <div class="menu-footer">
           <button class="menu-small" id="menu-character-back" type="button">Back</button>
-          <button class="menu-small menu-play" id="menu-save-look" type="button">Use this character</button>
+          <button class="menu-small menu-play" id="menu-save-look" type="button">Save character</button>
         </div>
       </section>
+      <section id="menu-item-shop" class="wardrobe-panel" hidden>
+        <div class="menu-kicker">THE AFTER HOURS COLLECTION</div>
+        <h2 id="menu-item-shop-title">Item Shop</h2>
+        <p>Spend store credits on outfits. Preview any look before buying.</p>
+        <div class="item-wallet"><span>YOUR WALLET</span><strong id="item-wallet"></strong></div>
+        <div class="look-swatches item-swatches" id="item-outfits" aria-label="Shop outfits"></div>
+        <div class="item-detail">
+          <div><div class="menu-kicker" id="item-type"></div><h3 id="item-name"></h3></div>
+          <strong id="item-price"></strong>
+        </div>
+        <p id="item-status" role="status"></p>
+        <div class="menu-footer">
+          <button class="menu-small" id="menu-item-back" type="button">Back</button>
+          <button class="menu-small menu-play" id="item-action" type="button"></button>
+        </div>
+      </section>
+      <aside class="wardrobe-stage" aria-label="Character preview controls">
+        <span class="wardrobe-stage-label">LIVE 3D PREVIEW</span>
+        <div class="wardrobe-rotate">
+          <button class="menu-small" id="preview-left" type="button" aria-label="Rotate left">↶</button>
+          <span>ROTATE</span>
+          <button class="menu-small" id="preview-right" type="button" aria-label="Rotate right">↷</button>
+        </div>
+      </aside>
       <section id="menu-options" hidden>
         <div class="menu-kicker">SETTINGS</div>
         <h2 id="menu-options-title">Options</h2>
@@ -238,7 +250,7 @@
         </div>
         <div class="menu-footer"><button class="menu-small" id="menu-options-back" type="button">Back</button></div>
       </section>
-      <div class="menu-hints" aria-hidden="true"><span><kbd>↑</kbd> <kbd>↓</kbd> NAVIGATE</span><span><kbd>ENTER</kbd> SELECT</span></div>
+      <div class="menu-hints" id="menu-hints" aria-hidden="true"><span><kbd>↑</kbd> <kbd>↓</kbd> NAVIGATE</span><span><kbd>ENTER</kbd> SELECT</span></div>
     </div>
   </dialog>
 </body>

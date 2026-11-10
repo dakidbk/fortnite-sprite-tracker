@@ -1,4 +1,5 @@
 import { GAMES, LATEST_RELEASE, RARITIES } from './catalog.js';
+import { outfits, shopOutfits } from './cosmetics.js?v=wardrobe-4';
 
 const PROFILE_KEY = 'after-hours-collection-v1';
 const STARTING_CREDITS = 120;
@@ -33,6 +34,7 @@ function loadProfile(fallback) {
     return {
       credits: Number.isSafeInteger(saved.credits) && saved.credits >= 0 ? saved.credits : STARTING_CREDITS,
       owned,
+      cosmetics: shopOutfits.filter(id => Array.isArray(saved.cosmetics) && saved.cosmetics.includes(id)),
       basket,
       caseSlots,
       arcadeEarned: saved.arcadeEarned === true,
@@ -45,7 +47,7 @@ function loadProfile(fallback) {
 
 export function createShop({ beforeOpen, onChange, paintCover, announce }) {
   const checkout = $('checkout-dialog'), collection = $('collection-dialog');
-  let profile = loadProfile({ credits: STARTING_CREDITS, owned: [], basket: [], caseSlots: {}, arcadeEarned: false, signalBest: 0 });
+  let profile = loadProfile({ credits: STARTING_CREDITS, owned: [], cosmetics: [], basket: [], caseSlots: {}, arcadeEarned: false, signalBest: 0 });
   let inspected = null;
 
   function renderWallet() {
@@ -218,6 +220,17 @@ export function createShop({ beforeOpen, onChange, paintCover, announce }) {
     clearInspection() { inspected = null; },
     openCheckout,
     openCollection,
+    buyOutfit(id) {
+      if (!shopOutfits.includes(id)) return false;
+      let purchased = false;
+      commit(current => {
+        const cost = outfits[id].price;
+        if (current.cosmetics.includes(id) || current.credits < cost) return current;
+        purchased = true;
+        return {...current, credits:current.credits-cost, cosmetics:[...current.cosmetics,id]};
+      });
+      return purchased;
+    },
     recordArcade(mode, score) {
       const reward = mode === 'signal'
         ? score * 11 + (score >= 5 ? 22 : 0)

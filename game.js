@@ -1,10 +1,10 @@
-import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js';
-import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=arcade-menu-3';
+import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=wardrobe-4';
+import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=wardrobe-4';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js';
-import { createShop } from './shop.js';
+import { createShop } from './shop.js?v=wardrobe-4';
 import { createSignalRelay } from './signal.js';
-import { createOnline } from './online.js?v=arcade-menu-3';
-import { createMenu } from './menu.js?v=arcade-menu-3';
+import { createOnline } from './online.js?v=wardrobe-4';
+import { createMenu } from './menu.js?v=wardrobe-4';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');
@@ -42,19 +42,19 @@ const online = createOnline({
   position: () => ({x:player.x,z:player.z,yaw:Math.atan2(Math.sin(player.yaw),Math.cos(player.yaw)),stride})
 });
 
+const shop = createShop({
+  beforeOpen: clearMovement, paintCover,
+  onChange() { syncCaseVisibility(); refreshObjective(); menu.refreshShop(); },
+  announce: message => { showToast(message); tone(523,.16,0,'triangle'); tone(784,.21,.095,'triangle'); }
+});
 const menu = createMenu({
-  read, save, toggleSound, toggleFullscreen,
+  read, save, shop, toggleSound, toggleFullscreen,
   onPlay() {
     clearMovement();
     if (!online.openInvite()) canvas.focus();
   }
 });
 
-const shop = createShop({
-  beforeOpen: clearMovement, paintCover,
-  onChange() { syncCaseVisibility(); refreshObjective(); },
-  announce: message => { showToast(message); tone(523,.16,0,'triangle'); tone(784,.21,.095,'triangle'); }
-});
 const signal = createSignalRelay({ tone, best: () => shop.state.signalBest, award: score => shop.recordArcade('signal',score) });
 
 const tiles = Array.from({length: 9}, (_, i) => {
@@ -470,7 +470,17 @@ function orbitCamera(dt,aspect) {
   return camera;
 }
 
-function cameraFor(dt, aspect) {
+const wardrobeSpot = {x:0,z:4.68};
+function cameraFor(dt, aspect, preview) {
+  if (preview) {
+    const wide = aspect > 1 && innerWidth > 650;
+    return {
+      eye: [0,1.55,wardrobeSpot.z+(wide ? 5.12 : 5.52)],
+      aim: [wide ? -1.46 : 0,wide ? 1.10 : .25,wardrobeSpot.z],
+      fov: wide ? .62 : .90,
+      hideAvatar: true
+    };
+  }
   if (menu.open) {
     const wide = aspect > 1.32 && innerWidth > 650;
     return {
@@ -535,7 +545,8 @@ function waypoint(matrix) {
 function draw(dt, now) {
   renderer.resize();
   const aspect = canvas.width / canvas.height;
-  const { eye, aim, fov, hideAvatar } = cameraFor(dt, aspect);
+  const preview = menu.preview;
+  const { eye, aim, fov, hideAvatar } = cameraFor(dt, aspect, preview);
   const matrix = viewProjection(eye,aim,fov,aspect);
   const offset = smooth(0,1,door) * 1.515;
   const doors = [model(-offset,0,0),model(offset,0,0)];
@@ -547,10 +558,16 @@ function draw(dt, now) {
   world.doors.forEach(([mesh],i) => renderer.draw(mesh,doors[i]));
   renderer.blend(true);
   world.decals.forEach(mesh => renderer.draw(mesh));
-  renderer.draw(world.avatarShadow,model(player.x,0,player.z));
+  if (preview || !menu.open) {
+    const spot = preview ? wardrobeSpot : player;
+    renderer.draw(world.avatarShadow,model(spot.x,0,spot.z));
+  }
   renderer.blend(false);
   if (!hideAvatar) drawAvatar(renderer,world,player,walkPhase,stride,reduced.matches ? 0 : now/1000,menu.look);
-  online.draw(matrix,eye,dt,peer => {
+  if (preview) {
+    drawAvatar(renderer,world,{...wardrobeSpot,yaw:Math.PI+preview.angle},0,0,0,preview.look);
+  }
+  if (!menu.open) online.draw(matrix,eye,dt,peer => {
     drawAvatar(renderer,world,peer,peer.phase,peer.stride,reduced.matches ? 0 : now/1000);
   });
   renderer.blend(true);

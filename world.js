@@ -1,6 +1,6 @@
 import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webgl.js';
 import { GAMES, LATEST_RELEASE, RARITIES, coverUV, coversPerAtlas } from './catalog.js';
-import { looks } from './menu.js?v=arcade-menu-3';
+import { avatarPalette } from './cosmetics.js?v=wardrobe-4';
 
 const M = {
   lamp: m('#fff0d8', 1.05), white: m('#ffffff', 1),
@@ -897,6 +897,11 @@ function avatar(renderer, palette) {
     [0,.80,0,.43,.33,.065],[0,.87,0,.50,.38,.07],[0,1.15,0,.54,.406,.085],
     [0,1.42,-.005,.57,.39,.094],[0,1.54,-.025,.44,.34,.073],[0,1.57,-.03,.31,.29,.063]
   ],coat);
+  if (palette.price) {
+    const badge = m(palette.accent,.22);
+    torso.box(0,1.17,-.210,.026,.44,.025,badge);
+    torso.block(-.15,1.32,-.214,.095,.074,.028,.009,badge);
+  }
   torso.block(0,.819,0,.482,.079,.36,.026,lining);
   torso.block(0,.757,0,.46,.083,.343,.027,denim);
   torso.block(0,1.585,-.029,.22,.22,.217,.041,skin);
@@ -1067,16 +1072,24 @@ export function createWorld(renderer, coverAtlases) {
     releasePosters,
     transparent:upload([glass]), decals:upload([shadow,rarityTags]),
     doors:[upload(door(-1)),upload(door(1))],
-    avatars:new Map([[0,avatar(renderer,looks[0])]]), avatarShadow:renderer.upload(avatarShadow), obstacles, cases, caseGames, posterSlot, stockCopies:stock.copies
+    avatar:avatar(renderer,avatarPalette({outfit:'forest',skin:0,hair:0})), avatarShadow:renderer.upload(avatarShadow), obstacles, cases, caseGames, posterSlot, stockCopies:stock.copies
   };
 }
 
-export function drawAvatar(renderer, world, player, phase, stride, time, look = 0) {
-  if (!world.avatars.has(look)) world.avatars.set(look,avatar(renderer,looks[look]));
+export function drawAvatar(renderer, world, player, phase, stride, time, look) {
+  let meshes = world.avatar;
+  if (look && (look.outfit !== 'forest' || look.skin !== 0 || look.hair !== 0)) {
+    const key = [look.outfit,look.skin,look.hair].join(':');
+    if (world.customAvatar?.key !== key) {
+      if (world.customAvatar) Object.values(world.customAvatar.meshes).forEach(mesh => renderer.release(mesh));
+      world.customAvatar = {key,meshes:avatar(renderer,avatarPalette(look))};
+    }
+    meshes = world.customAvatar.meshes;
+  }
   const idle=Math.sin(time*2.7)*.010;
   const swing=Math.sin(phase) * stride;
   const body=model(player.x,.029+Math.abs(Math.sin(phase))*.044*stride+idle,player.z,player.yaw,.060*stride,1.035);
-  const {torso,back,leftLeg,rightLeg,leftArm,rightArm}=world.avatars.get(look);
+  const {torso,back,leftLeg,rightLeg,leftArm,rightArm}=meshes;
   renderer.draw(torso,body);
   renderer.draw(back,body);
   renderer.draw(leftLeg,multiply(body,model(-.138,.812,.006,0,swing*.62)));
