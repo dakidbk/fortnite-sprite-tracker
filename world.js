@@ -890,79 +890,100 @@ function arcade(geo, marquee, screen, x, z, relay = false) {
 
 function avatar(renderer, palette, accessory) {
   const torso=new Mesh(), leftLeg=new Mesh(), rightLeg=new Mesh(), leftArm=new Mesh(), rightArm=new Mesh();
-  const coat=m(palette.coat), hood=m(palette.hood), denim=m('#2f3737'), seam=m('#4b5451');
-  const accent=m(palette.accent), lining=m('#aab4a3'), skin=m(palette.skin), lightSkin=m(palette.lightSkin);
-  const hair=m(palette.hair), auburn=m(palette.hairLight,0,1,.08), copper=m(palette.hairLight), sole=m('#dfdacb');
+  const coat=m(palette.coat,0,1,.26), hood=m(palette.hood,0,1,.23);
+  const denim=m('#282934',0,1,.16), seam=m('#474759'), welt=m('#191824');
+  const accent=m(palette.accent,.055), lining=m('#ded2c4'), skin=m(palette.skin,0,1,.11), lightSkin=m(palette.lightSkin,0,1,.12);
+  const hair=m(palette.hair,0,1,.28), hairLight=m(palette.hairLight,0,1,.33), sole=m('#ded9dc');
+  const eyeInk=m('#211924'), sclera=m('#eee3da'), iris=m('#604742'), lips=m('#683e43');
+
+  // A layered bomber jacket with a ribbed hem, raised lapels, and contrast piping.
   torso.layers([
-    [0,.80,0,.43,.33,.065],[0,.87,0,.50,.38,.07],[0,1.15,0,.54,.406,.085],
-    [0,1.42,-.005,.57,.39,.094],[0,1.54,-.025,.44,.34,.073],[0,1.57,-.03,.31,.29,.063]
+    [0,.795,0,.426,.316,.063],[0,.873,0,.506,.365,.068],[0,1.12,-.005,.543,.405,.081],
+    [0,1.405,-.012,.587,.394,.085],[0,1.52,-.029,.480,.325,.069],[0,1.58,-.034,.294,.262,.052]
   ],coat);
-  if (palette.price) {
-    const badge = m(palette.accent,.22);
-    torso.box(0,1.17,-.210,.026,.44,.025,badge);
-    torso.block(-.15,1.32,-.214,.095,.074,.028,.009,badge);
-  }
-  torso.block(0,.819,0,.482,.079,.36,.026,lining);
-  torso.block(0,.757,0,.46,.083,.343,.027,denim);
-  torso.block(0,1.585,-.029,.22,.22,.217,.041,skin);
+  torso.block(0,.817,0,.456,.076,.343,.024,hood);
+  torso.block(0,.765,0,.454,.074,.326,.026,denim);
+  torso.block(0,1.574,-.034,.210,.190,.182,.038,skin);
   torso.layers([
-    [0,1.403,.174,.18,.16,.048],[0,1.48,.145,.33,.23,.062],[0,1.56,.091,.489,.29,.074],
-    [0,1.633,.07,.42,.24,.061]
+    [0,1.389,.142,.192,.172,.047],[0,1.476,.136,.356,.254,.070],
+    [0,1.565,.106,.484,.268,.072],[0,1.618,.081,.390,.238,.056]
   ],hood);
-  torso.quad([-.229,1.58,.229],[-.101,1.477,.257],[.101,1.477,.257],[.229,1.58,.229],lining);
-  torso.triangle([-.18,1.58,.232],[0,1.495,.259],[.18,1.58,.232],m('#778d80'));
-  torso.front(-.219,1.011,.184,.036,.232,hood);
-  torso.front(.219,1.011,.184,.036,.232,hood);
-  torso.ellipsoid(0,1.79,-.026,.244,.262,.224,10,7,skin,true);
-  torso.ellipsoid(0,1.928,.011,.265,.207,.238,10,6,hair,true);
-  torso.ellipsoid(0,1.811,.121,.235,.210,.149,9,6,hair,true);
-  const spikes=[
-    [[-.23,1.90,.035],[-.302,2.057,.062],[-.13,2.032,.177],[-.113,1.935,.225]],
-    [[-.19,2.011,.001],[-.131,2.202,.029],[.036,2.057,.176],[.042,1.979,.226]],
-    [[-.056,2.026,-.06],[.063,2.224,-.05],[.188,2.073,.098],[.156,1.972,.209]],
-    [[.065,2.04,-.06],[.276,2.116,-.006],[.247,2.001,.14],[.142,1.949,.228]],
-    [[.12,1.951,.03],[.30,2.019,.02],[.244,1.882,.179],[.108,1.868,.239]],
-    [[-.23,1.929,-.085],[-.312,1.965,-.166],[-.175,2.045,-.188],[-.115,1.99,-.241]]
+  torso.quad([-.20,1.544,.216],[-.088,1.461,.262],[.088,1.461,.262],[.20,1.544,.216],accent);
+  torso.block(0,1.243,-.209,.026,.558,.028,.008,hood);
+  torso.box(0,1.27,-.226,.010,.460,.012,accent);
+  torso.block(.018,1.435,-.235,.025,.054,.019,.005,lining);
+  for (const side of [-1,1]) {
+    torso.rod([side*.055,1.52,-.203],[side*.131,1.445,-.222],.014,.015,5,lining);
+    torso.rod([side*.135,1.092,-.218],[side*.194,1.010,-.194],.012,.012,5,hood);
+    torso.box(side*.196,1.017,.178,.041,.177,.026,hood);
+  }
+  if (palette.price) {
+    torso.block(-.160,1.326,-.220,.107,.082,.031,.012,accent);
+    torso.box(-.160,1.326,-.239,.048,.026,.010,hood);
+  }
+
+  // A rounded jaw and a swept undercut keep the face readable from every angle.
+  torso.layers([
+    [0,1.597,-.068,.130,.119,.037],[0,1.643,-.057,.250,.216,.061],
+    [0,1.744,-.039,.369,.305,.088],[0,1.861,-.019,.414,.350,.091],
+    [0,1.965,.006,.372,.323,.088],[0,2.016,.017,.261,.231,.067]
+  ],skin);
+  torso.ellipsoid(0,1.96,.048,.212,.151,.179,12,7,hair);
+  torso.ellipsoid(0,1.845,.120,.192,.138,.106,10,6,hair);
+  torso.layers([
+    [.015,1.955,.012,.400,.330,.096],[.025,2.025,.005,.425,.352,.090],
+    [.050,2.083,.007,.380,.311,.081],[.081,2.127,.024,.257,.217,.072],
+    [.100,2.154,.034,.138,.131,.041]
+  ],hair);
+  const sweptLocks = [
+    [[-.196,1.953,-.122],[-.113,2.077,-.175],[.113,2.122,-.123],[.006,1.963,-.226]],
+    [[-.100,2.067,-.153],[.035,2.132,-.166],[.225,2.092,-.064],[.102,2.018,-.206]],
+    [[.047,2.126,-.087],[.163,2.147,-.048],[.224,2.078,.039],[.176,2.039,-.163]]
   ];
-  for (const [a,b,c,d] of spikes) {
-    torso.triangle(a,b,c,auburn);
-    torso.triangle(b,d,c,copper);
-    torso.triangle(a,d,b,hair);
+  for (const [a,b,c,d] of sweptLocks) {
+    torso.triangle(a,b,d,hairLight);
+    torso.triangle(b,c,d,hair);
+    torso.triangle(a,d,c,hair);
   }
-  for (const s of [-1,1]) {
-    torso.ellipsoid(s*.235,1.766,-.016,.057,.085,.061,7,5,lightSkin);
-    torso.ellipsoid(s*.083,1.816,-.224,.043,.023,.023,8,4,sole);
-    torso.ellipsoid(s*.079,1.814,-.244,.018,.019,.013,8,5,M.dark);
-    torso.rod([s*.046,1.853,-.238],[s*.123,1.865,-.215],.011,.012,5,auburn);
+  for (const side of [-1,1]) {
+    torso.ellipsoid(side*.200,1.785,-.003,.039,.063,.043,9,6,skin);
+    torso.ellipsoid(side*.226,1.785,-.012,.015,.033,.027,8,5,lightSkin);
+    torso.ellipsoid(side*.079,1.829,-.198,.039,.019,.012,10,5,eyeInk);
+    torso.ellipsoid(side*.079,1.828,-.207,.033,.014,.008,10,5,sclera);
+    torso.ellipsoid(side*.077,1.829,-.214,.015,.014,.007,9,5,iris);
+    torso.ellipsoid(side*.077-.004,1.834,-.219,.004,.004,.004,7,4,lining);
+    torso.rod([side*.043,1.875,-.207],[side*.114,1.883,-.183],.009,.008,6,hair);
   }
-  torso.ellipsoid(0,1.772,-.237,.040,.040,.044,7,4,lightSkin);
-  torso.box(0,1.699,-.226,.070,.015,.014,m('#744842'));
-  for (const [s,leg,arm] of [[-1,leftLeg,leftArm],[1,rightLeg,rightArm]]) {
+  torso.block(0,1.768,-.204,.047,.073,.047,.018,lightSkin);
+  torso.rod([-.026,1.697,-.174],[.028,1.702,-.176],.006,.005,5,lips);
+
+  for (const [side,leg,arm] of [[-1,leftLeg,leftArm],[1,rightLeg,rightArm]]) {
     leg.layers([
-      [0,-.58,.012,.173,.205,.043],[0,-.54,.005,.218,.227,.048],[0,-.26,.010,.255,.253,.051],
-      [s*.016,-.04,0,.254,.255,.049],[0,.033,0,.231,.235,.041]
+      [0,-.57,.007,.167,.202,.037],[0,-.49,.003,.203,.224,.044],[0,-.264,.013,.227,.245,.052],
+      [side*.011,-.045,.002,.247,.265,.046],[0,.033,0,.233,.237,.043]
     ],denim);
-    leg.block(s*.091,-.275,.022,.122,.259,.207,.028,seam);
-    leg.block(0,-.562,0,.209,.097,.214,.023,M.black);
-    leg.block(0,-.624,-.023,.198,.101,.232,.029,lining);
-    leg.block(0,-.717,-.086,.250,.153,.398,.057,coat);
-    leg.block(0,-.772,-.087,.263,.054,.410,.028,sole);
-    leg.block(0,-.711,-.232,.213,.086,.097,.027,m('#647b6e'));
-    leg.box(0,-.699,.109,.191,.044,.023,accent);
-    leg.box(0,-.663,-.142,.185,.038,.093,M.stone);
+    leg.block(side*.091,-.240,.021,.098,.183,.183,.025,seam);
+    leg.box(side*.139,-.203,.025,.019,.042,.139,welt);
+    leg.block(0,-.555,0,.190,.072,.205,.022,hood);
+    leg.block(0,-.642,-.029,.186,.128,.241,.032,coat);
+    leg.block(0,-.711,-.090,.242,.147,.385,.060,hood);
+    leg.block(0,-.771,-.091,.252,.055,.402,.028,sole);
+    leg.block(0,-.728,-.249,.206,.056,.087,.024,lining);
+    leg.box(0,-.695,.092,.174,.040,.024,accent);
+    for (let lace=0; lace<3; lace++) leg.box(0,-.630-lace*.008,-.095-lace*.027,.103,.012,.010,lining);
     arm.layers([
-      [s*.048,-.447,.003,.124,.137,.031],[s*.051,-.39,0,.16,.166,.045],
-      [s*.031,-.192,.007,.195,.207,.053],[0,-.011,0,.206,.211,.046],[0,.052,0,.144,.159,.035]
+      [side*.032,-.451,.010,.117,.136,.036],[side*.046,-.377,.009,.148,.166,.039],
+      [side*.037,-.194,.014,.176,.198,.044],[side*.009,-.025,.005,.209,.217,.052],[0,.052,0,.157,.159,.041]
     ],coat);
-    arm.block(s*.049,-.382,.004,.164,.061,.171,.022,accent);
-    arm.block(s*.049,-.431,.003,.133,.055,.151,.016,hood);
-    arm.ellipsoid(s*.048,-.500,-.001,.064,.091,.054,8,5,skin);
-    arm.ellipsoid(s*.005,-.477,-.031,.033,.049,.029,7,5,lightSkin);
+    arm.block(side*.041,-.400,.008,.153,.087,.170,.019,hood);
+    arm.box(side*.041,-.373,-.080,.139,.022,.019,accent);
+    arm.block(side*.032,-.493,.001,.104,.151,.110,.032,skin);
+    arm.ellipsoid(side*.005,-.476,-.042,.030,.048,.027,8,5,lightSkin);
   }
   const gear = accessories[accessory];
   if (accessory === 'visor') {
-    torso.block(0,1.862,-.238,.417,.103,.073,.029,m(gear.hood));
-    torso.box(0,1.867,-.279,.362,.053,.024,m(gear.accent,.64));
+    torso.block(0,1.837,-.220,.397,.090,.061,.024,m(gear.hood));
+    torso.box(0,1.841,-.254,.346,.047,.023,m(gear.accent,.64));
   }
   if (accessory === 'headphones') {
     const band = m(gear.hood), pad = m(gear.accent,.18);
@@ -1073,7 +1094,7 @@ export function createWorld(renderer, coverAtlases) {
     guide.quad([x-.15,.014,z+.13],[x,.014,z-.02],[x,.014,z-.09],[x-.15,.014,z+.06],marker);
     guide.quad([x,.014,z-.02],[x+.15,.014,z+.13],[x+.15,.014,z+.06],[x,.014,z-.09],marker);
   }
-  renderer.lights([
+  const sceneLights = [
     [[-4.4,3.65,.95],'#ffd6a4',5.5,1.23],[[4.55,3.65,.97],'#ffe0b6',5.7,1.22],
     [[0,3.68,1.19],'#ff9b86',6.9,1.16],[[0,3.31,-2.90],'#fff1db',7.0,1.16],
     [[-4.48,3.20,-3.3],'#fff0d6',6.0,1.13],[[4.0,3.23,-4.7],'#fff1db',6.3,1.14],
@@ -1084,11 +1105,12 @@ export function createWorld(renderer, coverAtlases) {
     [[-6.74,3.73,-9.21],'#fff0d9',6.05,1.23],[[-7.31,3.56,-16.09],'#ffedd2',6.1,1.20],
     [[6.15,3.76,-8.23],'#fff1da',6.0,1.15],[[6.16,3.63,-16.44],'#ffcdb3',6.38,1.30],
     [[0,4.72,2.05],'#ff6558',8.3,1.18],[[SIGNAL_CABINET.x,2.62,SIGNAL_CABINET.z+.75],'#9d9aff',4.9,.9]
-  ]);
+  ];
+  renderer.lights(sceneLights);
   const upload=meshes=>meshes.map(part=>renderer.upload(part));
   return {
     opaque:upload([distant,mesh,tile,sign,...cases,display,harvest,labels,marquee,screen,relayMarquee,relayScreen,logo,mat,guide]),
-    releasePosters,
+    releasePosters, sceneLights,
     transparent:upload([glass]), decals:upload([shadow,rarityTags]),
     doors:[upload(door(-1)),upload(door(1))],
     avatar:avatar(renderer,avatarPalette({outfit:'forest',skin:0,hair:0})), avatarShadow:renderer.upload(avatarShadow), obstacles, cases, caseGames, posterSlot, stockCopies:stock.copies
@@ -1113,6 +1135,6 @@ export function drawAvatar(renderer, world, player, phase, stride, time, look) {
   renderer.draw(back,body);
   renderer.draw(leftLeg,multiply(body,model(-.138,.812,.006,0,swing*.62)));
   renderer.draw(rightLeg,multiply(body,model(.138,.812,.006,0,-swing*.62)));
-  renderer.draw(leftArm,multiply(body,model(-.306,1.446,-.018,0,-swing*.71)));
-  renderer.draw(rightArm,multiply(body,model(.306,1.446,-.018,0,swing*.71)));
+  renderer.draw(leftArm,multiply(body,model(-.301,1.443,-.025,0,-swing*.71)));
+  renderer.draw(rightArm,multiply(body,model(.301,1.443,-.025,0,swing*.71)));
 }

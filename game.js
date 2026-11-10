@@ -1,5 +1,5 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=wardrobe-4';
-import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=shop-drop-7';
+import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=avatar-9';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js';
 import { createShop } from './shop.js?v=creator-inbox-8';
 import { createSignalRelay } from './signal.js';
@@ -471,6 +471,11 @@ function orbitCamera(dt,aspect) {
 }
 
 const wardrobeSpot = {x:0,z:4.68};
+const portraitLights = [
+  [[-1.25,2.60,6.4],'#ffd7b8',4.4,1.36],
+  [[1.45,1.65,6.9],'#a9b8ff',4.1,.87],
+  [[.65,2.55,3.8],'#ff997f',3.0,.71]
+];
 function cameraFor(dt, aspect, preview) {
   if (preview) {
     const wide = aspect > 1 && innerWidth > 650;
@@ -546,6 +551,11 @@ function draw(dt, now) {
   renderer.resize();
   const aspect = canvas.width / canvas.height;
   const preview = menu.preview;
+  if (world.portraitLighting !== !!preview) {
+    world.portraitLighting = !!preview;
+    if (preview) world.portraitAngle = preview.angle;
+    renderer.lights(preview ? [...world.sceneLights.slice(0,-3),...portraitLights] : world.sceneLights);
+  }
   const { eye, aim, fov, hideAvatar } = cameraFor(dt, aspect, preview);
   const matrix = viewProjection(eye,aim,fov,aspect);
   const offset = smooth(0,1,door) * 1.515;
@@ -565,7 +575,10 @@ function draw(dt, now) {
   renderer.blend(false);
   if (!hideAvatar) drawAvatar(renderer,world,player,walkPhase,stride,reduced.matches ? 0 : now/1000,menu.look);
   if (preview) {
-    drawAvatar(renderer,world,{...wardrobeSpot,yaw:Math.PI+preview.angle},0,0,0,preview.look);
+    const turn = preview.angle-world.portraitAngle;
+    const blend = reduced.matches ? 1 : 1-Math.exp(-dt*12);
+    world.portraitAngle += Math.atan2(Math.sin(turn),Math.cos(turn))*blend;
+    drawAvatar(renderer,world,{...wardrobeSpot,yaw:Math.PI+world.portraitAngle},0,0,reduced.matches ? 0 : now/1000,preview.look);
   }
   if (!menu.open) online.draw(matrix,eye,dt,peer => {
     drawAvatar(renderer,world,peer,peer.phase,peer.stride,reduced.matches ? 0 : now/1000);
