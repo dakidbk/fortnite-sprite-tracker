@@ -1,6 +1,8 @@
 import { GAMES, LATEST_RELEASE, RARITIES } from './catalog.js';
 import { listingQuote, listings, shopItems } from './cosmetics.js?v=shop-drop-7';
 
+import { creatorIdPattern } from './creator.js?v=creator-inbox-8';
+
 const PROFILE_KEY = 'after-hours-collection-v1';
 const STARTING_CREDITS = 120;
 const $ = id => document.getElementById(id);
@@ -34,6 +36,7 @@ function loadProfile(fallback) {
     return {
       credits: Number.isSafeInteger(saved.credits) && saved.credits >= 0 ? saved.credits : STARTING_CREDITS,
       owned,
+      creatorClaims: Array.isArray(saved.creatorClaims) ? [...new Set(saved.creatorClaims.filter(id => typeof id === 'string' && creatorIdPattern.test(id)))] : [],
       cosmetics: Object.keys(shopItems).filter(id => Array.isArray(saved.cosmetics) && saved.cosmetics.includes(id)),
       basket,
       caseSlots,
@@ -47,7 +50,7 @@ function loadProfile(fallback) {
 
 export function createShop({ beforeOpen, onChange, paintCover, announce }) {
   const checkout = $('checkout-dialog'), collection = $('collection-dialog');
-  let profile = loadProfile({ credits: STARTING_CREDITS, owned: [], cosmetics: [], basket: [], caseSlots: {}, arcadeEarned: false, signalBest: 0 });
+  let profile = loadProfile({ credits: STARTING_CREDITS, owned: [], cosmetics: [], creatorClaims: [], basket: [], caseSlots: {}, arcadeEarned: false, signalBest: 0 });
   let inspected = null;
 
   function renderWallet() {
@@ -156,10 +159,12 @@ export function createShop({ beforeOpen, onChange, paintCover, announce }) {
     onChange();
   }
 
-  function commit(change) {
+  function commit(change, requireSave = false) {
     const current = loadProfile(profile);
-    profile = change(current);
-    try { localStorage.setItem(PROFILE_KEY,JSON.stringify(profile)); } catch {}
+    const next = change(current);
+    try { localStorage.setItem(PROFILE_KEY,JSON.stringify(next)); }
+    catch (error) { if (requireSave) throw error; }
+    profile = next;
     refresh();
   }
 
@@ -220,6 +225,21 @@ export function createShop({ beforeOpen, onChange, paintCover, announce }) {
     clearInspection() { inspected = null; },
     openCheckout,
     openCollection,
+    async claimCreatorGift({id,credits,item}) {
+      if (!creatorIdPattern.test(id) || (!credits && !item)) return false;
+      const claim = () => {
+        let claimed = false;
+        commit(current => {
+          if (current.creatorClaims.includes(id)) return current;
+          claimed = true;
+          const cosmetics = item && !current.cosmetics.includes(item) ? [...current.cosmetics,item] : current.cosmetics;
+          return {...current,cosmetics,credits:Math.min(Number.MAX_SAFE_INTEGER,current.credits+credits),
+            creatorClaims:[...current.creatorClaims,id]};
+        },true);
+        return claimed;
+      };
+      return navigator.locks ? navigator.locks.request('after-hours-creator-gift',claim) : claim();
+    },
     buyCosmetic(id) {
       if (!Object.hasOwn(listings,id)) return false;
       let purchased = false;

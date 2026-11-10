@@ -343,6 +343,16 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; min-height: 23
   .shop-tile { min-height: clamp(118px,19dvh,169px); }
 }
 
+.creator-list { display: grid; gap: 9px; max-height: 44dvh; overflow: auto; padding-right: 3px; scrollbar-color: #ac91d5 #241735; }
+.creator-card { padding: 13px; border: 1px solid #c194c077; border-left: 3px solid #ffac8b; border-radius: 6px; background: linear-gradient(120deg,#30203eea,#1c142af5); }
+.creator-stamp { color: #ffb998; font: 800 9px var(--mono); letter-spacing: .13em; }
+.creator-card h3 { margin: 6px 0 0; color: #fff3e6; font-size: 18px; }
+.creator-card .creator-message { white-space: pre-wrap; overflow-wrap: anywhere; margin: 7px 0 11px; }
+.creator-gift { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 8px; border-top: 1px solid #c194c055; }
+.creator-reward { color: #ffcf9e; font: 800 12px var(--mono); }
+.creator-gift button:disabled { opacity: .65; cursor: default; }
+.creator-status:empty { display: none; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }

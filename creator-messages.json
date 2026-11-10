@@ -1,0 +1,13 @@
+[
+  {
+    "id": "welcome-2026",
+    "title": "Welcome to the night shift",
+    "message": "Thanks for stopping by Game Store After Hours. Here's a little something for your next outfit or game.",
+    "gift": { "credits": 100 }
+  },
+  {
+    "id": "bring-your-crew",
+    "title": "Bring your crew",
+    "message": "Open Online Play from the store and share your room link. Up to four players can explore the store together."
+  }
+]

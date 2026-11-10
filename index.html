@@ -7,8 +7,8 @@
   <meta name="description" content="Build a game collection in a 3D store and earn credits at two arcade cabinets.">
   <title>Game Store After Hours</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=shop-drop-7">
-  <script type="module" src="game.js?v=shop-drop-7"></script>
+  <link rel="stylesheet" href="style.css?v=creator-inbox-8">
+  <script type="module" src="game.js?v=creator-inbox-8"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -273,8 +273,25 @@
         <div class="menu-list">
           <button class="menu-choice" id="menu-sound" type="button" aria-pressed="false"><span>Sound effects</span><strong id="menu-sound-value">Off</strong></button>
           <button class="menu-choice" id="menu-fullscreen" type="button"><span>Fullscreen</span><strong id="menu-fullscreen-value">Enter</strong></button>
+          <button class="menu-choice" id="menu-creator-button" type="button"><span>From Creator</span><strong>MESSAGES &amp; GIFTS</strong></button>
         </div>
         <div class="menu-footer"><button class="menu-small" id="menu-options-back" type="button">Back</button></div>
+      </section>
+      <section id="menu-creator" hidden>
+        <div class="menu-kicker">OWNER'S INBOX</div>
+        <h2 id="menu-creator-title">From Creator</h2>
+        <p>Read messages and claim gifts from the owner of Game Store After Hours.</p>
+        <div id="creator-list" class="creator-list"></div>
+        <p id="creator-status" class="creator-status" role="status"></p>
+        <div class="menu-footer"><button class="menu-small" id="menu-creator-back" type="button">Back to Options</button></div>
+        <template id="creator-card-template">
+          <article class="creator-card">
+            <div class="creator-stamp">GAME STORE AFTER HOURS</div>
+            <h3></h3>
+            <p class="creator-message"></p>
+            <div class="creator-gift" hidden><strong class="creator-reward"></strong><button class="menu-small menu-play" type="button">Claim gift</button></div>
+          </article>
+        </template>
       </section>
       <div class="menu-hints" id="menu-hints" aria-hidden="true"><span><kbd>↑</kbd> <kbd>↓</kbd> NAVIGATE</span><span><kbd>ENTER</kbd> SELECT</span></div>
     </div>
