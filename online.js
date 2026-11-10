@@ -167,7 +167,7 @@ export function createOnline({ clearMovement, position }) {
         render(peer);
         const [x,y,w] = project(matrix,[peer.x,2.08,peer.z]);
         const distance = Math.hypot(eye[0]-peer.x,eye[2]-peer.z);
-        peer.tag.hidden = w < .3 || distance > 12 || x < .04 || x > .96 || y < .11 || y > .88;
+        peer.tag.hidden = w < .3 || distance > 26 || x < .04 || x > .96 || y < .11 || y > .88;
         if (!peer.tag.hidden) {
           peer.tag.style.left = (clamp(x,0,1)*100)+'%';
           peer.tag.style.top = (clamp(y,0,1)*100)+'%';
