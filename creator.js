@@ -1,4 +1,4 @@
-import { shopItems } from './cosmetics.js?v=shop-drop-7';
+import { shopItems } from './cosmetics.js?v=character-11';
 
 const $ = id => document.getElementById(id);
 const money = value => value.toLocaleString('en-US')+' CR';

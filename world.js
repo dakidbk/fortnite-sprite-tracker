@@ -1,6 +1,6 @@
 import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webgl.js';
 import { GAMES, LATEST_RELEASE, RARITIES, coverUV, coversPerAtlas } from './catalog.js';
-import { accessories, avatarPalette } from './cosmetics.js?v=shop-drop-7';
+import { accessories, avatarPalette } from './cosmetics.js?v=character-11';
 
 const M = {
   lamp: m('#fff0d8', 1.05), white: m('#ffffff', 1),
@@ -888,7 +888,10 @@ function arcade(geo, marquee, screen, x, z, relay = false) {
   geo.box(x,.057,z,1.25,.091,.86,M.dark);
 }
 
-function avatar(renderer, palette, accessory) {
+function avatar(renderer, palette, look = {}) {
+  const {accessory,style=0,gender=0} = look;
+  const shoulder = gender === 1 ? .624 : gender === 2 ? .548 : .587;
+  const jaw = gender === 1 ? .276 : gender === 2 ? .222 : .250;
   const torso=new Mesh(), leftLeg=new Mesh(), rightLeg=new Mesh(), leftArm=new Mesh(), rightArm=new Mesh();
   const coat=m(palette.coat,0,1,.26), hood=m(palette.hood,0,1,.23);
   const denim=m('#282934',0,1,.16), seam=m('#474759'), welt=m('#191824');
@@ -899,7 +902,7 @@ function avatar(renderer, palette, accessory) {
   // A layered bomber jacket with a ribbed hem, raised lapels, and contrast piping.
   torso.layers([
     [0,.795,0,.426,.316,.063],[0,.873,0,.506,.365,.068],[0,1.12,-.005,.543,.405,.081],
-    [0,1.405,-.012,.587,.394,.085],[0,1.52,-.029,.480,.325,.069],[0,1.58,-.034,.294,.262,.052]
+    [0,1.405,-.012,shoulder,.394,.085],[0,1.52,-.029,.480,.325,.069],[0,1.58,-.034,.294,.262,.052]
   ],coat);
   torso.block(0,.817,0,.456,.076,.343,.024,hood);
   torso.block(0,.765,0,.454,.074,.326,.026,denim);
@@ -924,26 +927,48 @@ function avatar(renderer, palette, accessory) {
 
   // A rounded jaw and a swept undercut keep the face readable from every angle.
   torso.layers([
-    [0,1.597,-.068,.130,.119,.037],[0,1.643,-.057,.250,.216,.061],
+    [0,1.597,-.068,.130,.119,.037],[0,1.643,-.057,jaw,.216,.061],
     [0,1.744,-.039,.369,.305,.088],[0,1.861,-.019,.414,.350,.091],
     [0,1.965,.006,.372,.323,.088],[0,2.016,.017,.261,.231,.067]
   ],skin);
-  torso.ellipsoid(0,1.96,.048,.212,.151,.179,12,7,hair);
-  torso.ellipsoid(0,1.845,.120,.192,.138,.106,10,6,hair);
-  torso.layers([
-    [.015,1.955,.012,.400,.330,.096],[.025,2.025,.005,.425,.352,.090],
-    [.050,2.083,.007,.380,.311,.081],[.081,2.127,.024,.257,.217,.072],
-    [.100,2.154,.034,.138,.131,.041]
-  ],hair);
-  const sweptLocks = [
-    [[-.196,1.953,-.122],[-.113,2.077,-.175],[.113,2.122,-.123],[.006,1.963,-.226]],
-    [[-.100,2.067,-.153],[.035,2.132,-.166],[.225,2.092,-.064],[.102,2.018,-.206]],
-    [[.047,2.126,-.087],[.163,2.147,-.048],[.224,2.078,.039],[.176,2.039,-.163]]
-  ];
-  for (const [a,b,c,d] of sweptLocks) {
-    torso.triangle(a,b,d,hairLight);
-    torso.triangle(b,c,d,hair);
-    torso.triangle(a,d,c,hair);
+  if (style === 0) {
+    torso.ellipsoid(0,1.96,.048,.212,.151,.179,12,7,hair);
+    torso.ellipsoid(0,1.845,.120,.192,.138,.106,10,6,hair);
+    torso.layers([
+      [.015,1.955,.012,.400,.330,.096],[.025,2.025,.005,.425,.352,.090],
+      [.050,2.083,.007,.380,.311,.081],[.081,2.127,.024,.257,.217,.072],
+      [.100,2.154,.034,.138,.131,.041]
+    ],hair);
+    const sweptLocks = [
+      [[-.196,1.953,-.122],[-.113,2.077,-.175],[.113,2.122,-.123],[.006,1.963,-.226]],
+      [[-.100,2.067,-.153],[.035,2.132,-.166],[.225,2.092,-.064],[.102,2.018,-.206]],
+      [[.047,2.126,-.087],[.163,2.147,-.048],[.224,2.078,.039],[.176,2.039,-.163]]
+    ];
+    for (const [a,b,c,d] of sweptLocks) {
+      torso.triangle(a,b,d,hairLight);
+      torso.triangle(b,c,d,hair);
+      torso.triangle(a,d,c,hair);
+    }
+  } else if (style === 1) {
+    torso.ellipsoid(0,1.969,.040,.208,.085,.172,14,7,hair);
+    torso.ellipsoid(0,1.901,.124,.178,.094,.105,12,7,hair);
+    torso.rod([-.139,2.004,-.075],[.105,2.028,-.090],.006,.006,5,hairLight);
+  } else if (style === 2) {
+    torso.ellipsoid(0,1.972,.053,.228,.144,.177,12,7,hair);
+    for (const [x,y,z,r] of [[-.136,2.043,-.066,.092],[-.035,2.091,-.086,.090],[.072,2.097,-.080,.088],
+      [.156,2.044,-.058,.083],[-.087,2.095,.054,.087],[.023,2.134,.033,.087],[.124,2.095,.065,.088]]) {
+      torso.ellipsoid(x,y,z,r,r*.89,r,10,6,hair);
+      torso.ellipsoid(x-.021,y+r*.57,z-.034,r*.46,r*.27,r*.38,8,5,hairLight);
+    }
+  } else {
+    torso.ellipsoid(0,1.951,.036,.230,.166,.191,14,8,hair);
+    torso.ellipsoid(0,1.805,.112,.210,.222,.114,12,7,hair);
+    for (const side of [-1,1]) {
+      torso.layers([[side*.183,1.690,.026,.078,.112,.031],[side*.197,1.766,.032,.113,.176,.044],
+        [side*.200,1.914,.029,.094,.172,.036],[side*.147,2.016,.009,.097,.145,.033]],hair);
+      torso.rod([side*.216,1.966,-.034],[side*.223,1.755,-.037],.009,.006,5,hairLight);
+    }
+    torso.rod([-.127,2.034,-.102],[.094,2.061,-.116],.016,.013,6,hairLight);
   }
   for (const side of [-1,1]) {
     torso.ellipsoid(side*.200,1.785,-.003,.039,.063,.043,9,6,skin);
@@ -981,6 +1006,13 @@ function avatar(renderer, palette, accessory) {
     arm.ellipsoid(side*.005,-.476,-.042,.030,.048,.027,8,5,lightSkin);
   }
   const gear = accessories[accessory];
+  if (accessory === 'headband') {
+    torso.block(0,1.929,-.043,.411,.063,.314,.025,m(gear.coat));
+    torso.box(0,1.939,-.211,.298,.018,.019,m(gear.accent,.22));
+  }
+  if (accessory === 'studs') {
+    for (const side of [-1,1]) torso.ellipsoid(side*.224,1.754,-.033,.018,.018,.018,8,5,m(gear.accent,.47));
+  }
   if (accessory === 'visor') {
     torso.block(0,1.837,-.220,.397,.090,.061,.024,m(gear.hood));
     torso.box(0,1.841,-.254,.346,.047,.023,m(gear.accent,.64));
@@ -1119,11 +1151,11 @@ export function createWorld(renderer, coverAtlases) {
 
 export function drawAvatar(renderer, world, player, phase, stride, time, look) {
   let meshes = world.avatar;
-  if (look && (look.outfit !== 'forest' || look.skin !== 0 || look.hair !== 0 || look.accessory)) {
-    const key = [look.outfit,look.skin,look.hair,look.accessory].join(':');
+  if (look && (look.outfit !== 'forest' || look.skin !== 0 || look.hair !== 0 || look.style || look.gender || look.accessory)) {
+    const key = [look.outfit,look.skin,look.hair,look.style,look.gender,look.accessory].join(':');
     if (world.customAvatar?.key !== key) {
       if (world.customAvatar) Object.values(world.customAvatar.meshes).forEach(mesh => renderer.release(mesh));
-      world.customAvatar = {key,meshes:avatar(renderer,avatarPalette(look),look.accessory)};
+      world.customAvatar = {key,meshes:avatar(renderer,avatarPalette(look),look)};
     }
     meshes = world.customAvatar.meshes;
   }
@@ -1135,6 +1167,7 @@ export function drawAvatar(renderer, world, player, phase, stride, time, look) {
   renderer.draw(back,body);
   renderer.draw(leftLeg,multiply(body,model(-.138,.812,.006,0,swing*.62)));
   renderer.draw(rightLeg,multiply(body,model(.138,.812,.006,0,-swing*.62)));
-  renderer.draw(leftArm,multiply(body,model(-.301,1.443,-.025,0,-swing*.71)));
-  renderer.draw(rightArm,multiply(body,model(.301,1.443,-.025,0,swing*.71)));
+  const armOffset = look?.gender === 1 ? .319 : look?.gender === 2 ? .281 : .301;
+  renderer.draw(leftArm,multiply(body,model(-armOffset,1.443,-.025,0,-swing*.71)));
+  renderer.draw(rightArm,multiply(body,model(armOffset,1.443,-.025,0,swing*.71)));
 }

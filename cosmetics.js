@@ -11,14 +11,18 @@ export const outfits = {
   camo: {name:'Night Camo', coat:'#3d493b', hood:'#25332a', accent:'#c8e490', price:55, type:'NIGHT SHIFT SERIES'}
 };
 export const shopOutfits = Object.keys(outfits).filter(id => outfits[id].price);
+export const genders = ['Neutral','Male','Female'];
+export const hairStyles = ['Sweep','Buzz Cut','Curls','Bob'];
 export const accessories = {
+  headband: {name:'Retro Headband', coat:'#962e4c', hood:'#5b2842', accent:'#ffd1ac'},
+  studs: {name:'Star Studs', coat:'#836536', hood:'#6c5241', accent:'#ffdc86'},
   visor: {name:'Pixel Visor', coat:'#37236c', hood:'#1d234a', accent:'#78f4ff', price:25, type:'ARCADE COLLECTION'},
   headphones: {name:'Arcade Headphones', coat:'#462443', hood:'#641d51', accent:'#ff8bb9', price:35, type:'AUDIO SERIES'},
   backpack: {name:'Collector Backpack', coat:'#4a312a', hood:'#795044', accent:'#ffc889', price:40, type:'COLLECTOR SERIES'}
 };
 export const shopItems = Object.fromEntries([
   ...shopOutfits.map(id => [id,{...outfits[id],slot:'outfit'}]),
-  ...Object.entries(accessories).map(([id,entry]) => [id,{...entry,slot:'accessory'}])
+  ...Object.entries(accessories).filter(([,entry]) => entry.price).map(([id,entry]) => [id,{...entry,slot:'accessory'}])
 ]);
 export const shopBundles = {
   arcadePack: {name:'Arcade After Dark',type:'OUTFIT + VISOR',items:['neon','visor'],discount:.20},
@@ -52,14 +56,17 @@ export function savedLook(raw, owned) {
   let look;
   try { look = JSON.parse(raw); } catch {}
   if (Number.isInteger(look) && starterOutfits[look]) {
-    return {outfit:starterOutfits[look],skin:look,hair:look,accessory:null};
+    return {outfit:starterOutfits[look],skin:look,hair:look,style:0,gender:0,accessory:null};
   }
   const outfit = look?.outfit;
   return {
     outfit:starterOutfits.includes(outfit) || (owned.includes(outfit) && shopItems[outfit]?.slot === 'outfit') ? outfit : 'forest',
     skin:Number.isInteger(look?.skin) && skinTones[look.skin] ? look.skin : 0,
     hair:Number.isInteger(look?.hair) && hairColors[look.hair] ? look.hair : 0,
-    accessory:owned.includes(look?.accessory) && shopItems[look.accessory]?.slot === 'accessory' ? look.accessory : null
+    style:Number.isInteger(look?.style) && hairStyles[look.style] ? look.style : 0,
+    gender:Number.isInteger(look?.gender) && genders[look.gender] ? look.gender : 0,
+    accessory:Object.hasOwn(accessories,look?.accessory) &&
+      (!accessories[look.accessory].price || owned.includes(look.accessory)) ? look.accessory : null
   };
 }
 

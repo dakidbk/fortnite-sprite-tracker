@@ -1,5 +1,5 @@
 import { GAMES, LATEST_RELEASE, RARITIES } from './catalog.js';
-import { listingQuote, listings, shopItems } from './cosmetics.js?v=shop-drop-7';
+import { listingQuote, listings, shopItems } from './cosmetics.js?v=character-11';
 
 import { creatorIdPattern } from './creator.js?v=creator-inbox-8';
 

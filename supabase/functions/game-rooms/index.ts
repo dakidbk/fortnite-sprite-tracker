@@ -11,6 +11,16 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{1
 const bounded = (value: unknown, min: number, max: number, fallback: number) =>
   typeof value === 'number' && Number.isFinite(value) ? Math.max(min,Math.min(max,value)) : fallback;
 
+const usernamePattern = /^[A-Za-z][A-Za-z0-9_]{2,15}$/;
+function rpc(name: string, data: object) {
+  const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  return fetch(Deno.env.get('SUPABASE_URL')+'/rest/v1/rpc/'+name,{
+    method:'POST',
+    headers:{'Content-Type':'application/json',apikey:key,Authorization:'Bearer '+key},
+    body:JSON.stringify(data)
+  });
+}
+
 Deno.serve(async request => {
   if (request.headers.get('origin') !== origin) return respond({error:'Open the game to join a room.'}, 403);
   if (request.method === 'OPTIONS') return new Response(null,{status:204,headers});
@@ -19,19 +29,25 @@ Deno.serve(async request => {
   try {
     const text = await request.text();
     if (text.length > 1024) return respond({error:'Invalid request.'},400);
-    const {op,room,token,x,z,yaw,stride} = JSON.parse(text);
+    const {op,room,token,x,z,yaw,stride,profileToken,username} = JSON.parse(text);
+    if (op === 'username') {
+      if (typeof profileToken !== 'string' || !uuid.test(profileToken)) return respond({error:'Invalid profile.'},400);
+      if (typeof username !== 'string' || !usernamePattern.test(username)) return respond({error:'Use 3–16 letters, numbers or underscores, starting with a letter.'},400);
+      const result = await rpc('after_hours_reserve_name',{profile_token:profileToken,requested:username});
+      if (!result.ok) return respond({error:'Username service is temporarily unavailable.'},503);
+      const state = await result.json();
+      return respond(state,state.error ? 409 : 200);
+    }
     if (!['create','join','sync','leave'].includes(op)) return respond({error:'Invalid action.'},400);
     const joining = op === 'create' || op === 'join';
     const code = op === 'create' ? crypto.randomUUID().replaceAll('-','').slice(0,12).toUpperCase() : room;
     if (typeof code !== 'string' || !/^[A-F0-9]{12}$/.test(code)) return respond({error:'Enter a valid room code.'},400);
     if (!joining && (typeof token !== 'string' || !uuid.test(token))) return respond({error:'Invalid session.'},401);
     const session = joining ? crypto.randomUUID() : token;
-    const key = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const result = await fetch(Deno.env.get('SUPABASE_URL')+'/rest/v1/rpc/after_hours_room',{
-      method:'POST',
-      headers:{'Content-Type':'application/json',apikey:key!,Authorization:'Bearer '+key},
-      body:JSON.stringify({op,code,session_id:session,px:bounded(x,-11,11,0),pz:bounded(z,-20,10,4.55),
-        angle:bounded(yaw,-7,7,0),pace:bounded(stride,0,1.3,0)})
+    const result = await rpc('after_hours_room_named',{
+      op,code,session_id:session,px:bounded(x,-11,11,0),pz:bounded(z,-20,10,4.55),
+      angle:bounded(yaw,-7,7,0),pace:bounded(stride,0,1.3,0),
+      profile_token: joining && typeof profileToken === 'string' && uuid.test(profileToken) ? profileToken : null
     });
     if (!result.ok) return respond({error:'Online rooms are temporarily unavailable.'},503);
     const state = await result.json();

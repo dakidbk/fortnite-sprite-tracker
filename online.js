@@ -1,5 +1,7 @@
 import { clamp, mix, project } from './webgl.js';
 
+import { profileToken } from './username.js?v=usernames-10';
+
 const endpoint = 'https://fwjthjqevmukrovpbvfx.supabase.co/functions/v1/game-rooms';
 const roomPattern = /^[A-F0-9]{12}$/;
 const interval = 280;
@@ -46,12 +48,12 @@ export function createOnline({ clearMovement, position }) {
         const tag = document.createElement('span');
         tag.className = 'room-tag';
         tag.dataset.slot = player.slot;
-        tag.textContent = 'Player '+player.slot;
         tags.append(tag);
         peer = {...player, phase:0, tag};
         peers.set(player.slot,peer);
       }
       peer.target = player;
+      peer.tag.textContent = player.username || 'Player '+player.slot;
     }
     for (const [slot,peer] of peers) {
       if (slots.has(slot)) continue;
@@ -103,7 +105,7 @@ export function createOnline({ clearMovement, position }) {
     $('room-create').disabled = $('room-join').disabled = true;
     showState(op === 'create' ? 'Creating your room…' : 'Joining room…');
     try {
-      const state = await request({op,room,...position()});
+      const state = await request({op,room,profileToken:profileToken(),...position()});
       session = {room:state.room,token:state.token,slot:state.slot};
       const url = new URL(location.pathname,location.origin);
       url.searchParams.set('room',session.room);

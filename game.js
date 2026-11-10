@@ -1,10 +1,10 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=wardrobe-4';
-import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=avatar-9';
+import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=character-11';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js';
-import { createShop } from './shop.js?v=creator-inbox-8';
+import { createShop } from './shop.js?v=character-11';
 import { createSignalRelay } from './signal.js';
-import { createOnline } from './online.js?v=wardrobe-4';
-import { createMenu } from './menu.js?v=creator-inbox-8';
+import { createOnline } from './online.js?v=usernames-10';
+import { createMenu } from './menu.js?v=character-11';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');

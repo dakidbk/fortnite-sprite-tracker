@@ -1,6 +1,8 @@
-import { accessories, outfits, listings, listingQuote, shopBundles, shopItems, shopOutfits, skinTones, hairColors, savedLook } from './cosmetics.js?v=shop-drop-7';
+import { accessories, outfits, listings, listingQuote, shopBundles, shopItems, shopOutfits, skinTones, hairColors, hairStyles, genders, savedLook } from './cosmetics.js?v=character-11';
 
 import { createCreatorInbox } from './creator.js?v=creator-inbox-8';
+
+import { createUsernameEditor } from './username.js?v=usernames-10';
 
 const storageKey = 'after-hours-character';
 const $ = id => document.getElementById(id);
@@ -11,10 +13,11 @@ const wearingAll = (look,id) => itemIds(id).every(part => look[shopItems[part].s
 
 export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscreen}) {
   const menu = $('start-menu');
-  const home = $('menu-home'), character = $('menu-character'), options = $('menu-options'), store = $('menu-item-shop'), creator = $('menu-creator');
+  const home = $('menu-home'), character = $('menu-character'), options = $('menu-options'), store = $('menu-item-shop'), creator = $('menu-creator'), username = $('menu-username');
+  const usernameEditor = createUsernameEditor();
   const inbox = createCreatorInbox(shop);
   let look = savedLook(read(storageKey),shop.state.cosmetics);
-  const catalogs = {outfits:shopOutfits,accessories:Object.keys(accessories),bundles:Object.keys(shopBundles)};
+  const catalogs = {outfits:shopOutfits,accessories:Object.keys(accessories).filter(id => accessories[id].price),bundles:Object.keys(shopBundles)};
   let selected = {...look}, item, category = 'featured', angle = 0, day = 0, clock;
   const featured = date => [
     shopOutfits[date % shopOutfits.length],
@@ -23,7 +26,7 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
   ];
 
   function screen(panel, focus) {
-    for (const section of [home,character,options,store,creator]) section.hidden = section !== panel;
+    for (const section of [home,character,options,store,creator,username]) section.hidden = section !== panel;
     menu.classList.toggle('wardrobe-open',panel === character || panel === store);
     menu.classList.toggle('item-shop-open',panel === store);
     $('menu-hints').hidden = panel !== home;
@@ -48,6 +51,12 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
     return button;
   }
 
+  function characterTab(tab) {
+    $('character-profile').hidden = tab !== 'profile';
+    $('character-wardrobe').hidden = tab !== 'wardrobe';
+    for (const button of $('character-tabs').children) button.setAttribute('aria-pressed',String(button.dataset.editor === tab));
+  }
+
   function openCreator() {
     selected = {...look};
     angle = 0;
@@ -55,11 +64,14 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
       .map(([id,entry]) => choose(entry.name,entry.hood,id === selected.outfit,() => { selected.outfit = id; })));
     $('look-skins').replaceChildren(...skinTones.map((tone,index) => choose(tone.name,tone.skin,index === selected.skin,() => { selected.skin = index; })));
     $('look-hair').replaceChildren(...hairColors.map((tone,index) => choose(tone.name,tone.hair,index === selected.hair,() => { selected.hair = index; })));
-    const available = Object.keys(accessories).filter(id => shop.state.cosmetics.includes(id));
+    const available = Object.keys(accessories).filter(id => !accessories[id].price || shop.state.cosmetics.includes(id));
     $('look-accessory-group').hidden = !available.length;
     $('look-accessories').replaceChildren(choose('None','#463750',!selected.accessory,() => { selected.accessory = null; }),
       ...available.map(id => choose(accessories[id].name,accessories[id].accent,id === selected.accessory,() => { selected.accessory = id; })));
-    screen(character,$('menu-save-look'));
+    $('look-genders').replaceChildren(...genders.map((name,index) => choose(name,'#d391be',index === selected.gender,() => { selected.gender = index; })));
+    $('look-hairstyles').replaceChildren(...hairStyles.map((name,index) => choose(name,'#aa86da',index === selected.style,() => { selected.style = index; })));
+    characterTab('profile');
+    screen(character,$('menu-username-button'));
   }
 
   function updateRotation() {
@@ -173,6 +185,7 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
   }
 
   $('menu-create').addEventListener('click',openCreator);
+  for (const tab of $('character-tabs').children) tab.addEventListener('click',() => characterTab(tab.dataset.editor));
   $('menu-shop-button').addEventListener('click',openShop);
   for (const tab of $('shop-categories').children) tab.addEventListener('click',() => {
     showCategory(tab.dataset.category);
@@ -195,6 +208,11 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
       $('item-status').textContent = 'Purchased. Equip it here or in Create a Character.';
     } else refreshShop();
   });
+  $('menu-username-button').addEventListener('click',() => {
+    screen(username,$('username-field'));
+    usernameEditor.open();
+  });
+  $('menu-username-back').addEventListener('click',() => screen(character,$('menu-username-button')));
   $('menu-character-back').addEventListener('click',() => screen(home,$('menu-create')));
   $('menu-item-back').addEventListener('click',() => screen(home,$('menu-shop-button')));
   $('menu-creator-button').addEventListener('click',() => {
@@ -225,6 +243,7 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
     if (!store.hidden) screen(home,$('menu-shop-button'));
     if (!options.hidden) screen(home,$('menu-options-button'));
     else if (!creator.hidden) screen(options,$('menu-creator-button'));
+    else if (!username.hidden) screen(character,$('menu-username-button'));
   });
 
   return {
