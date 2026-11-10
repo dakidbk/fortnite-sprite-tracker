@@ -13,6 +13,7 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
   function screen(panel, focus) {
     for (const section of [home,character,options,store]) section.hidden = section !== panel;
     menu.classList.toggle('wardrobe-open',panel === character || panel === store);
+    menu.classList.toggle('item-shop-open',panel === store);
     $('menu-hints').hidden = panel !== home;
     menu.setAttribute('aria-labelledby',panel.querySelector('h1,h2').id);
     menu.scrollTop = 0;
@@ -52,6 +53,13 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
     $('item-name').textContent = entry.name;
     $('item-type').textContent = entry.type;
     $('item-price').textContent = owned ? 'OWNED' : money(entry.price);
+    for (const tile of $('item-outfits').children) {
+      const id = tile.dataset.outfit;
+      const selected = id === item;
+      tile.setAttribute('aria-pressed',String(selected));
+      tile.querySelector('.shop-tile-price').textContent = look.outfit === id ? 'EQUIPPED'
+        : cosmetics.includes(id) ? 'OWNED' : money(outfits[id].price);
+    }
     const action = $('item-action');
     action.textContent = wearing ? 'Equipped' : owned ? 'Equip outfit' : 'Buy outfit · '+money(entry.price);
     action.disabled = wearing || (!owned && credits < entry.price);
@@ -60,10 +68,23 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
 
   function openShop() {
     angle = 0;
-    $('item-outfits').replaceChildren(...shopOutfits.map(id => choose(outfits[id].name,outfits[id].accent,id === item,() => {
-      item = id;
-      refreshShop();
-    })));
+    $('item-outfits').replaceChildren(...shopOutfits.map((id,index) => {
+      const outfit = outfits[id];
+      const tile = $('shop-tile-template').content.firstElementChild.cloneNode(true);
+      tile.dataset.outfit = id;
+      tile.querySelector('.shop-tile-label').hidden = index !== 0;
+      tile.querySelector('.shop-tile-name').textContent = outfit.name;
+      tile.style.setProperty('--coat',outfit.coat);
+      tile.style.setProperty('--hood',outfit.hood);
+      tile.style.setProperty('--trim',outfit.accent);
+      tile.style.setProperty('--tile-base',outfit.hood);
+      tile.style.setProperty('--tile-glow',outfit.accent+'ad');
+      tile.addEventListener('click',() => {
+        item = id;
+        refreshShop();
+      });
+      return tile;
+    }));
     refreshShop();
     screen(store,$('item-outfits').querySelector('[aria-pressed=true]'));
   }

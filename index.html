@@ -7,8 +7,8 @@
   <meta name="description" content="Build a game collection in a 3D store and earn credits at two arcade cabinets.">
   <title>Game Store After Hours</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=wardrobe-4">
-  <script type="module" src="game.js?v=wardrobe-4"></script>
+  <link rel="stylesheet" href="style.css?v=featured-shop-5">
+  <script type="module" src="game.js?v=featured-shop-5"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -216,12 +216,26 @@
           <button class="menu-small menu-play" id="menu-save-look" type="button">Save character</button>
         </div>
       </section>
-      <section id="menu-item-shop" class="wardrobe-panel" hidden>
+      <section id="menu-item-shop" class="wardrobe-panel item-shop-panel" hidden>
         <div class="menu-kicker">THE AFTER HOURS COLLECTION</div>
-        <h2 id="menu-item-shop-title">Item Shop</h2>
-        <p>Spend store credits on outfits. Preview any look before buying.</p>
-        <div class="item-wallet"><span>YOUR WALLET</span><strong id="item-wallet"></strong></div>
-        <div class="look-swatches item-swatches" id="item-outfits" aria-label="Shop outfits"></div>
+        <div class="shop-head"><h2 id="menu-item-shop-title">Item Shop</h2><div class="item-wallet"><span>STORE CREDITS</span><strong id="item-wallet"></strong></div></div>
+        <p>Pick an outfit to try it on.</p>
+        <h3 class="shop-shelf-label">FEATURED OUTFITS</h3>
+        <div class="shop-tiles" id="item-outfits" aria-label="Featured outfits"></div>
+        <template id="shop-tile-template">
+          <button class="shop-tile" type="button">
+            <svg class="shop-tile-art" viewBox="0 0 128 128" aria-hidden="true">
+              <path d="M49 27 53 13h22l5 14 26 13 16 59-19 8-12-39v42l-9 7H46l-9-7V68l-12 39-19-8 16-59z" fill="var(--coat)" stroke="#fff6" stroke-width="2"/>
+              <path d="m49 27 15 13 16-13 26 13-17 16-11-14-14 11-14-11-11 14-17-16z" fill="var(--hood)"/>
+              <path d="M53 13h22l5 14-16 13-15-13z" fill="#141426"/>
+              <path d="M64 52v64m-23-24 14-9m32 9-14-9" fill="none" stroke="var(--trim)" stroke-width="3"/>
+              <path d="m10 91 18 7-3 9-19-8zm108 0-18 7 3 9 19-8zM77 60h10v8H77z" fill="var(--trim)"/>
+              <path d="M46 109h36l-4 8H50z" fill="var(--hood)"/>
+            </svg>
+            <span class="shop-tile-label" hidden>FEATURED</span>
+            <span class="shop-tile-info"><span class="shop-tile-name"></span><span class="shop-tile-price"></span></span>
+          </button>
+        </template>
         <div class="item-detail">
           <div><div class="menu-kicker" id="item-type"></div><h3 id="item-name"></h3></div>
           <strong id="item-price"></strong>

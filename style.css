@@ -281,8 +281,6 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; min-height: 23
 .wardrobe-rotate button { font-size: 18px; min-width: 40px; }
 .item-wallet, .item-detail { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; border: 1px solid #e5b5af46; background: #24172be8; }
 .item-wallet strong, .item-detail > strong { color: #ffd29b; font: 800 13px var(--mono); white-space: nowrap; }
-.item-swatches { grid-template-columns: repeat(3,minmax(0,1fr)); margin: 10px 0; }
-.item-swatches button { min-height: 46px; }
 .item-detail h3 { margin: 2px 0 0; font-size: clamp(18px,2.5vw,28px); }
 .item-detail .menu-kicker { margin: 0; letter-spacing: .08em; }
 .item-detail .menu-kicker::before { display: none; }
@@ -295,6 +293,41 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; min-height: 23
   .wardrobe-open .wardrobe-stage { position: relative; grid-row: 2; inset: auto; padding: 9px 0; }
   .wardrobe-group { padding: 5px 0 8px; }
   .wardrobe-group .look-swatch { min-height: 31px; }
+}
+
+/* The shop has its own browsing layout while sharing the studio preview. */
+.item-shop-open::backdrop { background: linear-gradient(90deg,#0e0b20 0%,#14102aea 45%,#21193f35 76%),linear-gradient(0deg,#100b20bd,transparent 55%); }
+.menu-window > .item-shop-panel { width: min(660px,53vw); }
+.shop-head { display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.shop-head .item-wallet { flex: none; display: grid; justify-items: end; gap: 3px; padding: 6px 9px; border: 1px solid #b9a7ee6e; border-radius: 6px; background: #29204dea; }
+.shop-head .item-wallet span { font-size: 8px; }
+.shop-head .item-wallet strong { color: #e3d8ff; font-size: 12px; }
+.shop-shelf-label { display: flex; align-items: center; gap: 9px; margin: 0 0 7px; color: #e5d7ff; font: 800 10px var(--mono); letter-spacing: .14em; }
+.shop-shelf-label::after { flex: 1; height: 1px; background: linear-gradient(90deg,#ba9cf389,transparent); content: ''; }
+.shop-tiles { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: clamp(5px,1vw,11px); }
+.shop-tile { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; min-height: clamp(134px,30dvh,262px); padding: 0; border: 1px solid #f6dcff68; border-radius: 5px; color: #fff7ff; text-align: left; background: radial-gradient(ellipse at 52% 40%,var(--tile-glow),transparent 69%),linear-gradient(135deg,var(--tile-base),#15142b); cursor: pointer; }
+.shop-tile::before { position: absolute; inset: 0; z-index: -1; background: repeating-linear-gradient(135deg,transparent 0 15px,#fff1 16px 17px,transparent 18px 28px); content: ''; }
+.shop-tile:hover, .shop-tile[aria-pressed=true] { border-color: #fff1bb; box-shadow: inset 0 0 0 2px #fff1bb, 0 0 16px #d4acff50; }
+.shop-tile:focus-visible { outline: 2px solid white; outline-offset: 2px; }
+.shop-tile-art { position: absolute; z-index: -1; top: 13%; left: 5%; width: 90%; height: 75%; filter: drop-shadow(0 5px 5px #100a28ae); }
+.shop-tile:first-child .shop-tile-art { transform: rotate(-8deg) scale(1.11); }
+.shop-tile:nth-child(2) .shop-tile-art { transform: rotate(7deg); }
+.shop-tile:nth-child(3) .shop-tile-art { transform: rotate(-4deg); }
+.shop-tile-label { align-self: flex-start; margin: 5px; padding: 3px 5px; border-radius: 3px; color: #17112b; background: #fff0ac; font: 900 8px var(--mono); letter-spacing: .06em; }
+.shop-tile-info { display: grid; gap: 3px; margin-top: auto; padding: 15px 7px 7px; background: linear-gradient(0deg,#151028 50%,#151028e8 76%,transparent); }
+.shop-tile-name { font-size: clamp(11px,1.5vw,18px); font-weight: 900; line-height: 1.1; }
+.shop-tile-price { color: #e9dcff; font: 800 10px var(--mono); }
+.item-shop-panel .item-detail { margin-top: 8px; padding: 7px 10px; border-color: #b9a7ee61; background: #221a3c; }
+.item-shop-panel .menu-footer { margin-top: 9px; }
+.item-shop-panel p { margin: 9px 0 11px; }
+.item-shop-open .wardrobe-stage { left: 61%; }
+@media (max-width: 650px), (orientation: portrait) {
+  .item-shop-open::backdrop { background: linear-gradient(0deg,#120c26 1%,#17102be8 58%,#2d245c25 88%); }
+  .item-shop-open .menu-window { grid-template-rows: auto minmax(155px,25dvh) 1fr; }
+  .menu-window > .item-shop-panel { width: min(100%,530px); }
+  .item-shop-open .wardrobe-stage { left: auto; }
+  .item-shop-open .wardrobe-rotate { align-self: flex-end; }
+  .shop-tile { min-height: clamp(118px,19dvh,169px); }
 }
 
 @media (prefers-reduced-motion: reduce) {

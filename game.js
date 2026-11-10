@@ -4,7 +4,7 @@ import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtla
 import { createShop } from './shop.js?v=wardrobe-4';
 import { createSignalRelay } from './signal.js';
 import { createOnline } from './online.js?v=wardrobe-4';
-import { createMenu } from './menu.js?v=wardrobe-4';
+import { createMenu } from './menu.js?v=featured-shop-5';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');
