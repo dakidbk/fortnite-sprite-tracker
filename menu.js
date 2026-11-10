@@ -58,6 +58,14 @@ export function createMenu({read, save, onPlay, toggleSound, toggleFullscreen}) 
     menu.close();
     onPlay();
   });
+  menu.addEventListener('keydown',event => {
+    if (home.hidden || !['ArrowUp','ArrowDown'].includes(event.key)) return;
+    const choices = [...home.querySelectorAll('button')];
+    const current = choices.indexOf(document.activeElement);
+    const direction = event.key === 'ArrowDown' ? 1 : -1;
+    event.preventDefault();
+    choices[(current + direction + choices.length) % choices.length].focus();
+  });
   menu.addEventListener('cancel',event => {
     event.preventDefault();
     if (!character.hidden) screen(home,$('menu-create'));

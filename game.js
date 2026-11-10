@@ -1,10 +1,10 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js';
-import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=title-menu-2';
+import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=arcade-menu-3';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js';
 import { createShop } from './shop.js';
 import { createSignalRelay } from './signal.js';
-import { createOnline } from './online.js?v=title-menu-2';
-import { createMenu } from './menu.js?v=title-menu-2';
+import { createOnline } from './online.js?v=arcade-menu-3';
+import { createMenu } from './menu.js?v=arcade-menu-3';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');
@@ -471,6 +471,15 @@ function orbitCamera(dt,aspect) {
 }
 
 function cameraFor(dt, aspect) {
+  if (menu.open) {
+    const wide = aspect > 1.32 && innerWidth > 650;
+    return {
+      eye: [0,6.55,24.1],
+      aim: [wide ? -6.15 : 0,wide ? 1.72 : 1.25,0],
+      fov: Math.max(.58,2*Math.atan(.326 / Math.max(aspect,.43))),
+      hideAvatar: true
+    };
+  }
   if (orbit.active) return orbitCamera(dt,aspect);
   const blend = doorOpened ? smooth(.27,-2.78,player.z) : 0;
   const rear = smooth(STORE.taperStart,STORE.taperEnd,player.z);
