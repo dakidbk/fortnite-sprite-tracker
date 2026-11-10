@@ -1,5 +1,5 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=wardrobe-4';
-import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=character-11';
+import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=fit-12';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js';
 import { createShop } from './shop.js?v=character-11';
 import { createSignalRelay } from './signal.js';

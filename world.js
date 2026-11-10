@@ -890,7 +890,8 @@ function arcade(geo, marquee, screen, x, z, relay = false) {
 
 function avatar(renderer, palette, look = {}) {
   const {accessory,style=0,gender=0} = look;
-  const shoulder = gender === 1 ? .624 : gender === 2 ? .548 : .587;
+  const fitted = gender === 2;
+  const shoulder = gender === 1 ? .624 : fitted ? .519 : .587;
   const jaw = gender === 1 ? .276 : gender === 2 ? .222 : .250;
   const torso=new Mesh(), leftLeg=new Mesh(), rightLeg=new Mesh(), leftArm=new Mesh(), rightArm=new Mesh();
   const coat=m(palette.coat,0,1,.26), hood=m(palette.hood,0,1,.23);
@@ -900,29 +901,46 @@ function avatar(renderer, palette, look = {}) {
   const eyeInk=m('#211924'), sclera=m('#eee3da'), iris=m('#604742'), lips=m('#683e43');
 
   // A layered bomber jacket with a ribbed hem, raised lapels, and contrast piping.
-  torso.layers([
+  torso.layers(fitted ? [
+    [0,.795,.012,.490,.363,.067],[0,.866,.006,.495,.365,.071],[0,.998,.005,.365,.311,.065],
+    [0,1.124,-.013,.405,.364,.073],[0,1.198,-.041,.449,.445,.087],[0,1.258,-.060,.483,.498,.096],
+    [0,1.310,-.065,.503,.504,.098],[0,1.361,-.053,.511,.480,.098],[0,1.438,-.022,shoulder,.382,.081],
+    [0,1.520,-.030,.407,.318,.070],[0,1.580,-.033,.274,.255,.052]
+  ] : [
     [0,.795,0,.426,.316,.063],[0,.873,0,.506,.365,.068],[0,1.12,-.005,.543,.405,.081],
     [0,1.405,-.012,shoulder,.394,.085],[0,1.52,-.029,.480,.325,.069],[0,1.58,-.034,.294,.262,.052]
   ],coat);
-  torso.block(0,.817,0,.456,.076,.343,.024,hood);
-  torso.block(0,.765,0,.454,.074,.326,.026,denim);
+  torso.block(0,.817,0,fitted ? .500 : .456,.076,fitted ? .370 : .343,.024,hood);
+  torso.block(0,.765,0,fitted ? .498 : .454,.074,fitted ? .352 : .326,.026,denim);
   torso.block(0,1.574,-.034,.210,.190,.182,.038,skin);
   torso.layers([
     [0,1.389,.142,.192,.172,.047],[0,1.476,.136,.356,.254,.070],
     [0,1.565,.106,.484,.268,.072],[0,1.618,.081,.390,.238,.056]
   ],hood);
   torso.quad([-.20,1.544,.216],[-.088,1.461,.262],[.088,1.461,.262],[.20,1.544,.216],accent);
-  torso.block(0,1.243,-.209,.026,.558,.028,.008,hood);
-  torso.box(0,1.27,-.226,.010,.460,.012,accent);
-  torso.block(.018,1.435,-.235,.025,.054,.019,.005,lining);
-  for (const side of [-1,1]) {
-    torso.rod([side*.055,1.52,-.203],[side*.131,1.445,-.222],.014,.015,5,lining);
-    torso.rod([side*.135,1.092,-.218],[side*.194,1.010,-.194],.012,.012,5,hood);
-    torso.box(side*.196,1.017,.178,.041,.177,.026,hood);
+  if (fitted) {
+    const zipper = [[0,.850,-.190],[0,.998,-.157],[0,1.124,-.202],[0,1.198,-.271],[0,1.258,-.317],[0,1.310,-.325],
+      [0,1.361,-.301],[0,1.438,-.221],[0,1.515,-.195]];
+    for (let i=1; i<zipper.length; i++) torso.rod(zipper[i-1],zipper[i],.011,.011,5,accent);
+    torso.block(.018,1.456,-.222,.022,.049,.019,.005,lining);
+    for (const side of [-1,1]) {
+      torso.rod([side*.053,1.515,-.195],[side*.115,1.438,-.219],.013,.013,5,lining);
+      torso.rod([side*.114,1.103,-.192],[side*.166,1.018,-.156],.010,.010,5,hood);
+    }
+  } else {
+    torso.block(0,1.243,-.209,.026,.558,.028,.008,hood);
+    torso.box(0,1.27,-.226,.010,.460,.012,accent);
+    torso.block(.018,1.435,-.235,.025,.054,.019,.005,lining);
+    for (const side of [-1,1]) {
+      torso.rod([side*.055,1.52,-.203],[side*.131,1.445,-.222],.014,.015,5,lining);
+      torso.rod([side*.135,1.092,-.218],[side*.194,1.010,-.194],.012,.012,5,hood);
+      torso.box(side*.196,1.017,.178,.041,.177,.026,hood);
+    }
   }
   if (palette.price) {
-    torso.block(-.160,1.326,-.220,.107,.082,.031,.012,accent);
-    torso.box(-.160,1.326,-.239,.048,.026,.010,hood);
+    const badgeZ = fitted ? -.298 : -.220;
+    torso.block(-.160,1.326,badgeZ,.107,.082,.031,.012,accent);
+    torso.box(-.160,1.326,badgeZ-.019,.048,.026,.010,hood);
   }
 
   // A rounded jaw and a swept undercut keep the face readable from every angle.
@@ -1165,9 +1183,10 @@ export function drawAvatar(renderer, world, player, phase, stride, time, look) {
   const {torso,back,leftLeg,rightLeg,leftArm,rightArm}=meshes;
   renderer.draw(torso,body);
   renderer.draw(back,body);
-  renderer.draw(leftLeg,multiply(body,model(-.138,.812,.006,0,swing*.62)));
-  renderer.draw(rightLeg,multiply(body,model(.138,.812,.006,0,-swing*.62)));
-  const armOffset = look?.gender === 1 ? .319 : look?.gender === 2 ? .281 : .301;
+  const legOffset = look?.gender === 2 ? .148 : .138;
+  renderer.draw(leftLeg,multiply(body,model(-legOffset,.812,.006,0,swing*.62)));
+  renderer.draw(rightLeg,multiply(body,model(legOffset,.812,.006,0,-swing*.62)));
+  const armOffset = look?.gender === 1 ? .319 : look?.gender === 2 ? .265 : .301;
   renderer.draw(leftArm,multiply(body,model(-armOffset,1.443,-.025,0,-swing*.71)));
   renderer.draw(rightArm,multiply(body,model(armOffset,1.443,-.025,0,swing*.71)));
 }
