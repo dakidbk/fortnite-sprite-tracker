@@ -1,0 +1,2 @@
+[functions.game-rooms]
+verify_jwt = false

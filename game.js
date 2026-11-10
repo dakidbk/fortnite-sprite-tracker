@@ -3,6 +3,7 @@ import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, 
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js';
 import { createShop } from './shop.js';
 import { createSignalRelay } from './signal.js';
+import { createOnline } from './online.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');
@@ -34,6 +35,11 @@ let selectedGame = -1;
 let sound = read('after-hours-sound') === 'on';
 let best = Math.max(0, Number(read('after-hours-best')) || 0);
 let round = null, target = -1, nextAt = 0, targetUntil = 0, lastTarget = -1;
+
+const online = createOnline({
+  clearMovement,
+  position: () => ({x:player.x,z:player.z,yaw:Math.atan2(Math.sin(player.yaw),Math.cos(player.yaw)),stride})
+});
 
 const shop = createShop({
   beforeOpen: clearMovement, paintCover,
@@ -160,7 +166,7 @@ function clearMovement() {
 }
 
 function modalOpen() {
-  return help.open || arcade.open || caseDialog.open || signal.open || shop.open;
+  return online.open || help.open || arcade.open || caseDialog.open || signal.open || shop.open;
 }
 
 function currentAction() {
@@ -524,6 +530,9 @@ function draw(dt, now) {
   renderer.draw(world.avatarShadow,model(player.x,0,player.z));
   renderer.blend(false);
   if (!hideAvatar) drawAvatar(renderer,world,player,walkPhase,stride,reduced.matches ? 0 : now/1000);
+  online.draw(matrix,eye,dt,peer => {
+    drawAvatar(renderer,world,peer,peer.phase,peer.stride,reduced.matches ? 0 : now/1000);
+  });
   renderer.blend(true);
   world.transparent.forEach(mesh => renderer.draw(mesh));
   world.doors.forEach(([,glass],i) => renderer.draw(glass,doors[i]));
