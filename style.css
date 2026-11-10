@@ -219,6 +219,42 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; min-height: 23
   .tile { height: 42px; }
   .signal-pad { height: 44px; }
 }
+.start-menu { --menu-ink: #17121f; margin: auto auto auto clamp(20px, 8vw, 140px); width: min(475px, calc(100% - 40px)); max-height: calc(100dvh - 32px); max-width: none; overflow: auto; padding: 0; border: 1px solid #c77b7299; border-radius: 21px; color: #fff1e1; background: linear-gradient(155deg, #332238fa, #17121ffa 67%); box-shadow: 0 24px 80px #06040be0, 0 0 34px #ff66592e; }
+.start-menu::backdrop { background: linear-gradient(90deg, #140b1be8, #21132859 67%, #24163122), linear-gradient(0deg,#0c0914ca,transparent 58%); }
+.game:has(+ .start-menu[open]) :is(.hud-top,.hud-bottom,.objective,.touch-controls,.waypoint) { visibility: hidden; }
+.menu-window { padding: clamp(18px, 4vw, 34px); }
+.menu-header { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 17px; border-bottom: 1px solid #e5b5af31; color: #e1bfcc; font: 700 10px var(--mono); letter-spacing: .16em; }
+.menu-header i { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: #ffa184; box-shadow: 0 0 12px #ff6c57; }
+.menu-kicker { margin: 23px 0 7px; color: #ffab90; font: 750 10px var(--mono); letter-spacing: .23em; }
+.start-menu h1, .start-menu h2 { margin: 0; line-height: .97; letter-spacing: -.055em; }
+.start-menu h1 { font-size: clamp(39px, 6vw, 65px); font-weight: 900; text-shadow: 0 0 30px #ff644d67; }
+.start-menu h1 span { display: block; margin-top: 7px; font-size: .60em; letter-spacing: .105em; color: #ffc39d; }
+.start-menu h2 { font-size: clamp(28px, 5vw, 40px); }
+.start-menu p { margin: 13px 0 20px; color: #e4cbd5; font-size: 13px; line-height: 1.45; }
+.menu-list { display: grid; gap: 8px; }
+.menu-choice, .menu-small, .look-swatch { border: 1px solid #e5b5af46; border-radius: 10px; color: #fff1e1; background: #312339; cursor: pointer; }
+.menu-choice { display: flex; align-items: center; gap: 10px; min-height: 51px; padding: 10px 13px; text-align: left; font-size: 15px; font-weight: 760; }
+.menu-choice small, .menu-choice strong { color: #ffc39d; font: 750 11px var(--mono); }
+.menu-choice strong, .menu-choice svg { margin-left: auto; }
+.menu-choice svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.menu-choice:hover, .menu-small:hover, .look-swatch:hover { background: #51344e; border-color: #ffc39d; }
+.menu-play { color: #23121a; background: linear-gradient(100deg,#ff8a6a,#ffc29b); border-color: #ffd3b2; box-shadow: 0 0 17px #ff775142; }
+.menu-play:hover { color: #23121a; background: #ffd0ae; }
+.menu-play small { color: #65322f; }
+.menu-choice:disabled { opacity: .55; cursor: default; }
+.character-stage { display: grid; place-items: center; height: clamp(110px, 24dvh, 175px); border: 1px solid #e5b5af31; border-radius: 12px; overflow: hidden; background: radial-gradient(ellipse at center,#714669,#241a32 73%); }
+#character-preview { display: block; width: auto; height: 96%; }
+.look-swatches { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; margin-top: 10px; }
+.look-swatch { min-height: 37px; padding: 5px 2px; font-size: 11px; }
+.look-swatch::before { display: inline-block; vertical-align: middle; width: 9px; height: 9px; margin-right: 4px; border-radius: 50%; background: var(--swatch); border: 1px solid #fff5; content: ''; }
+.look-swatch[aria-pressed=true] { border-color: #ffc39d; box-shadow: inset 0 0 0 1px #ffc39d; }
+.menu-footer { display: flex; justify-content: space-between; gap: 8px; margin-top: 16px; }
+.menu-small { min-height: 40px; padding: 7px 13px; font-size: 13px; font-weight: 750; }
+@media (max-width: 600px) {
+  .start-menu { width: min(430px,calc(100% - 28px)); margin: auto auto max(16px, env(safe-area-inset-bottom)); }
+  .start-menu::backdrop { background: linear-gradient(0deg,#120b1af5,#140c1c38 80%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }

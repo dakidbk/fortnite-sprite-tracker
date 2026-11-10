@@ -190,5 +190,55 @@
       <div class="arcade-foot"><span id="signal-status">Earn credits for every completed level.</span><button type="button" class="primary-button" id="signal-start">Start relay</button></div>
     </dialog>
   </main>
+  <dialog class="start-menu" id="start-menu" aria-labelledby="menu-title">
+    <div class="menu-window">
+      <div class="menu-header"><span><i></i> STORE OPEN</span><span>EST. 1998</span></div>
+      <section id="menu-home">
+        <div class="menu-kicker">THE NIGHT SHIFT</div>
+        <h1 id="menu-title">GAME STORE <span>AFTER HOURS</span></h1>
+        <p>Browse the shelves. Hit the arcade. Bring your friends.</p>
+        <div class="menu-list">
+          <button class="menu-choice" id="menu-create" type="button"><small>01</small><span>Create a Character</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+          <button class="menu-choice menu-play" id="menu-play" type="button"><small>02</small><span>Play</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+          <button class="menu-choice" id="menu-options-button" type="button"><small>03</small><span>Options</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+        </div>
+      </section>
+      <section id="menu-character" hidden>
+        <div class="menu-kicker">PLAYER PROFILE</div>
+        <h2 id="menu-character-title">Create a Character</h2>
+        <p>Pick a look for your night at the store.</p>
+        <div class="character-stage">
+          <svg id="character-preview" viewBox="0 0 140 168" role="img" aria-label="Selected character preview">
+            <ellipse cx="70" cy="153" rx="41" ry="8" fill="#0b0a16" opacity=".55"/>
+            <path d="M49 105h42l-4 43H73l-3-24-3 24H53z" fill="#26263b"/>
+            <path d="M51 144h16v9H45v-5zm22 0h16l6 4v5H73z" fill="#e7d9d0"/>
+            <path d="M51 61 36 69l-6 37 13 4 9-25h36l9 25 13-4-6-37-15-8z" fill="var(--hood)"/>
+            <path d="M49 68h42v43H49z" fill="var(--coat)"/>
+            <path d="M48 66l22 19 22-19-9-8H57z" fill="var(--accent)"/>
+            <path d="M51 37c0-16 38-16 38 0v15c0 12-10 18-19 18s-19-6-19-18z" fill="var(--skin)"/>
+            <path d="M47 42V26l8 2 5-11 8 7 13-9 2 10 10-2v19l-9-7-14 3-14-3z" fill="var(--hair)"/>
+            <path d="M59 47h5m12 0h5" stroke="#231c26" stroke-width="3" stroke-linecap="round"/>
+            <path d="M67 57h6" stroke="#52323b" stroke-width="2" stroke-linecap="round"/>
+            <path d="M70 84v25m-17-8h12m10 0h12" fill="none" stroke="var(--accent)" stroke-width="2"/>
+          </svg>
+        </div>
+        <div class="look-swatches" id="look-swatches" aria-label="Character styles"></div>
+        <div class="menu-footer">
+          <button class="menu-small" id="menu-character-back" type="button">Back</button>
+          <button class="menu-small menu-play" id="menu-save-look" type="button">Use this character</button>
+        </div>
+      </section>
+      <section id="menu-options" hidden>
+        <div class="menu-kicker">SETTINGS</div>
+        <h2 id="menu-options-title">Options</h2>
+        <p>Set up the game the way you like it.</p>
+        <div class="menu-list">
+          <button class="menu-choice" id="menu-sound" type="button" aria-pressed="false"><span>Sound effects</span><strong id="menu-sound-value">Off</strong></button>
+          <button class="menu-choice" id="menu-fullscreen" type="button"><span>Fullscreen</span><strong id="menu-fullscreen-value">Enter</strong></button>
+        </div>
+        <div class="menu-footer"><button class="menu-small" id="menu-options-back" type="button">Back</button></div>
+      </section>
+    </div>
+  </dialog>
 </body>
 </html>

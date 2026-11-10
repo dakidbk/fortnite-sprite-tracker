@@ -150,10 +150,14 @@ export function createOnline({ clearMovement, position }) {
     }
   });
   window.addEventListener('pagehide',leave);
-  if (roomPattern.test(codeFromLink || '')) open();
 
   return {
     get open() { return dialog.open; },
+    openInvite() {
+      if (!roomPattern.test(codeFromLink || '')) return false;
+      open();
+      return true;
+    },
     draw(matrix, eye, dt, render) {
       const blend = 1-Math.exp(-dt*13);
       for (const peer of peers.values()) {

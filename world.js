@@ -1,5 +1,6 @@
 import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webgl.js';
 import { GAMES, LATEST_RELEASE, RARITIES, coverUV, coversPerAtlas } from './catalog.js';
+import { looks } from './menu.js';
 
 const M = {
   lamp: m('#fff0d8', 1.05), white: m('#ffffff', 1),
@@ -887,11 +888,11 @@ function arcade(geo, marquee, screen, x, z, relay = false) {
   geo.box(x,.057,z,1.25,.091,.86,M.dark);
 }
 
-function avatar(renderer) {
+function avatar(renderer, palette) {
   const torso=new Mesh(), leftLeg=new Mesh(), rightLeg=new Mesh(), leftArm=new Mesh(), rightArm=new Mesh();
-  const coat=m('#313c37'), hood=m('#465b51'), denim=m('#2f3737'), seam=m('#4b5451');
-  const accent=m('#95afa0'), lining=m('#aab4a3'), skin=m('#bf876d'), lightSkin=m('#d99d81');
-  const hair=m('#372b26'), auburn=m('#5b4236'), copper=m('#805a45'), sole=m('#dfdacb');
+  const coat=m(palette.coat), hood=m(palette.hood), denim=m('#2f3737'), seam=m('#4b5451');
+  const accent=m(palette.accent), lining=m('#aab4a3'), skin=m(palette.skin), lightSkin=m(palette.lightSkin);
+  const hair=m(palette.hair), auburn=m(palette.hairLight,0,1,.08), copper=m(palette.hairLight), sole=m('#dfdacb');
   torso.layers([
     [0,.80,0,.43,.33,.065],[0,.87,0,.50,.38,.07],[0,1.15,0,.54,.406,.085],
     [0,1.42,-.005,.57,.39,.094],[0,1.54,-.025,.44,.34,.073],[0,1.57,-.03,.31,.29,.063]
@@ -1066,15 +1067,16 @@ export function createWorld(renderer, coverAtlases) {
     releasePosters,
     transparent:upload([glass]), decals:upload([shadow,rarityTags]),
     doors:[upload(door(-1)),upload(door(1))],
-    avatar:avatar(renderer), avatarShadow:renderer.upload(avatarShadow), obstacles, cases, caseGames, posterSlot, stockCopies:stock.copies
+    avatars:new Map([[0,avatar(renderer,looks[0])]]), avatarShadow:renderer.upload(avatarShadow), obstacles, cases, caseGames, posterSlot, stockCopies:stock.copies
   };
 }
 
-export function drawAvatar(renderer, world, player, phase, stride, time) {
+export function drawAvatar(renderer, world, player, phase, stride, time, look = 0) {
+  if (!world.avatars.has(look)) world.avatars.set(look,avatar(renderer,looks[look]));
   const idle=Math.sin(time*2.7)*.010;
   const swing=Math.sin(phase) * stride;
   const body=model(player.x,.029+Math.abs(Math.sin(phase))*.044*stride+idle,player.z,player.yaw,.060*stride,1.035);
-  const {torso,back,leftLeg,rightLeg,leftArm,rightArm}=world.avatar;
+  const {torso,back,leftLeg,rightLeg,leftArm,rightArm}=world.avatars.get(look);
   renderer.draw(torso,body);
   renderer.draw(back,body);
   renderer.draw(leftLeg,multiply(body,model(-.138,.812,.006,0,swing*.62)));

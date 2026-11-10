@@ -4,6 +4,7 @@ import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtla
 import { createShop } from './shop.js';
 import { createSignalRelay } from './signal.js';
 import { createOnline } from './online.js';
+import { createMenu } from './menu.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');
@@ -27,7 +28,7 @@ const stations = {
 };
 const collectorGoal = { titles: 5, rarities: 3 };
 
-let renderer, world, running = false, lastFrame = 0, lastDraw = 0;
+let renderer, world, introShown = false, running = false, lastFrame = 0, lastDraw = 0;
 let door = 0, doorOpened = false, walkPhase = 0, stride = 0, inside = false, visited = false;
 let toastTimeout, audio, camera = null, action = null;
 let moveGesture = null, lookGesture = null;
@@ -39,6 +40,14 @@ let round = null, target = -1, nextAt = 0, targetUntil = 0, lastTarget = -1;
 const online = createOnline({
   clearMovement,
   position: () => ({x:player.x,z:player.z,yaw:Math.atan2(Math.sin(player.yaw),Math.cos(player.yaw)),stride})
+});
+
+const menu = createMenu({
+  read, save, toggleSound, toggleFullscreen,
+  onPlay() {
+    clearMovement();
+    if (!online.openInvite()) canvas.focus();
+  }
 });
 
 const shop = createShop({
@@ -74,6 +83,8 @@ function refreshSound() {
   button.setAttribute('aria-pressed', String(sound));
   button.setAttribute('aria-label', label);
   button.title = label;
+  $('menu-sound').setAttribute('aria-pressed',String(sound));
+  $('menu-sound-value').textContent = sound ? 'On' : 'Off';
   button.querySelector('use').setAttribute('href', sound ? '#i-sound' : '#i-muted');
 }
 
@@ -166,7 +177,7 @@ function clearMovement() {
 }
 
 function modalOpen() {
-  return online.open || help.open || arcade.open || caseDialog.open || signal.open || shop.open;
+  return menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || shop.open;
 }
 
 function currentAction() {
@@ -529,7 +540,7 @@ function draw(dt, now) {
   world.decals.forEach(mesh => renderer.draw(mesh));
   renderer.draw(world.avatarShadow,model(player.x,0,player.z));
   renderer.blend(false);
-  if (!hideAvatar) drawAvatar(renderer,world,player,walkPhase,stride,reduced.matches ? 0 : now/1000);
+  if (!hideAvatar) drawAvatar(renderer,world,player,walkPhase,stride,reduced.matches ? 0 : now/1000,menu.look);
   online.draw(matrix,eye,dt,peer => {
     drawAvatar(renderer,world,peer,peer.phase,peer.stride,reduced.matches ? 0 : now/1000);
   });
@@ -573,6 +584,10 @@ async function startup() {
     $('load').hidden = true;
     if (!running) {
       running = true;
+      if (!introShown) {
+        menu.show();
+        introShown = true;
+      }
       lastFrame = lastDraw = performance.now();
       requestAnimationFrame(frame);
     }
@@ -683,27 +698,35 @@ arcade.addEventListener('close', () => {
   setTarget(-1);
   clearMovement();
 });
-$('sound-button').addEventListener('click', () => {
+function toggleSound() {
   sound = !sound;
   save('after-hours-sound', sound ? 'on' : 'off');
   refreshSound();
   tone(612,.13,0,'triangle');
-});
+}
+$('sound-button').addEventListener('click',toggleSound);
 
 const fullscreen = $('fullscreen-button');
 fullscreen.hidden = !document.fullscreenEnabled;
-fullscreen.addEventListener('click', async () => {
+$('menu-fullscreen').disabled = !document.fullscreenEnabled;
+if (!document.fullscreenEnabled) $('menu-fullscreen-value').textContent = 'Unavailable';
+async function toggleFullscreen() {
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
     else await document.documentElement.requestFullscreen();
-  } catch { showToast('Fullscreen is unavailable here'); }
-});
+  } catch {
+    $('menu-fullscreen-value').textContent = 'Unavailable';
+    if (!menu.open) showToast('Fullscreen is unavailable here');
+  }
+}
+fullscreen.addEventListener('click',toggleFullscreen);
 document.addEventListener('fullscreenchange', () => {
   const active = !!document.fullscreenElement;
   const label = active ? 'Exit fullscreen' : 'Enter fullscreen';
   fullscreen.setAttribute('aria-label', label);
   fullscreen.setAttribute('aria-pressed', String(active));
   fullscreen.title = label;
+  $('menu-fullscreen-value').textContent = active ? 'Exit' : 'Enter';
   fullscreen.querySelector('use').setAttribute('href',active ? '#i-window' : '#i-full');
 });
 
