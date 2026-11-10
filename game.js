@@ -1,10 +1,10 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js';
-import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js';
+import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=title-menu-2';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js';
 import { createShop } from './shop.js';
 import { createSignalRelay } from './signal.js';
-import { createOnline } from './online.js';
-import { createMenu } from './menu.js';
+import { createOnline } from './online.js?v=title-menu-2';
+import { createMenu } from './menu.js?v=title-menu-2';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');
@@ -675,6 +675,11 @@ for (const type of ['pointerup','pointercancel','lostpointercapture']) {
   });
 }
 
+$('main-menu-button').addEventListener('click', () => {
+  if (!world || modalOpen()) return;
+  clearMovement();
+  menu.show();
+});
 $('waypoint').addEventListener('click', interact);
 $('touch-action').addEventListener('click', interact);
 $('collection-button').addEventListener('click',openCollection);

@@ -7,8 +7,8 @@
   <meta name="description" content="Build a game collection in a 3D store and earn credits at two arcade cabinets.">
   <title>Game Store After Hours</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css">
-  <script type="module" src="game.js"></script>
+  <link rel="stylesheet" href="style.css?v=title-menu-2">
+  <script type="module" src="game.js?v=title-menu-2"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -38,10 +38,10 @@
     </div>
 
     <header class="hud-top">
-      <div class="brand">
+      <button class="brand brand-menu" id="main-menu-button" type="button" aria-label="Open main menu" title="Open main menu">
         <span class="brand-mark"><svg aria-hidden="true"><use href="#i-pad"></use></svg></span>
-        <div><div class="brand-title">GAME STORE</div><div class="brand-sub">AFTER HOURS</div></div>
-      </div>
+        <span><span class="brand-title">GAME STORE</span><span class="brand-sub">MAIN MENU</span></span>
+      </button>
       <div class="open-pill"><span></span> Store open</div>
       <nav class="toolbar" aria-label="Game settings">
         <button class="icon-button online-button" id="online-button" type="button" aria-label="Online play, up to 4 players" title="Online play, up to 4 players"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="7" r="3"/><path d="M3 19v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2M16 4a3 3 0 0 1 0 6m2 3a4 4 0 0 1 3 4v2"/></svg></button>

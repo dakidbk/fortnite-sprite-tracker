@@ -1,6 +1,6 @@
 import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webgl.js';
 import { GAMES, LATEST_RELEASE, RARITIES, coverUV, coversPerAtlas } from './catalog.js';
-import { looks } from './menu.js';
+import { looks } from './menu.js?v=title-menu-2';
 
 const M = {
   lamp: m('#fff0d8', 1.05), white: m('#ffffff', 1),

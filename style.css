@@ -28,6 +28,10 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 .hud-top { top: 0; padding-block: max(20px, env(safe-area-inset-top)) 15px; }
 .hud-bottom { bottom: 0; padding-block: 15px max(21px, env(safe-area-inset-bottom)); }
 .brand { display: flex; gap: 12px; align-items: center; white-space: nowrap; }
+.brand-menu { pointer-events: auto; padding: 0; border: 0; color: inherit; text-align: left; background: transparent; cursor: pointer; }
+.brand-menu .brand-title, .brand-menu .brand-sub { display: block; }
+.brand-menu .brand-sub { color: var(--accent); }
+.brand-menu:hover .brand-mark { border-color: var(--accent); }
 .brand-mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 11px; border: 1px solid var(--line); color: var(--white); background: linear-gradient(145deg, #a94648, #462637); box-shadow: 0 3px 20px #ff68534a; }
 .brand-mark svg, .loading-mark svg { width: 25px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.85; stroke-linecap: round; stroke-linejoin: round; }
 .brand-title { font-size: 16px; font-weight: 760; line-height: 1.1; letter-spacing: .09em; }

@@ -22,7 +22,7 @@ export function createOnline({ clearMovement, position }) {
   const tags = $('room-tags');
   const peers = new Map();
   let session, timer, pending = false, count = 0, reconnecting = false;
-  const codeFromLink = new URL(location.href).searchParams.get('room')?.toUpperCase();
+  let codeFromLink = new URL(location.href).searchParams.get('room')?.toUpperCase();
   if (roomPattern.test(codeFromLink || '')) field.value = codeFromLink;
 
   function showState(message) {
@@ -155,6 +155,7 @@ export function createOnline({ clearMovement, position }) {
     get open() { return dialog.open; },
     openInvite() {
       if (!roomPattern.test(codeFromLink || '')) return false;
+      codeFromLink = null;
       open();
       return true;
     },
