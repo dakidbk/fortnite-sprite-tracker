@@ -1,5 +1,5 @@
 import { GAMES, LATEST_RELEASE, RARITIES } from './catalog.js';
-import { outfits, shopOutfits } from './cosmetics.js?v=wardrobe-4';
+import { shopItems } from './cosmetics.js?v=stock-shop-6';
 
 const PROFILE_KEY = 'after-hours-collection-v1';
 const STARTING_CREDITS = 120;
@@ -34,7 +34,7 @@ function loadProfile(fallback) {
     return {
       credits: Number.isSafeInteger(saved.credits) && saved.credits >= 0 ? saved.credits : STARTING_CREDITS,
       owned,
-      cosmetics: shopOutfits.filter(id => Array.isArray(saved.cosmetics) && saved.cosmetics.includes(id)),
+      cosmetics: Object.keys(shopItems).filter(id => Array.isArray(saved.cosmetics) && saved.cosmetics.includes(id)),
       basket,
       caseSlots,
       arcadeEarned: saved.arcadeEarned === true,
@@ -220,11 +220,11 @@ export function createShop({ beforeOpen, onChange, paintCover, announce }) {
     clearInspection() { inspected = null; },
     openCheckout,
     openCollection,
-    buyOutfit(id) {
-      if (!shopOutfits.includes(id)) return false;
+    buyCosmetic(id) {
+      if (!Object.hasOwn(shopItems,id)) return false;
       let purchased = false;
       commit(current => {
-        const cost = outfits[id].price;
+        const cost = shopItems[id].price;
         if (current.cosmetics.includes(id) || current.credits < cost) return current;
         purchased = true;
         return {...current, credits:current.credits-cost, cosmetics:[...current.cosmetics,id]};

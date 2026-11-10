@@ -1,6 +1,6 @@
 import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webgl.js';
 import { GAMES, LATEST_RELEASE, RARITIES, coverUV, coversPerAtlas } from './catalog.js';
-import { avatarPalette } from './cosmetics.js?v=wardrobe-4';
+import { accessories, avatarPalette } from './cosmetics.js?v=stock-shop-6';
 
 const M = {
   lamp: m('#fff0d8', 1.05), white: m('#ffffff', 1),
@@ -888,7 +888,7 @@ function arcade(geo, marquee, screen, x, z, relay = false) {
   geo.box(x,.057,z,1.25,.091,.86,M.dark);
 }
 
-function avatar(renderer, palette) {
+function avatar(renderer, palette, accessory) {
   const torso=new Mesh(), leftLeg=new Mesh(), rightLeg=new Mesh(), leftArm=new Mesh(), rightArm=new Mesh();
   const coat=m(palette.coat), hood=m(palette.hood), denim=m('#2f3737'), seam=m('#4b5451');
   const accent=m(palette.accent), lining=m('#aab4a3'), skin=m(palette.skin), lightSkin=m(palette.lightSkin);
@@ -958,6 +958,25 @@ function avatar(renderer, palette) {
     arm.block(s*.049,-.431,.003,.133,.055,.151,.016,hood);
     arm.ellipsoid(s*.048,-.500,-.001,.064,.091,.054,8,5,skin);
     arm.ellipsoid(s*.005,-.477,-.031,.033,.049,.029,7,5,lightSkin);
+  }
+  const gear = accessories[accessory];
+  if (accessory === 'visor') {
+    torso.block(0,1.862,-.238,.417,.103,.073,.029,m(gear.hood));
+    torso.box(0,1.867,-.279,.362,.053,.024,m(gear.accent,.64));
+  }
+  if (accessory === 'headphones') {
+    const band = m(gear.hood), pad = m(gear.accent,.18);
+    torso.box(0,2.139,.006,.45,.047,.077,band);
+    for (const side of [-1,1]) {
+      torso.rod([side*.22,2.12,.006],[side*.26,1.89,.006],.027,.022,6,band);
+      torso.block(side*.256,1.846,.005,.078,.162,.141,.025,band);
+      torso.box(side*.299,1.846,.005,.024,.085,.082,pad);
+    }
+  }
+  if (accessory === 'backpack') {
+    torso.block(0,1.19,.260,.36,.46,.15,.035,m(gear.coat));
+    torso.block(0,1.10,.353,.27,.19,.071,.027,m(gear.hood));
+    torso.box(0,1.17,.394,.215,.022,.021,m(gear.accent,.24));
   }
   const back=new Mesh(renderer.texture(surface(160,110,(ctx)=>controller(ctx,20,-1,120,'#b4c9bb',true))));
   back.front(0,1.195,.209,.328,.239,m('#dce0d4',.35));
@@ -1078,11 +1097,11 @@ export function createWorld(renderer, coverAtlases) {
 
 export function drawAvatar(renderer, world, player, phase, stride, time, look) {
   let meshes = world.avatar;
-  if (look && (look.outfit !== 'forest' || look.skin !== 0 || look.hair !== 0)) {
-    const key = [look.outfit,look.skin,look.hair].join(':');
+  if (look && (look.outfit !== 'forest' || look.skin !== 0 || look.hair !== 0 || look.accessory)) {
+    const key = [look.outfit,look.skin,look.hair,look.accessory].join(':');
     if (world.customAvatar?.key !== key) {
       if (world.customAvatar) Object.values(world.customAvatar.meshes).forEach(mesh => renderer.release(mesh));
-      world.customAvatar = {key,meshes:avatar(renderer,avatarPalette(look))};
+      world.customAvatar = {key,meshes:avatar(renderer,avatarPalette(look),look.accessory)};
     }
     meshes = world.customAvatar.meshes;
   }

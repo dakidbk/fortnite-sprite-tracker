@@ -5,9 +5,21 @@ export const outfits = {
   violet: {name:'Violet', coat:'#614177', hood:'#845c99', accent:'#dab4f5'},
   neon: {name:'Neon Runner', coat:'#23343d', hood:'#316072', accent:'#5df4dc', price:45, type:'ARCADE COLLECTION'},
   varsity: {name:'Crimson Varsity', coat:'#a12b48', hood:'#53213d', accent:'#ffd496', price:75, type:'STORE EXCLUSIVE'},
-  gold: {name:'Midnight Gold', coat:'#29243d', hood:'#47395d', accent:'#ffce64', price:110, type:'AFTER HOURS EDITION'}
+  gold: {name:'Midnight Gold', coat:'#29243d', hood:'#47395d', accent:'#ffce64', price:110, type:'AFTER HOURS EDITION'},
+  cobalt: {name:'Cobalt Racer', coat:'#2752a0', hood:'#173465', accent:'#a9e9ff', price:60, type:'SPEED SERIES'},
+  retro: {name:'Retro Wave', coat:'#563584', hood:'#8d3d81', accent:'#ffb4dc', price:65, type:'ARCADE COLLECTION'},
+  camo: {name:'Night Camo', coat:'#3d493b', hood:'#25332a', accent:'#c8e490', price:55, type:'NIGHT SHIFT SERIES'}
 };
 export const shopOutfits = Object.keys(outfits).filter(id => outfits[id].price);
+export const accessories = {
+  visor: {name:'Pixel Visor', coat:'#37236c', hood:'#1d234a', accent:'#78f4ff', price:25, type:'ARCADE COLLECTION'},
+  headphones: {name:'Arcade Headphones', coat:'#462443', hood:'#641d51', accent:'#ff8bb9', price:35, type:'AUDIO SERIES'},
+  backpack: {name:'Collector Backpack', coat:'#4a312a', hood:'#795044', accent:'#ffc889', price:40, type:'COLLECTOR SERIES'}
+};
+export const shopItems = Object.fromEntries([
+  ...shopOutfits.map(id => [id,{...outfits[id],slot:'outfit'}]),
+  ...Object.entries(accessories).map(([id,entry]) => [id,{...entry,slot:'accessory'}])
+]);
 export const skinTones = [
   {name:'Warm', skin:'#bf876d', lightSkin:'#d99d81'},
   {name:'Deep', skin:'#865342', lightSkin:'#aa715a'},
@@ -26,13 +38,14 @@ export function savedLook(raw, owned) {
   let look;
   try { look = JSON.parse(raw); } catch {}
   if (Number.isInteger(look) && starterOutfits[look]) {
-    return {outfit:starterOutfits[look],skin:look,hair:look};
+    return {outfit:starterOutfits[look],skin:look,hair:look,accessory:null};
   }
   const outfit = look?.outfit;
   return {
-    outfit:starterOutfits.includes(outfit) || owned.includes(outfit) ? outfit : 'forest',
+    outfit:starterOutfits.includes(outfit) || (owned.includes(outfit) && shopItems[outfit]?.slot === 'outfit') ? outfit : 'forest',
     skin:Number.isInteger(look?.skin) && skinTones[look.skin] ? look.skin : 0,
-    hair:Number.isInteger(look?.hair) && hairColors[look.hair] ? look.hair : 0
+    hair:Number.isInteger(look?.hair) && hairColors[look.hair] ? look.hair : 0,
+    accessory:owned.includes(look?.accessory) && shopItems[look.accessory]?.slot === 'accessory' ? look.accessory : null
   };
 }
 

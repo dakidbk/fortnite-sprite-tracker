@@ -302,8 +302,12 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; min-height: 23
 .shop-head .item-wallet { flex: none; display: grid; justify-items: end; gap: 3px; padding: 6px 9px; border: 1px solid #b9a7ee6e; border-radius: 6px; background: #29204dea; }
 .shop-head .item-wallet span { font-size: 8px; }
 .shop-head .item-wallet strong { color: #e3d8ff; font-size: 12px; }
-.shop-shelf-label { display: flex; align-items: center; gap: 9px; margin: 0 0 7px; color: #e5d7ff; font: 800 10px var(--mono); letter-spacing: .14em; }
-.shop-shelf-label::after { flex: 1; height: 1px; background: linear-gradient(90deg,#ba9cf389,transparent); content: ''; }
+.shop-categories { display: flex; gap: 5px; margin: 0 0 8px; }
+.shop-categories button { padding: 5px 9px; border: 1px solid #aa94d270; border-radius: 4px; background: #251b42; color: #f2e7ff; font-size: 11px; font-weight: 800; cursor: pointer; }
+.shop-categories button[aria-pressed=true] { border-color: #efe0ff; background: #e1cbff; color: #211237; }
+.shop-tiles:not([data-category=featured]) { grid-template-columns: repeat(3,minmax(0,1fr)); }
+.shop-tiles[data-category=outfits] { max-height: clamp(156px,32dvh,270px); overflow: auto; padding: 2px 4px 4px 2px; scrollbar-color: #ac91d5 #241735; }
+.shop-tiles[data-category=outfits] .shop-tile { min-height: clamp(98px,15dvh,144px); }
 .shop-tiles { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: clamp(5px,1vw,11px); }
 .shop-tile { position: relative; isolation: isolate; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; min-height: clamp(134px,30dvh,262px); padding: 0; border: 1px solid #f6dcff68; border-radius: 5px; color: #fff7ff; text-align: left; background: radial-gradient(ellipse at 52% 40%,var(--tile-glow),transparent 69%),linear-gradient(135deg,var(--tile-base),#15142b); cursor: pointer; }
 .shop-tile::before { position: absolute; inset: 0; z-index: -1; background: repeating-linear-gradient(135deg,transparent 0 15px,#fff1 16px 17px,transparent 18px 28px); content: ''; }
