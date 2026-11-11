@@ -7,8 +7,8 @@
   <meta name="description" content="Build a game collection in a 3D store and earn credits at two arcade cabinets.">
   <title>Game Store After Hours</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=game-dex-13">
-  <script type="module" src="game.js?v=game-dex-13"></script>
+  <link rel="stylesheet" href="style.css?v=shift-14">
+  <script type="module" src="game.js?v=shift-14"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -75,6 +75,7 @@
         <div class="control-item"><kbd>E</kbd><span>Interact</span></div>
       </div>
       <div class="hud-library">
+      <button class="collection-button shift-button" id="shift-button" type="button" aria-label="Open daily Shift Challenge" title="Shift Challenge (J)"><span>Shift</span><strong id="shift-hud">0/3</strong></button>
       <button class="collection-button dex-button" id="dex-button" type="button" aria-label="Open Game Dex" title="Game Dex (G)"><svg aria-hidden="true"><use href="#i-collection"></use></svg><span>Game Dex</span></button>
       <button type="button" class="collection-button" id="collection-button" aria-label="Open collection" title="Collection (C)">
         <svg aria-hidden="true"><use href="#i-collection"></use></svg><span><strong id="wallet-credits">120 CR</strong><span id="wallet-count">0/48 collected</span></span>
@@ -155,6 +156,16 @@
       <div class="checkout-totals"><span><span class="micro">BASKET TOTAL</span><strong id="checkout-total">0 CR</strong></span><span><span class="micro">YOUR WALLET</span><strong id="checkout-wallet">120 CR</strong></span></div>
       <p class="checkout-status" id="checkout-status" role="status"></p>
       <button type="button" class="primary-button" id="checkout-buy" disabled>Buy game</button>
+    </dialog>
+
+    <dialog class="dialog shift-dialog" id="shift-dialog" aria-labelledby="shift-title">
+      <div class="dialog-head"><span class="micro">DAILY SHIFT · <span id="shift-countdown"></span></span><button class="icon-button" id="shift-close" type="button" aria-label="Close Shift Challenge"><svg><use href="#i-cross"></use></svg></button></div>
+      <h2 id="shift-title">Your night shift</h2>
+      <p>Explore the store, grow your collection, and take an arcade break.</p>
+      <div class="shift-reward"><span class="micro">SHIFT REWARD</span><strong>75 CR</strong><span id="shift-progress"></span></div>
+      <ol id="shift-tasks" class="shift-tasks"></ol>
+      <p id="shift-status" role="status"></p>
+      <button class="primary-button" id="shift-claim" type="button" disabled>Claim 75 CR</button>
     </dialog>
 
     <dialog class="dialog dex-dialog" id="dex-dialog" aria-labelledby="dex-title">

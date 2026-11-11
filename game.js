@@ -1,9 +1,10 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=wardrobe-4';
 import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=fit-12';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js';
-import { createShop } from './shop.js?v=character-11';
+import { createShop } from './shop.js?v=shift-14';
 import { createSignalRelay } from './signal.js';
 import { createOnline } from './online.js?v=usernames-10';
+import { createShift } from './shift.js?v=shift-14';
 import { createDex } from './dex.js?v=game-dex-13';
 import { createMenu } from './menu.js?v=character-11';
 
@@ -45,7 +46,7 @@ const online = createOnline({
 
 const shop = createShop({
   beforeOpen: clearMovement, paintCover,
-  onChange() { syncCaseVisibility(); refreshObjective(); menu.refreshShop(); dex.refresh(); },
+  onChange() { syncCaseVisibility(); refreshObjective(); menu.refreshShop(); dex.refresh(); shift.refresh(); },
   announce: message => { showToast(message); tone(523,.16,0,'triangle'); tone(784,.21,.095,'triangle'); }
 });
 const menu = createMenu({
@@ -60,6 +61,7 @@ const dex = createDex({
   getProfile: () => shop.state, paintCover, clearMovement,
   ready: () => !!world && !modalOpen()
 });
+const shift = createShift({shop,clearMovement,ready:() => !!world && !modalOpen()});
 const signal = createSignalRelay({ tone, best: () => shop.state.signalBest, award: score => shop.recordArcade('signal',score) });
 
 const tiles = Array.from({length: 9}, (_, i) => {
@@ -182,7 +184,7 @@ function clearMovement() {
 }
 
 function modalOpen() {
-  return dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || shop.open;
+  return shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || shop.open;
 }
 
 function currentAction() {
@@ -263,6 +265,7 @@ function inspectCase(clientX,clientY) {
   $('case-art').setAttribute('data-rarity-mark',rarity.mark);
   $('case-rarity').textContent = rarity.label;
   shop.inspect(index,slot,copies);
+  shop.recordInspection(index);
   showCaseFace('front');
   caseDialog.showModal();
   caseDialog.scrollTop = 0;
@@ -802,6 +805,7 @@ document.addEventListener('keydown', event => {
   }
   if (!event.repeat && event.code === 'KeyR') resetCamera();
   if (!event.repeat && event.code === 'KeyC') openCollection();
+  if (!event.repeat && event.code === 'KeyJ') { event.preventDefault(); shift.open(); }
   if (!event.repeat && event.code === 'KeyG') { event.preventDefault(); dex.open(); }
 });
 document.addEventListener('keyup', event => keys.delete(event.code));

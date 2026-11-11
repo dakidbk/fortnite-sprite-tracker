@@ -3,6 +3,8 @@ import { listingQuote, listings, shopItems } from './cosmetics.js?v=character-11
 
 import { creatorIdPattern } from './creator.js?v=creator-inbox-8';
 
+import { shiftState, shiftComplete, shiftReward } from './shift.js?v=shift-14';
+
 const PROFILE_KEY = 'after-hours-collection-v1';
 const STARTING_CREDITS = 120;
 const $ = id => document.getElementById(id);
@@ -36,6 +38,7 @@ function loadProfile(fallback) {
     return {
       credits: Number.isSafeInteger(saved.credits) && saved.credits >= 0 ? saved.credits : STARTING_CREDITS,
       owned,
+      shift:saved.shift,
       creatorClaims: Array.isArray(saved.creatorClaims) ? [...new Set(saved.creatorClaims.filter(id => typeof id === 'string' && creatorIdPattern.test(id)))] : [],
       cosmetics: Object.keys(shopItems).filter(id => Array.isArray(saved.cosmetics) && saved.cosmetics.includes(id)),
       basket,
@@ -201,7 +204,7 @@ export function createShop({ beforeOpen, onChange, paintCover, announce }) {
       const due = basketCost(current.basket);
       if (!current.basket.length || due > current.credits) return current;
       purchased = current.basket.length;
-      return { ...current, credits: current.credits - due, owned: [...current.owned,...current.basket], basket: [] };
+      return { ...current, shift:{...shiftState(current),purchase:true}, credits: current.credits - due, owned: [...current.owned,...current.basket], basket: [] };
     });
     if (purchased) {
       checkout.close();
@@ -225,6 +228,29 @@ export function createShop({ beforeOpen, onChange, paintCover, announce }) {
     clearInspection() { inspected = null; },
     openCheckout,
     openCollection,
+    recordInspection(index) {
+      const state = shiftState(profile);
+      if (state.inspected.length >= 3 || state.inspected.includes(index)) return;
+      commit(current => {
+        const shift = shiftState(current);
+        return {...current,shift:{...shift,inspected:[...new Set([...shift.inspected,index])].slice(0,3)}};
+      });
+    },
+    async claimShift() {
+      const claim = () => {
+        let claimed = false;
+        commit(current => {
+          const shift = shiftState(current);
+          if (shift.claimed || !shiftComplete(shift)) return current;
+          claimed = true;
+          return {...current,credits:Math.min(Number.MAX_SAFE_INTEGER,current.credits+shiftReward),
+            shift:{...shift,claimed:true}};
+        },true);
+        if (claimed) announce('Shift complete · +'+shiftReward+' CR');
+        return claimed;
+      };
+      return navigator.locks ? navigator.locks.request('after-hours-shift-reward',claim) : claim();
+    },
     async claimCreatorGift({id,credits,item}) {
       if (!creatorIdPattern.test(id) || (!credits && !item)) return false;
       const claim = () => {
@@ -259,6 +285,7 @@ export function createShop({ beforeOpen, onChange, paintCover, announce }) {
         ...current,
         credits: Math.min(Number.MAX_SAFE_INTEGER,current.credits + reward),
         arcadeEarned: true,
+        shift:{...shiftState(current),arcade:true},
         signalBest: mode === 'signal' ? Math.max(current.signalBest,score) : current.signalBest
       }));
       return reward;
