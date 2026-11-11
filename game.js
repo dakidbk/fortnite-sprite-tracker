@@ -4,6 +4,7 @@ import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtla
 import { createShop } from './shop.js?v=character-11';
 import { createSignalRelay } from './signal.js';
 import { createOnline } from './online.js?v=usernames-10';
+import { createDex } from './dex.js?v=game-dex-13';
 import { createMenu } from './menu.js?v=character-11';
 
 const $ = id => document.getElementById(id);
@@ -44,7 +45,7 @@ const online = createOnline({
 
 const shop = createShop({
   beforeOpen: clearMovement, paintCover,
-  onChange() { syncCaseVisibility(); refreshObjective(); menu.refreshShop(); },
+  onChange() { syncCaseVisibility(); refreshObjective(); menu.refreshShop(); dex.refresh(); },
   announce: message => { showToast(message); tone(523,.16,0,'triangle'); tone(784,.21,.095,'triangle'); }
 });
 const menu = createMenu({
@@ -55,6 +56,10 @@ const menu = createMenu({
   }
 });
 
+const dex = createDex({
+  getProfile: () => shop.state, paintCover, clearMovement,
+  ready: () => !!world && !modalOpen()
+});
 const signal = createSignalRelay({ tone, best: () => shop.state.signalBest, award: score => shop.recordArcade('signal',score) });
 
 const tiles = Array.from({length: 9}, (_, i) => {
@@ -177,7 +182,7 @@ function clearMovement() {
 }
 
 function modalOpen() {
-  return menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || shop.open;
+  return dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || shop.open;
 }
 
 function currentAction() {
@@ -797,6 +802,7 @@ document.addEventListener('keydown', event => {
   }
   if (!event.repeat && event.code === 'KeyR') resetCamera();
   if (!event.repeat && event.code === 'KeyC') openCollection();
+  if (!event.repeat && event.code === 'KeyG') { event.preventDefault(); dex.open(); }
 });
 document.addEventListener('keyup', event => keys.delete(event.code));
 window.addEventListener('blur', clearMovement);

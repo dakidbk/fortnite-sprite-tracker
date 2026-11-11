@@ -7,8 +7,8 @@
   <meta name="description" content="Build a game collection in a 3D store and earn credits at two arcade cabinets.">
   <title>Game Store After Hours</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=character-11">
-  <script type="module" src="game.js?v=fit-12"></script>
+  <link rel="stylesheet" href="style.css?v=game-dex-13">
+  <script type="module" src="game.js?v=game-dex-13"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -74,9 +74,12 @@
         <span class="control-divider"></span>
         <div class="control-item"><kbd>E</kbd><span>Interact</span></div>
       </div>
+      <div class="hud-library">
+      <button class="collection-button dex-button" id="dex-button" type="button" aria-label="Open Game Dex" title="Game Dex (G)"><svg aria-hidden="true"><use href="#i-collection"></use></svg><span>Game Dex</span></button>
       <button type="button" class="collection-button" id="collection-button" aria-label="Open collection" title="Collection (C)">
         <svg aria-hidden="true"><use href="#i-collection"></use></svg><span><strong id="wallet-credits">120 CR</strong><span id="wallet-count">0/48 collected</span></span>
       </button>
+      </div>
     </footer>
 
     <div class="touch-controls" role="group" aria-label="Touch controls">
@@ -113,7 +116,7 @@
     <dialog class="dialog help-dialog" id="help-dialog" aria-labelledby="help-title">
       <div class="dialog-head"><span class="micro">FIELD GUIDE</span><button type="button" class="icon-button" id="help-close" aria-label="Close help"><svg><use href="#i-cross"></use></svg></button></div>
       <h2 id="help-title">How to play</h2>
-      <p>Tap a case to add it to your basket. Pay at checkout with store credits and earn more at either arcade cabinet.</p>
+      <p>Open Game Dex from the bottom-right corner or press G to browse all 48 games. Tap a case to add it to your basket. Pay at checkout with store credits and earn more at either arcade cabinet.</p>
       <dl class="help-controls">
         <div><dt>Move</dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>or arrow keys</span></dd></div>
         <div><dt>Move on touch</dt><dd><span>Use the thumbstick on the left</span></dd></div>
@@ -152,6 +155,31 @@
       <div class="checkout-totals"><span><span class="micro">BASKET TOTAL</span><strong id="checkout-total">0 CR</strong></span><span><span class="micro">YOUR WALLET</span><strong id="checkout-wallet">120 CR</strong></span></div>
       <p class="checkout-status" id="checkout-status" role="status"></p>
       <button type="button" class="primary-button" id="checkout-buy" disabled>Buy game</button>
+    </dialog>
+
+    <dialog class="dialog dex-dialog" id="dex-dialog" aria-labelledby="dex-title">
+      <div class="dialog-head"><span class="micro">GAME LIBRARY · FIELD GUIDE</span><button class="icon-button" id="dex-close" type="button" aria-label="Close Game Dex"><svg><use href="#i-cross"></use></svg></button></div>
+      <div class="dex-heading"><h2 id="dex-title">Game Dex</h2><span id="dex-progress-text"></span></div>
+      <progress id="dex-progress" max="48" value="0" aria-label="Games collected"></progress>
+      <div class="dex-filters">
+        <label>Search<input id="dex-search" type="search" placeholder="Title or genre" autocomplete="off"></label>
+        <label>Rarity<select id="dex-rarity"><option value="">All rarities</option></select></label>
+        <label>Collection<select id="dex-ownership"><option value="all">All games</option><option value="owned">Collected</option><option value="missing">Missing</option></select></label>
+      </div>
+      <p class="micro" id="dex-results" role="status"></p>
+      <div class="dex-body">
+        <div class="dex-catalog"><div id="dex-grid" class="dex-grid"></div><p id="dex-empty" hidden>No games match these filters.</p></div>
+        <section id="dex-detail" class="dex-detail" aria-labelledby="dex-entry-title">
+          <div class="micro" id="dex-entry-number"></div>
+          <div class="dex-entry-art" id="dex-entry-art" role="img"></div>
+          <div class="dex-cover-buttons"><button class="menu-small" id="dex-front" type="button" aria-pressed="true">Front</button><button class="menu-small" id="dex-back" type="button" aria-pressed="false">Back</button></div>
+          <h3 id="dex-entry-title"></h3>
+          <span class="micro" id="dex-entry-genre"></span>
+          <p id="dex-entry-description"></p>
+          <div class="dex-stats"><strong id="dex-entry-rarity"></strong><strong id="dex-entry-price"></strong></div>
+          <p class="dex-entry-status" id="dex-entry-status"></p>
+        </section>
+      </div>
     </dialog>
 
     <dialog class="dialog collection-dialog" id="collection-dialog" aria-labelledby="collection-title">
