@@ -3,7 +3,7 @@ import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, 
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js';
 import { createShop } from './shop.js?v=neighborhood-15';
 import { createSignalRelay } from './signal.js';
-import { createOnline } from './online.js?v=neighborhood-15';
+import { createOnline } from './online.js?v=room-chat-16';
 import { createShift } from './shift.js?v=shift-14';
 import { createDex } from './dex.js?v=neighborhood-15';
 import { createMenu } from './menu.js?v=neighborhood-15';
@@ -849,6 +849,7 @@ document.addEventListener('keydown', event => {
   if (!event.repeat && event.code === 'KeyC') openCollection();
   if (!event.repeat && event.code === 'KeyJ') { event.preventDefault(); shift.open(); }
   if (!event.repeat && event.code === 'KeyG') { event.preventDefault(); dex.open(); }
+  if (!event.repeat && event.code === 'KeyT' && online.openChat()) event.preventDefault();
 });
 document.addEventListener('keyup', event => keys.delete(event.code));
 window.addEventListener('blur', clearMovement);

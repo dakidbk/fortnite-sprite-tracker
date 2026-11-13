@@ -29,7 +29,7 @@ Deno.serve(async request => {
   try {
     const text = await request.text();
     if (text.length > 1024) return respond({error:'Invalid request.'},400);
-    const {op,room,token,x,z,yaw,stride,profileToken,username} = JSON.parse(text);
+    const {op,room,token,x,z,yaw,stride,profileToken,username,chat,message,messageId} = JSON.parse(text);
     if (op === 'username') {
       if (typeof profileToken !== 'string' || !uuid.test(profileToken)) return respond({error:'Invalid profile.'},400);
       if (typeof username !== 'string' || !usernamePattern.test(username)) return respond({error:'Use 3–16 letters, numbers or underscores, starting with a letter.'},400);
@@ -38,19 +38,33 @@ Deno.serve(async request => {
       const state = await result.json();
       return respond(state,state.error ? 409 : 200);
     }
-    if (!['create','join','sync','leave'].includes(op)) return respond({error:'Invalid action.'},400);
+    if (!['create','join','sync','leave','chat'].includes(op)) return respond({error:'Invalid action.'},400);
     const joining = op === 'create' || op === 'join';
     const code = op === 'create' ? crypto.randomUUID().replaceAll('-','').slice(0,12).toUpperCase() : room;
     if (typeof code !== 'string' || !/^[A-F0-9]{12}$/.test(code)) return respond({error:'Enter a valid room code.'},400);
     if (!joining && (typeof token !== 'string' || !uuid.test(token))) return respond({error:'Invalid session.'},401);
     const session = joining ? crypto.randomUUID() : token;
-    const result = await rpc('after_hours_room_named',{
+    const parameters = {
       op,code,session_id:session,px:bounded(x,-11,11,0),pz:bounded(z,-20,10,4.55),
       angle:bounded(yaw,-7,7,0),pace:bounded(stride,0,1.3,0),
       profile_token: joining && typeof profileToken === 'string' && uuid.test(profileToken) ? profileToken : null
-    });
-    if (!result.ok) return respond({error:'Online rooms are temporarily unavailable.'},503);
+    };
+    const sending = op === 'chat';
+    const withChat = sending || chat === true;
+    let result: Response;
+    if (sending) {
+      const body = typeof message === 'string' ? message.trim() : '';
+      if (!body || [...body].length > 60 || /[\u0000-\u001f\u007f-\u009f]/u.test(body) || !body.isWellFormed()) {
+        return respond({error:'Enter a message up to 60 characters.'},400);
+      }
+      if (typeof messageId !== 'string' || !uuid.test(messageId)) return respond({error:'Invalid message.'},400);
+      result = await rpc('after_hours_room_with_chat',{...parameters,message_text:body,nonce:messageId});
+    } else {
+      result = await rpc(withChat ? 'after_hours_room_with_chat' : 'after_hours_room_named',parameters);
+    }
+    if (!result.ok) return respond({error:sending ? 'Could not send your message. Try again.' : 'Online rooms are temporarily unavailable.'},503);
     const state = await result.json();
+    if (state.rate_limited) return respond(state,429);
     if (state.error || state.expired) return respond(state,state.expired ? 410 : 409);
     return respond(joining ? {...state,token:session} : state);
   } catch {

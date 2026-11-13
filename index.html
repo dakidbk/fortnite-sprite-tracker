@@ -7,8 +7,8 @@
   <meta name="description" content="Build a game collection in a 3D store and earn credits at two arcade cabinets.">
   <title>Game Store After Hours</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=neighborhood-15">
-  <script type="module" src="game.js?v=neighborhood-15"></script>
+  <link rel="stylesheet" href="style.css?v=room-chat-16">
+  <script type="module" src="game.js?v=room-chat-16"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -24,6 +24,7 @@
     <symbol id="i-look" viewBox="0 0 24 24"><path d="M4 12s3-5.5 8-5.5 8 5.5 8 5.5-3 5.5-8 5.5S4 12 4 12Z"/><circle cx="12" cy="12" r="2.1"/></symbol>
     <symbol id="i-reset" viewBox="0 0 24 24"><path d="M5 10a7.5 7.5 0 1 1 1.4 7.5M5 4.5V10h5.5"/></symbol>
     <symbol id="i-collection" viewBox="0 0 24 24"><rect x="5" y="3.5" width="11" height="15" rx="1.7"/><path d="M19 6.5v12a3 3 0 0 1-3 3H8m0-14h5m-5 4h3"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M5 4.5h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-6 3v-14a2 2 0 0 1 2-2Z"/><path d="M7 9h10M7 13h7"/></symbol>
   </svg>
 
   <main class="game" aria-label="Game Store After Hours">
@@ -53,6 +54,9 @@
         <button class="icon-button full-button" id="fullscreen-button" type="button" aria-label="Enter fullscreen" title="Enter fullscreen" aria-pressed="false"><svg><use href="#i-full"></use></svg></button>
       </nav>
     </header>
+
+    <button class="icon-button chat-button" id="chat-button" type="button" title="Room chat (T)" aria-keyshortcuts="T" aria-haspopup="dialog" hidden><svg aria-hidden="true"><use href="#i-chat"></use></svg>Chat</button>
+    <div class="room-chat-log" id="room-chat-log" role="log" aria-label="Room messages"></div>
 
     <button type="button" class="waypoint" id="waypoint" hidden><span class="waypoint-gem"></span><span class="waypoint-label"><kbd>E</kbd><span id="waypoint-text">Open doors</span></span></button>
     <div class="toast" id="toast" role="status" hidden></div>
@@ -110,6 +114,24 @@
       <p id="room-status" role="status"></p>
     </dialog>
 
+    <dialog class="dialog chat-dialog" id="chat-dialog" aria-labelledby="chat-title">
+      <div class="dialog-head">
+        <h2 id="chat-title">Room chat</h2>
+        <button class="icon-button" id="chat-close" type="button" aria-label="Close chat"><svg aria-hidden="true"><use href="#i-cross"></use></svg></button>
+      </div>
+      <form id="chat-form">
+        <label class="micro" for="chat-message">MESSAGE</label>
+        <div class="chat-compose">
+          <input id="chat-message" dir="auto" maxlength="120" autocomplete="off" enterkeyhint="send" aria-describedby="chat-count" autofocus>
+          <button class="primary-button" id="chat-send" type="submit" disabled>Send</button>
+        </div>
+        <div class="chat-feedback">
+          <span id="chat-status" role="status"></span>
+          <span class="micro" id="chat-count">0 / 60</span>
+        </div>
+      </form>
+    </dialog>
+
     <dialog class="dialog help-dialog" id="help-dialog" aria-labelledby="help-title">
       <div class="dialog-head"><span class="micro">FIELD GUIDE</span><button type="button" class="icon-button" id="help-close" aria-label="Close help"><svg><use href="#i-cross"></use></svg></button></div>
       <h2 id="help-title">How to play</h2>
@@ -120,6 +142,7 @@
         <div><dt>Look around</dt><dd><span>Drag with the mouse or swipe the right side</span></dd></div>
         <div><dt>Run</dt><dd><kbd>Shift</kbd></dd></div>
         <div><dt>Interact</dt><dd><kbd>E</kbd> <span>or tap the prompt</span></dd></div>
+        <div><dt>Room chat</dt><dd><kbd>T</kbd> <span>or tap Chat while online</span></dd></div>
         <div><dt>Collection</dt><dd><kbd>C</kbd> <span>or tap your wallet</span></dd></div>
       </dl>
       <button class="primary-button" id="resume-button" type="button">Back to the store <svg><use href="#i-arrow"></use></svg></button>

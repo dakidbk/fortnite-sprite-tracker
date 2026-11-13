@@ -5,11 +5,14 @@ import { profileToken } from './username.js?v=usernames-10';
 const endpoint = 'https://fwjthjqevmukrovpbvfx.supabase.co/functions/v1/game-rooms';
 const roomPattern = /^[A-F0-9]{12}$/;
 const interval = 280;
+const requestTimeout = 6500;
+const chatLimit = 60;
+const chatLifetime = 10000;
 
 async function request(payload, keepalive = false) {
   const response = await fetch(endpoint,{
     method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload), keepalive, signal:AbortSignal.timeout(6500)
+    body:JSON.stringify(payload), keepalive, signal:AbortSignal.timeout(requestTimeout)
   });
   const result = await response.json();
   if (!response.ok && !result.expired) throw Error(result.error || 'Online rooms are temporarily unavailable.');
@@ -22,8 +25,12 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
   const field = $('room-code'), status = $('room-status'), invite = $('room-invite');
   const lobby = $('room-lobby'), connected = $('room-connected');
   const tags = $('room-tags');
+  const chatButton = $('chat-button'), chatDialog = $('chat-dialog'), chatLog = $('room-chat-log');
+  const chatInput = $('chat-message'), chatSend = $('chat-send'), chatStatus = $('chat-status');
   const peers = new Map();
+  const recentMessages = new Map();
   let session, timer, pending = false, count = 0, reconnecting = false;
+  let composing = false, draft, sending;
   let codeFromLink = new URL(location.href).searchParams.get('room')?.toUpperCase();
   if (roomPattern.test(codeFromLink || '')) field.value = codeFromLink;
 
@@ -62,6 +69,88 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
     }
   }
 
+  function showMessages(messages, started) {
+    if (!Array.isArray(messages)) return;
+    chatButton.hidden = false;
+    const now = performance.now();
+    for (const [key, message] of recentMessages) {
+      if (message.forgetAt <= now) recentMessages.delete(key);
+    }
+    for (const {id, slot, username, text, remaining_ms} of messages) {
+      const key = slot+':'+id;
+      const remaining = Math.min(chatLifetime,remaining_ms) - (now-started)/2;
+      if (recentMessages.has(key) || !(remaining > 0)) continue;
+
+      const row = document.createElement('div');
+      const name = document.createElement('strong');
+      const body = document.createElement('span');
+      row.className = 'room-chat-message';
+      name.textContent = username || 'Player '+slot;
+      body.dir = 'auto';
+      body.textContent = text;
+      const fade = Math.min(1500,remaining);
+      row.style.setProperty('--fade-delay',(remaining-fade)+'ms');
+      row.style.setProperty('--fade-duration',fade+'ms');
+      row.append(name,body);
+      chatLog.append(row);
+      recentMessages.set(key,{
+        timer: setTimeout(() => row.remove(),remaining),
+        forgetAt: now+chatLifetime+requestTimeout
+      });
+    }
+  }
+
+  function updateChatInput() {
+    const characters = [...chatInput.value];
+    if (!composing && characters.length > chatLimit) chatInput.value = characters.slice(0,chatLimit).join('');
+    $('chat-count').textContent = (composing ? characters.length : Math.min(chatLimit,characters.length))+' / '+chatLimit;
+    chatInput.readOnly = !!sending;
+    chatSend.disabled = !!sending || composing || !chatInput.value.trim();
+  }
+
+  function openChat() {
+    if (!session || chatButton.hidden || dialog.open || chatDialog.open) return false;
+    clearMovement();
+    if (!sending) chatStatus.textContent = '';
+    chatDialog.showModal();
+    chatInput.focus();
+    return true;
+  }
+
+  async function sendChat(event) {
+    event.preventDefault();
+    if (!session || !chatDialog.open || sending || composing) return;
+    const message = chatInput.value.trim();
+    if (!message || [...message].length > chatLimit) return;
+    const current = session;
+    if (draft?.message !== message) draft = {message,messageId:crypto.randomUUID()};
+    const outgoing = draft;
+    sending = outgoing;
+    chatStatus.textContent = 'Sending…';
+    updateChatInput();
+    const started = performance.now();
+    try {
+      const state = await request({op:'chat',room:current.room,token:current.token,...outgoing});
+      if (session !== current) return;
+      if (state.expired) {
+        clearSession('Your room connection expired. Create or join a room again.');
+        return;
+      }
+      showMessages(state.messages,started);
+      chatInput.value = '';
+      chatStatus.textContent = '';
+      draft = null;
+      if (chatDialog.open) chatDialog.close();
+    } catch (error) {
+      if (session === current) chatStatus.textContent = error.name === 'Error' ? error.message : 'Could not send your message. Try again.';
+    } finally {
+      if (sending === outgoing) {
+        sending = null;
+        updateChatInput();
+      }
+    }
+  }
+
   function clearSession(message) {
     clearTimeout(timer);
     session = null;
@@ -69,6 +158,16 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
     reconnecting = false;
     peers.clear();
     tags.replaceChildren();
+    for (const {timer} of recentMessages.values()) clearTimeout(timer);
+    recentMessages.clear();
+    chatLog.replaceChildren();
+    composing = false;
+    draft = sending = null;
+    chatInput.value = '';
+    chatStatus.textContent = '';
+    if (chatDialog.open) chatDialog.close();
+    chatButton.hidden = true;
+    updateChatInput();
     showState(message);
   }
 
@@ -76,13 +175,14 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
     if (session !== current) return;
     const start = performance.now();
     try {
-      const state = await request({op:'sync',...current,...position()});
+      const state = await request({op:'sync',...current,...position(),chat:true});
       if (session !== current) return;
       if (state.expired) {
         clearSession('Your room connection expired. Create or join a room again.');
         return;
       }
       apply(state.players);
+      showMessages(state.messages,start);
       showState(reconnecting ? 'Reconnected.' : undefined);
       reconnecting = false;
     } catch {
@@ -105,8 +205,9 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
     pending = true;
     $('room-create').disabled = $('room-join').disabled = true;
     showState(op === 'create' ? 'Creating your room…' : 'Joining room…');
+    const started = performance.now();
     try {
-      const state = await request({op,room,profileToken:profileToken(),...roomEntry});
+      const state = await request({op,room,profileToken:profileToken(),...roomEntry,chat:true});
       const current = {room:state.room,token:state.token,slot:state.slot};
       if (!dialog.open) {
         await request({op:'leave',...current},true).catch(() => {});
@@ -119,6 +220,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
       field.value = session.room;
       $('room-current-code').textContent = session.room;
       apply(state.players);
+      showMessages(state.messages,started);
       showState('Share the invite with up to three friends.');
       dialog.close();
       onEnter(roomEntry, session.room);
@@ -145,6 +247,25 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
   }
 
   button.addEventListener('click',open);
+  chatButton.addEventListener('click',openChat);
+  $('chat-close').addEventListener('click',() => chatDialog.close());
+  $('chat-form').addEventListener('submit',sendChat);
+  chatInput.addEventListener('input',() => {
+    chatStatus.textContent = '';
+    updateChatInput();
+  });
+  chatInput.addEventListener('compositionstart',() => {
+    composing = true;
+    updateChatInput();
+  });
+  chatInput.addEventListener('compositionend',() => {
+    composing = false;
+    updateChatInput();
+  });
+  chatDialog.addEventListener('close',() => {
+    composing = false;
+    updateChatInput();
+  });
   $('online-close').addEventListener('click',() => dialog.close());
   $('room-play').addEventListener('click',() => dialog.close());
   $('room-create').addEventListener('click',() => enter('create'));
@@ -163,7 +284,8 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
   window.addEventListener('pagehide',leave);
 
   return {
-    get open() { return dialog.open; },
+    get open() { return dialog.open || chatDialog.open; },
+    openChat,
     openMenu: open,
     openInvite() {
       if (!roomPattern.test(codeFromLink || '')) return false;
