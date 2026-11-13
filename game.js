@@ -1,16 +1,19 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=wardrobe-4';
-import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=fit-12';
+import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=neighborhood-15';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js';
-import { createShop } from './shop.js?v=shift-14';
+import { createShop } from './shop.js?v=neighborhood-15';
 import { createSignalRelay } from './signal.js';
-import { createOnline } from './online.js?v=usernames-10';
+import { createOnline } from './online.js?v=neighborhood-15';
 import { createShift } from './shift.js?v=shift-14';
-import { createDex } from './dex.js?v=game-dex-13';
-import { createMenu } from './menu.js?v=character-11';
+import { createDex } from './dex.js?v=neighborhood-15';
+import { createMenu } from './menu.js?v=neighborhood-15';
+import { createMusic } from './music.js?v=neighborhood-15';
+import { createReveal } from './reveal.js?v=neighborhood-15';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');
 const game = canvas.parentElement;
+const loading = $('load');
 const stick = $('move-stick');
 const help = $('help-dialog'), arcade = $('arcade-dialog');
 const caseDialog = $('case-dialog');
@@ -28,32 +31,47 @@ const stations = {
   arcade: { spot: CABINET, title: 'Neon Dash', prompt: 'Play Neon Dash', radius: 1.28, y: 2.66 },
   signal: { spot: SIGNAL_CABINET, title: 'Signal Relay', prompt: 'Play Signal Relay', radius: 1.28, y: 2.66 }
 };
-const collectorGoal = { titles: 5, rarities: 3 };
 
-let renderer, world, introShown = false, running = false, lastFrame = 0, lastDraw = 0;
+let renderer, world, introShown = false, running = false, entering = false, lastFrame = 0, lastDraw = 0;
 let door = 0, doorOpened = false, walkPhase = 0, stride = 0, inside = false, visited = false;
 let toastTimeout, audio, camera = null, action = null;
 let moveGesture = null, lookGesture = null;
 let selectedGame = -1;
 let sound = read('after-hours-sound') === 'on';
+let musicEnabled = read('after-hours-music') !== 'off', musicStarted = false;
 let best = Math.max(0, Number(read('after-hours-best')) || 0);
 let round = null, target = -1, nextAt = 0, targetUntil = 0, lastTarget = -1;
 
 const online = createOnline({
-  clearMovement,
+  clearMovement, canOccupy: withinStoreBounds,
+  onEnter(entry) {
+    Object.assign(player,entry);
+    stride = 0;
+    resetCamera();
+    camera = null;
+    enterStore('Entering the online store…', 'Online room ready. Open Online to invite friends.');
+  },
   position: () => ({x:player.x,z:player.z,yaw:Math.atan2(Math.sin(player.yaw),Math.cos(player.yaw)),stride})
 });
+const music = createMusic(audioContext);
+const reveal = createReveal({ paintCover, playSound: revealSound, focusGame: () => canvas.focus() });
 
 const shop = createShop({
   beforeOpen: clearMovement, paintCover,
-  onChange() { syncCaseVisibility(); refreshObjective(); menu.refreshShop(); dex.refresh(); shift.refresh(); },
+  onChange() { syncCaseVisibility(); menu.refreshShop(); dex.refresh(); shift.refresh(); },
+  onPurchase: indexes => reveal.show(indexes),
   announce: message => { showToast(message); tone(523,.16,0,'triangle'); tone(784,.21,.095,'triangle'); }
 });
 const menu = createMenu({
   read, save, shop, toggleSound, toggleFullscreen,
   onPlay() {
     clearMovement();
-    if (!online.openInvite()) canvas.focus();
+    startMusic();
+    if (!online.openInvite()) enterStore('Entering the store…');
+  },
+  onOnline() {
+    startMusic();
+    online.openMenu();
   }
 });
 
@@ -84,6 +102,56 @@ function save(key, value) {
   try { localStorage.setItem(key, value); } catch {}
 }
 
+function audioContext() {
+  audio ||= new (window.AudioContext || window.webkitAudioContext)();
+  return audio;
+}
+
+function startMusic() {
+  musicStarted = true;
+  if (musicEnabled && !document.hidden) music.start();
+}
+
+function refreshMusic() {
+  $('menu-music').setAttribute('aria-pressed',String(musicEnabled));
+  $('menu-music-value').textContent = musicEnabled ? 'On' : 'Off';
+}
+
+function revealSound(rarity) {
+  const tier = Object.keys(RARITIES).indexOf(rarity);
+  const root = tier >= 4 ? 587 : 523;
+  [1,1.25,1.5,2].forEach((note,i) => tone(root*note,.24+i*.035,i*.076,'triangle'));
+}
+
+function showLoading(message, stage) {
+  $('load-message').textContent = message;
+  loading.dataset.stage = stage;
+  loading.hidden = false;
+  canvas.setAttribute('aria-busy','true');
+}
+
+function hideLoading() {
+  loading.hidden = true;
+  canvas.removeAttribute('aria-busy');
+}
+
+function enterStore(message, notice) {
+  if (entering || !running) return;
+  entering = true;
+  clearMovement();
+  showLoading(message,'enter');
+  // Paint the loading screen before revealing the playable view.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    setTimeout(() => {
+      entering = false;
+      if (!running) return;
+      hideLoading();
+      canvas.focus();
+      if (notice) showToast(notice);
+    },reduced.matches ? 260 : 680);
+  }));
+}
+
 function refreshSound() {
   const button = $('sound-button');
   const label = sound ? 'Turn sound off' : 'Turn sound on';
@@ -98,7 +166,7 @@ function refreshSound() {
 function tone(freq, length = .09, delay = 0, kind = 'sine') {
   if (!sound) return;
   try {
-    audio ??= new AudioContext();
+    audioContext();
     if (audio.state === 'suspended') audio.resume().catch(() => {});
     const osc = audio.createOscillator(), gain = audio.createGain();
     const t = audio.currentTime + delay;
@@ -111,42 +179,6 @@ function tone(freq, length = .09, delay = 0, kind = 'sine') {
     osc.start(t);
     osc.stop(t + length + .015);
   } catch {}
-}
-
-function refreshObjective() {
-  const { owned, basket, arcadeEarned, credits } = shop.state;
-  let step = 0, title = 'Head inside', description = 'Walk up to the doors of the game store.';
-  if (visited) {
-    if (!owned.length) {
-      step = 1;
-      title = 'Pick your first game';
-      description = 'Tap a cover on the shelf and add it to your basket.';
-    } else if (!arcadeEarned) {
-      step = 2;
-      title = 'Earn arcade credits';
-      description = 'Try Neon Dash or Signal Relay at the back of the store.';
-    } else {
-      const rarities = new Set(owned.map(index => GAMES[index].rarity)).size;
-      const complete = owned.length >= collectorGoal.titles && rarities >= collectorGoal.rarities;
-      step = complete ? 4 : 3;
-      title = complete ? 'Collector goal complete' : 'Build your collection';
-      description = complete ? 'Your collection is ready to explore from your wallet.'
-        : 'Collect five games across three rarities. ' + Math.min(owned.length,5) + '/5 games · ' + Math.min(rarities,3) + '/3 tiers.';
-    }
-    if (basket.length) {
-      const missing = shop.basketTotal - credits;
-      title = missing > 0 ? 'Earn more credits' : 'Head to checkout';
-      description = missing > 0 ? 'Earn ' + missing + ' more CR at the arcade, or remove a case from your basket.'
-        : 'Pay for the games in your basket at the counter on the right.';
-    }
-  }
-  $('objective-count').textContent = '0' + Math.min(step + 1,4) + ' / 04';
-  $('objective-title').textContent = title;
-  $('objective-description').textContent = description;
-  document.querySelectorAll('.objective-bars i').forEach((bar, i) => {
-    bar.classList.toggle('active', i === step);
-    bar.classList.toggle('done', i < step);
-  });
 }
 
 function showToast(message) {
@@ -184,7 +216,7 @@ function clearMovement() {
 }
 
 function modalOpen() {
-  return shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || shop.open;
+  return entering || reveal.open || shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || shop.open;
 }
 
 function currentAction() {
@@ -391,11 +423,15 @@ function hit(i) {
   tone(162, .09);
 }
 
+function withinStoreBounds(x,z) {
+  return z < -.27
+    ? Math.abs(x) <= storeHalfWidth(z) - .54 && z >= STORE.back + .41
+    : canWalkOnPorch(x,z);
+}
+
 function allow(x, z) {
   const r = .245;
-  if (z < -.27) {
-    if (Math.abs(x) > storeHalfWidth(z) - .54 || z < STORE.back + .41) return false;
-  } else if (!canWalkOnPorch(x,z,r)) return false;
+  if (!withinStoreBounds(x,z)) return false;
   if (door < .78 && Math.abs(x) < 1.79 && z > -.19 - r && z < .25 + r) return false;
   return !world.obstacles.some(([l,h,b,f]) => {
     const dx = x - clamp(x,l,h), dz = z - clamp(z,b,f);
@@ -438,7 +474,6 @@ function move(dt) {
     $('storefront-time').hidden = inside;
     if (inside && !visited) {
       visited = true;
-      refreshObjective();
       showToast(touchLayout.matches ? 'Tap a cover to pick a game' : 'Click a cover to pick a game');
     }
   }
@@ -618,8 +653,8 @@ async function startup() {
   const loading = coverAtlases.filter(atlas => !atlas.complete);
   if (loading.length) await Promise.all(loading.map(atlas => atlas.decode().catch(() => {})));
   if (coverAtlases.length !== Math.ceil(GAMES.length/coversPerAtlas) || coverAtlases.some(atlas => atlas.naturalWidth !== atlasWidth || atlas.naturalHeight !== atlasHeight)) {
-    $('load').hidden = false;
-    $('load').querySelector('p').textContent = 'The cover artwork could not load. Refresh to try again.';
+    showLoading('The cover artwork could not load. Refresh to try again.','error');
+    canvas.removeAttribute('aria-busy');
     return;
   }
   try {
@@ -628,7 +663,7 @@ async function startup() {
     syncCaseVisibility();
     camera = null;
     draw(1,performance.now());
-    $('load').hidden = true;
+    if (!entering) hideLoading();
     if (!running) {
       running = true;
       if (!introShown) {
@@ -640,8 +675,8 @@ async function startup() {
     }
   } catch (error) {
     console.error(error);
-    $('load').hidden = false;
-    $('load').querySelector('p').textContent = 'This game needs a browser with WebGL 2 enabled.';
+    showLoading('This game needs a browser with WebGL 2 enabled.','error');
+    canvas.removeAttribute('aria-busy');
   }
 }
 
@@ -757,6 +792,13 @@ function toggleSound() {
   tone(612,.13,0,'triangle');
 }
 $('sound-button').addEventListener('click',toggleSound);
+$('menu-music').addEventListener('click',() => {
+  musicEnabled = !musicEnabled;
+  save('after-hours-music',musicEnabled ? 'on' : 'off');
+  refreshMusic();
+  if (musicEnabled) startMusic();
+  else music.stop();
+});
 
 const fullscreen = $('fullscreen-button');
 fullscreen.hidden = !document.fullscreenEnabled;
@@ -810,18 +852,20 @@ document.addEventListener('keydown', event => {
 });
 document.addEventListener('keyup', event => keys.delete(event.code));
 window.addEventListener('blur', clearMovement);
-document.addEventListener('visibilitychange', () => { if (document.hidden) clearMovement(); });
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { clearMovement(); music.stop(); }
+  else if (musicStarted && musicEnabled) music.start();
+});
 
 canvas.addEventListener('webglcontextlost', event => {
   event.preventDefault();
   running = false;
   clearMovement();
-  $('load').querySelector('p').textContent = 'Reconnecting to WebGL';
-  $('load').hidden = false;
+  showLoading('Reconnecting to WebGL…','enter');
 });
 canvas.addEventListener('webglcontextrestored', startup);
 
 refreshSound();
+refreshMusic();
 updateBest();
-refreshObjective();
-requestAnimationFrame(startup);
+requestAnimationFrame(() => requestAnimationFrame(startup));

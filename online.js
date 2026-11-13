@@ -16,7 +16,7 @@ async function request(payload, keepalive = false) {
   return result;
 }
 
-export function createOnline({ clearMovement, position }) {
+export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
   const $ = id => document.getElementById(id);
   const dialog = $('online-dialog'), button = $('online-button');
   const field = $('room-code'), status = $('room-status'), invite = $('room-invite');
@@ -41,7 +41,7 @@ export function createOnline({ clearMovement, position }) {
     count = roster.length;
     const slots = new Set();
     for (const player of roster) {
-      if (player.slot === session.slot) continue;
+      if (player.slot === session.slot || !Number.isFinite(player.x) || !Number.isFinite(player.z) || !canOccupy(player.x,player.z)) continue;
       slots.add(player.slot);
       let peer = peers.get(player.slot);
       if (!peer) {
@@ -101,12 +101,18 @@ export function createOnline({ clearMovement, position }) {
       field.focus();
       return;
     }
+    const roomEntry = { x:0, z:4.55, yaw:0, stride:0 };
     pending = true;
     $('room-create').disabled = $('room-join').disabled = true;
     showState(op === 'create' ? 'Creating your room…' : 'Joining room…');
     try {
-      const state = await request({op,room,profileToken:profileToken(),...position()});
-      session = {room:state.room,token:state.token,slot:state.slot};
+      const state = await request({op,room,profileToken:profileToken(),...roomEntry});
+      const current = {room:state.room,token:state.token,slot:state.slot};
+      if (!dialog.open) {
+        await request({op:'leave',...current},true).catch(() => {});
+        return;
+      }
+      session = current;
       const url = new URL(location.pathname,location.origin);
       url.searchParams.set('room',session.room);
       invite.value = url.href;
@@ -114,7 +120,9 @@ export function createOnline({ clearMovement, position }) {
       $('room-current-code').textContent = session.room;
       apply(state.players);
       showState('Share the invite with up to three friends.');
-      timer = setTimeout(() => sync(session),interval);
+      dialog.close();
+      onEnter(roomEntry, session.room);
+      timer = setTimeout(() => sync(current),interval);
     } catch (error) {
       showState(error.name === 'Error' ? error.message : 'Could not reach the room server. Try again.');
     } finally {
@@ -138,6 +146,7 @@ export function createOnline({ clearMovement, position }) {
 
   button.addEventListener('click',open);
   $('online-close').addEventListener('click',() => dialog.close());
+  $('room-play').addEventListener('click',() => dialog.close());
   $('room-create').addEventListener('click',() => enter('create'));
   $('room-form').addEventListener('submit',event => { event.preventDefault(); enter('join'); });
   $('room-leave').addEventListener('click',leave);
@@ -155,29 +164,37 @@ export function createOnline({ clearMovement, position }) {
 
   return {
     get open() { return dialog.open; },
+    openMenu: open,
     openInvite() {
       if (!roomPattern.test(codeFromLink || '')) return false;
       codeFromLink = null;
       open();
+      enter('join');
       return true;
     },
     draw(matrix, eye, dt, render) {
       const blend = 1-Math.exp(-dt*13);
       for (const peer of peers.values()) {
         const target = peer.target;
-        peer.x = mix(peer.x,target.x,blend);
-        peer.z = mix(peer.z,target.z,blend);
+        const x = mix(peer.x,target.x,blend), z = mix(peer.z,target.z,blend);
+        if (canOccupy(x,z)) {
+          peer.x = x;
+          peer.z = z;
+        } else {
+          peer.x = target.x;
+          peer.z = target.z;
+        }
         peer.stride = mix(peer.stride,target.stride,blend);
         const difference = target.yaw-peer.yaw;
         peer.yaw += Math.atan2(Math.sin(difference),Math.cos(difference))*blend;
         peer.phase += dt*13.6;
         render(peer);
-        const [x,y,w] = project(matrix,[peer.x,2.08,peer.z]);
+        const [screenX,screenY,w] = project(matrix,[peer.x,2.08,peer.z]);
         const distance = Math.hypot(eye[0]-peer.x,eye[2]-peer.z);
-        peer.tag.hidden = w < .3 || distance > 26 || x < .04 || x > .96 || y < .11 || y > .88;
+        peer.tag.hidden = w < .3 || distance > 26 || screenX < .04 || screenX > .96 || screenY < .11 || screenY > .88;
         if (!peer.tag.hidden) {
-          peer.tag.style.left = (clamp(x,0,1)*100)+'%';
-          peer.tag.style.top = (clamp(y,0,1)*100)+'%';
+          peer.tag.style.left = (clamp(screenX,0,1)*100)+'%';
+          peer.tag.style.top = (clamp(screenY,0,1)*100)+'%';
         }
       }
     }

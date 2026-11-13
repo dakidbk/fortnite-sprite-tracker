@@ -51,7 +51,7 @@ function loadProfile(fallback) {
   }
 }
 
-export function createShop({ beforeOpen, onChange, paintCover, announce }) {
+export function createShop({ beforeOpen, onChange, paintCover, announce, onPurchase }) {
   const checkout = $('checkout-dialog'), collection = $('collection-dialog');
   let profile = loadProfile({ credits: STARTING_CREDITS, owned: [], cosmetics: [], creatorClaims: [], basket: [], caseSlots: {}, arcadeEarned: false, signalBest: 0 });
   let inspected = null;
@@ -199,16 +199,16 @@ export function createShop({ beforeOpen, onChange, paintCover, announce }) {
     });
   });
   $('checkout-buy').addEventListener('click',() => {
-    let purchased = 0;
+    let purchased = [];
     commit(current => {
       const due = basketCost(current.basket);
       if (!current.basket.length || due > current.credits) return current;
-      purchased = current.basket.length;
-      return { ...current, shift:{...shiftState(current),purchase:true}, credits: current.credits - due, owned: [...current.owned,...current.basket], basket: [] };
+      purchased = current.basket;
+      return { ...current, shift:{...shiftState(current),purchase:true}, credits: current.credits - due, owned: [...current.owned,...purchased], basket: [] };
     });
-    if (purchased) {
+    if (purchased.length) {
       checkout.close();
-      announce(purchased === 1 ? 'Game added to your collection' : purchased + ' games added to your collection');
+      onPurchase(purchased);
     }
   });
   $('checkout-close').addEventListener('click',() => checkout.close());

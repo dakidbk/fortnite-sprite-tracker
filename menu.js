@@ -11,7 +11,7 @@ const dayLength = 86400000;
 const itemIds = id => listings[id].items || [id];
 const wearingAll = (look,id) => itemIds(id).every(part => look[shopItems[part].slot] === part);
 
-export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscreen}) {
+export function createMenu({read, save, shop, onPlay, onOnline, toggleSound, toggleFullscreen}) {
   const menu = $('start-menu');
   const home = $('menu-home'), character = $('menu-character'), options = $('menu-options'), store = $('menu-item-shop'), creator = $('menu-creator'), username = $('menu-username');
   const usernameEditor = createUsernameEditor();
@@ -226,6 +226,10 @@ export function createMenu({read, save, shop, onPlay, toggleSound, toggleFullscr
   $('menu-play').addEventListener('click',() => {
     menu.close();
     onPlay();
+  });
+  $('menu-online-button').addEventListener('click',() => {
+    menu.close();
+    onOnline();
   });
   $('preview-left').addEventListener('click',() => { angle -= Math.PI/4; });
   $('preview-right').addEventListener('click',() => { angle += Math.PI/4; });

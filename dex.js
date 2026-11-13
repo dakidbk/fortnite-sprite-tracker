@@ -4,8 +4,8 @@ const $ = id => document.getElementById(id);
 
 export function createDex({getProfile, paintCover, clearMovement, ready}) {
   const dialog = $('dex-dialog'), grid = $('dex-grid'), search = $('dex-search');
-  const rarity = $('dex-rarity'), ownedFilter = $('dex-ownership');
-  let selected = 0, face = 'front';
+  const rarity = $('dex-rarity');
+  let selected = null, face = 'front';
   rarity.append(...Object.entries(RARITIES).map(([key,tier]) => {
     const option = document.createElement('option');
     option.value = key;
@@ -14,16 +14,14 @@ export function createDex({getProfile, paintCover, clearMovement, ready}) {
   }));
 
   function details() {
+    if (selected === null) return;
     const game = GAMES[selected], tier = RARITIES[game.rarity];
-    const {owned,basket} = getProfile();
-    $('dex-entry-number').textContent = '#'+String(selected+1).padStart(3,'0');
     $('dex-entry-title').textContent = game.title;
     $('dex-entry-genre').textContent = game.genre;
     $('dex-entry-description').textContent = game.blurb;
     $('dex-entry-rarity').textContent = tier.label;
     $('dex-entry-rarity').style.color = tier.color;
     $('dex-entry-price').textContent = tier.price+' CR';
-    $('dex-entry-status').textContent = owned.includes(selected) ? 'Collected' : basket.includes(selected) ? 'In your basket' : 'Not collected · Find this case in the store';
     const art = $('dex-entry-art');
     paintCover(art,selected,face);
     art.setAttribute('aria-label',(face === 'front' ? 'Front' : 'Back')+' cover of '+game.title);
@@ -32,26 +30,26 @@ export function createDex({getProfile, paintCover, clearMovement, ready}) {
   }
 
   function refresh() {
-    const owned = new Set(getProfile().owned);
+    const {owned} = getProfile();
     const query = search.value.trim().toLowerCase();
-    const entries = GAMES.map((game,index) => ({game,index})).filter(({game,index}) =>
+    const entries = owned.map(index => ({game:GAMES[index],index})).filter(({game}) =>
       (!query || (game.title+' '+game.genre).toLowerCase().includes(query)) &&
-      (!rarity.value || game.rarity === rarity.value) &&
-      (ownedFilter.value === 'all' || (ownedFilter.value === 'owned') === owned.has(index)));
-    $('dex-progress-text').textContent = owned.size+' / '+GAMES.length+' collected';
-    $('dex-progress').value = owned.size;
-    $('dex-results').textContent = entries.length+' '+(entries.length === 1 ? 'game' : 'games');
-    $('dex-empty').hidden = !!entries.length;
+      (!rarity.value || game.rarity === rarity.value));
+    $('dex-progress-text').textContent = owned.length+' / '+GAMES.length+' collected';
+    $('dex-progress').value = owned.length;
+    $('dex-results').textContent = query || rarity.value ? entries.length+' '+(entries.length === 1 ? 'match' : 'matches') : '';
+    const empty = $('dex-empty');
+    empty.textContent = owned.length ? 'No discoveries match these filters.' : 'Buy your first game at checkout to reveal it here.';
+    empty.hidden = !!entries.length;
     $('dex-detail').hidden = !entries.length;
     if (!entries.some(entry => entry.index === selected)) {
-      selected = entries[0]?.index ?? 0;
+      selected = entries[0]?.index ?? null;
       face = 'front';
     }
     grid.replaceChildren(...entries.map(({game,index}) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'dex-card';
-      button.dataset.game = index;
       button.setAttribute('aria-pressed',String(index === selected));
       const art = document.createElement('span');
       art.className = 'collection-art';
@@ -61,7 +59,7 @@ export function createDex({getProfile, paintCover, clearMovement, ready}) {
       label.textContent = game.title;
       const state = document.createElement('span');
       state.className = 'dex-card-state';
-      state.textContent = '#'+String(index+1).padStart(3,'0')+' · '+(owned.has(index) ? 'Collected' : 'Missing');
+      state.textContent = RARITIES[game.rarity].label;
       button.append(art,label,state);
       button.addEventListener('click',() => {
         selected = index;
@@ -82,7 +80,8 @@ export function createDex({getProfile, paintCover, clearMovement, ready}) {
     search.focus({preventScroll:true});
   }
 
-  for (const input of [search,rarity,ownedFilter]) input.addEventListener(input === search ? 'input' : 'change',refresh);
+  search.addEventListener('input',refresh);
+  rarity.addEventListener('change',refresh);
   $('dex-button').addEventListener('click',open);
   $('dex-close').addEventListener('click',() => dialog.close());
   $('dex-front').addEventListener('click',() => { face='front'; details(); });

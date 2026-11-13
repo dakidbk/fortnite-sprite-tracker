@@ -7,8 +7,8 @@
   <meta name="description" content="Build a game collection in a 3D store and earn credits at two arcade cabinets.">
   <title>Game Store After Hours</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=shift-14">
-  <script type="module" src="game.js?v=shift-14"></script>
+  <link rel="stylesheet" href="style.css?v=neighborhood-15">
+  <script type="module" src="game.js?v=neighborhood-15"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -27,14 +27,16 @@
   </svg>
 
   <main class="game" aria-label="Game Store After Hours">
-    <canvas id="world" aria-label="3D game store. Move with WASD, arrow keys, or the left thumbstick. Drag to look around. Tap or click a game cover to inspect it."></canvas>
+    <canvas id="world" tabindex="-1" aria-label="3D game store. Move with WASD, arrow keys, or the left thumbstick. Drag to look around. Tap or click a game cover to inspect it."></canvas>
     <img data-cover-atlas src="case-covers.webp" alt="" decoding="async" hidden>
     <img data-cover-atlas src="case-covers-2.webp" alt="" decoding="async" hidden>
     <img data-cover-atlas src="case-covers-3.webp" alt="" decoding="async" hidden>
     <div class="vignette" aria-hidden="true"></div>
-    <div class="load" id="load" role="status">
-      <div class="loading-mark"><svg><use href="#i-pad"></use></svg></div>
-      <p>Switching on the lights</p>
+    <div class="load" id="load" role="status" aria-atomic="true">
+      <div class="loading-mark" aria-hidden="true"><svg><use href="#i-pad"></use></svg></div>
+      <strong>Game Store <span>After Hours</span></strong>
+      <p id="load-message">Loading the main menu…</p>
+      <span class="loading-line" aria-hidden="true"></span>
     </div>
 
     <header class="hud-top">
@@ -51,13 +53,6 @@
         <button class="icon-button full-button" id="fullscreen-button" type="button" aria-label="Enter fullscreen" title="Enter fullscreen" aria-pressed="false"><svg><use href="#i-full"></use></svg></button>
       </nav>
     </header>
-
-    <aside class="objective" aria-label="Current objective" aria-live="polite" aria-atomic="true">
-      <div class="objective-top"><svg aria-hidden="true"><use href="#i-locator"></use></svg><span>OBJECTIVE</span><span class="objective-count" id="objective-count">01 / 04</span></div>
-      <h1 id="objective-title">Head inside</h1>
-      <p id="objective-description">Walk up to the doors of the game store.</p>
-      <div class="objective-bars" aria-hidden="true"><i class="active"></i><i></i><i></i><i></i></div>
-    </aside>
 
     <button type="button" class="waypoint" id="waypoint" hidden><span class="waypoint-gem"></span><span class="waypoint-label"><kbd>E</kbd><span id="waypoint-text">Open doors</span></span></button>
     <div class="toast" id="toast" role="status" hidden></div>
@@ -107,6 +102,7 @@
         <label class="micro" for="room-invite">INVITE LINK</label>
         <input id="room-invite" readonly>
         <div class="room-actions">
+          <button class="primary-button" id="room-play" type="button">Back to game</button>
           <button class="primary-button" id="room-copy" type="button">Copy invite</button>
           <button class="primary-button" id="room-leave" type="button">Leave room</button>
         </div>
@@ -117,7 +113,7 @@
     <dialog class="dialog help-dialog" id="help-dialog" aria-labelledby="help-title">
       <div class="dialog-head"><span class="micro">FIELD GUIDE</span><button type="button" class="icon-button" id="help-close" aria-label="Close help"><svg><use href="#i-cross"></use></svg></button></div>
       <h2 id="help-title">How to play</h2>
-      <p>Open Game Dex from the bottom-right corner or press G to browse all 48 games. Tap a case to add it to your basket. Pay at checkout with store credits and earn more at either arcade cabinet.</p>
+      <p>Open Game Dex from the bottom-right corner or press G to view the games you’ve collected. Tap a case to add it to your basket. Pay at checkout with store credits and earn more at either arcade cabinet.</p>
       <dl class="help-controls">
         <div><dt>Move</dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>or arrow keys</span></dd></div>
         <div><dt>Move on touch</dt><dd><span>Use the thumbstick on the left</span></dd></div>
@@ -158,6 +154,18 @@
       <button type="button" class="primary-button" id="checkout-buy" disabled>Buy game</button>
     </dialog>
 
+    <dialog class="dialog reveal-dialog" id="reveal-dialog" aria-labelledby="reveal-title">
+      <div class="dialog-head"><span class="micro">GAME DEX</span><button class="icon-button" id="reveal-close" type="button" aria-label="Close game reveal"><svg><use href="#i-cross"></use></svg></button></div>
+      <h2 id="reveal-title">New game discovered</h2>
+      <div class="reveal-display">
+        <div class="reveal-rays" aria-hidden="true"></div>
+        <div class="reveal-sparks" id="reveal-sparks" aria-hidden="true"></div>
+        <div class="reveal-cover" id="reveal-cover" aria-hidden="true"></div>
+      </div>
+      <div class="reveal-copy" aria-live="polite" aria-atomic="true"><span class="micro" id="reveal-rarity"></span><h3 id="reveal-name"></h3></div>
+      <button class="primary-button" id="reveal-next" type="button"><span id="reveal-next-label">Back to the store</span><svg><use href="#i-arrow"></use></svg></button>
+    </dialog>
+
     <dialog class="dialog shift-dialog" id="shift-dialog" aria-labelledby="shift-title">
       <div class="dialog-head"><span class="micro">DAILY SHIFT · <span id="shift-countdown"></span></span><button class="icon-button" id="shift-close" type="button" aria-label="Close Shift Challenge"><svg><use href="#i-cross"></use></svg></button></div>
       <h2 id="shift-title">Your night shift</h2>
@@ -169,26 +177,23 @@
     </dialog>
 
     <dialog class="dialog dex-dialog" id="dex-dialog" aria-labelledby="dex-title">
-      <div class="dialog-head"><span class="micro">GAME LIBRARY · FIELD GUIDE</span><button class="icon-button" id="dex-close" type="button" aria-label="Close Game Dex"><svg><use href="#i-cross"></use></svg></button></div>
+      <div class="dialog-head"><span class="micro">YOUR DISCOVERIES</span><button class="icon-button" id="dex-close" type="button" aria-label="Close Game Dex"><svg><use href="#i-cross"></use></svg></button></div>
       <div class="dex-heading"><h2 id="dex-title">Game Dex</h2><span id="dex-progress-text"></span></div>
       <progress id="dex-progress" max="48" value="0" aria-label="Games collected"></progress>
       <div class="dex-filters">
         <label>Search<input id="dex-search" type="search" placeholder="Title or genre" autocomplete="off"></label>
         <label>Rarity<select id="dex-rarity"><option value="">All rarities</option></select></label>
-        <label>Collection<select id="dex-ownership"><option value="all">All games</option><option value="owned">Collected</option><option value="missing">Missing</option></select></label>
       </div>
       <p class="micro" id="dex-results" role="status"></p>
       <div class="dex-body">
-        <div class="dex-catalog"><div id="dex-grid" class="dex-grid"></div><p id="dex-empty" hidden>No games match these filters.</p></div>
+        <div class="dex-catalog"><div id="dex-grid" class="dex-grid"></div><p id="dex-empty" hidden></p></div>
         <section id="dex-detail" class="dex-detail" aria-labelledby="dex-entry-title">
-          <div class="micro" id="dex-entry-number"></div>
           <div class="dex-entry-art" id="dex-entry-art" role="img"></div>
           <div class="dex-cover-buttons"><button class="menu-small" id="dex-front" type="button" aria-pressed="true">Front</button><button class="menu-small" id="dex-back" type="button" aria-pressed="false">Back</button></div>
           <h3 id="dex-entry-title"></h3>
           <span class="micro" id="dex-entry-genre"></span>
           <p id="dex-entry-description"></p>
           <div class="dex-stats"><strong id="dex-entry-rarity"></strong><strong id="dex-entry-price"></strong></div>
-          <p class="dex-entry-status" id="dex-entry-status"></p>
         </section>
       </div>
     </dialog>
@@ -237,10 +242,11 @@
         <h1 id="menu-title">GAME STORE <span>AFTER HOURS</span></h1>
         <p>Browse the shelves. Hit the arcade. Bring your friends.</p>
         <div class="menu-list">
-          <button class="menu-choice" id="menu-create" type="button"><small>01</small><span>Create a Character</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
-          <button class="menu-choice menu-play" id="menu-play" type="button"><small>02</small><span>Play</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
-          <button class="menu-choice" id="menu-shop-button" type="button"><small>03</small><span>Item Shop</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
-          <button class="menu-choice" id="menu-options-button" type="button"><small>04</small><span>Options</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+          <button class="menu-choice" id="menu-create" type="button"><span>Create a Character</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+          <button class="menu-choice menu-play" id="menu-play" type="button"><span>Play</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+          <button class="menu-choice" id="menu-online-button" type="button"><span>Play Online</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+          <button class="menu-choice" id="menu-shop-button" type="button"><span>Item Shop</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
+          <button class="menu-choice" id="menu-options-button" type="button"><span>Options</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
         </div>
       </section>
       <section id="menu-character" class="wardrobe-panel" hidden>
@@ -321,6 +327,7 @@
         <h2 id="menu-options-title">Options</h2>
         <p>Set up the game the way you like it.</p>
         <div class="menu-list">
+          <button class="menu-choice" id="menu-music" type="button" aria-pressed="true"><span>Music</span><strong id="menu-music-value">On</strong></button>
           <button class="menu-choice" id="menu-sound" type="button" aria-pressed="false"><span>Sound effects</span><strong id="menu-sound-value">Off</strong></button>
           <button class="menu-choice" id="menu-fullscreen" type="button"><span>Fullscreen</span><strong id="menu-fullscreen-value">Enter</strong></button>
           <button class="menu-choice" id="menu-creator-button" type="button"><span>From Creator</span><strong>MESSAGES &amp; GIFTS</strong></button>

@@ -1,6 +1,7 @@
 import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webgl.js';
 import { GAMES, LATEST_RELEASE, RARITIES, coverUV, coversPerAtlas } from './catalog.js';
 import { accessories, avatarPalette } from './cosmetics.js?v=character-11';
+import { buildNeighborhood } from './neighborhood.js?v=neighborhood-15';
 
 const M = {
   lamp: m('#fff0d8', 1.05), white: m('#ffffff', 1),
@@ -23,6 +24,9 @@ const porchCornerX = DECK.frontHalf - DECK.corner;
 const porchCornerZ = DECK.front - DECK.corner;
 const porchRailX = DECK.frontHalf - .43;
 const porchRailFront = porchCornerZ - .07;
+const frontFenceZ = DECK.front - .25;
+const frontFenceX = DECK.front + porchCornerX - frontFenceZ - .27;
+const cornerFenceZ = DECK.front + porchCornerX - porchRailX - .27;
 const PORCH_BENCHES = [[-7.12, 3.18], [7.12, 3.18], [-7.12, 6.32], [7.12, 6.32]];
 const SHELVES = [
   [-5.54, -2.50, 1, 3.03], [5.53, -3.52, -1, 1.45],
@@ -57,10 +61,10 @@ export function storeHalfWidth(z) {
   return widthAt(z, STORE.entryHalf, STORE.rearHalf);
 }
 
-export function canWalkOnPorch(x, z, radius) {
+export function canWalkOnPorch(x, z, radius = .245) {
   const side = Math.abs(x);
-  return side <= porchRailX - radius - .05 && z <= DECK.front - radius - .04 &&
-    side + z <= DECK.front + porchCornerX - (radius + .02) * Math.SQRT2;
+  return side <= porchRailX - radius - .05 && z <= frontFenceZ - radius - .06 &&
+    side + z <= frontFenceX + frontFenceZ - (radius + .06) * Math.SQRT2;
 }
 
 function surface(w, h, draw) {
@@ -382,6 +386,22 @@ function oakSlats(mesh,x,y,z,width,height,spacing) {
   }
 }
 
+function fenceSpan(mesh, a, b) {
+  const length=Math.hypot(b[0]-a[0],b[1]-a[1]);
+  const sections=Math.ceil(length/1.54);
+  const yaw=Math.atan2(a[1]-b[1],b[0]-a[0]);
+  mesh.inFrame((a[0]+b[0])/2,0,(a[1]+b[1])/2,yaw,fence=>{
+    fence.box(0,.56,0,length,.049,.066,M.trim);
+    fence.box(0,.98,0,length,.078,.092,M.chrome);
+    for (let i=0;i<=sections;i++) {
+      const x=(i/sections-.5)*length;
+      fence.box(x,.49,0,.118,.98,.118,M.steel);
+      fence.box(x,.065,0,.199,.13,.194,M.trim);
+      if (i>0 && i<sections && i%4===0) fence.box(x,1.062,0,.125,.09,.12,M.lamp);
+    }
+  });
+}
+
 function platform(mesh) {
   const { frontHalf, rearHalf, front, back } = DECK;
   const pts=[[-frontHalf,STORE.taperStart],[-frontHalf,porchCornerZ],[-porchCornerX,front],
@@ -398,8 +418,11 @@ function platform(mesh) {
     beam(mesh,[x*.994,-.027,z*.995],[x2*.994,-.027,z2*.995],.025,M.stone);
   }
   const rails=Array.from({length:6},(_,i)=>mix(-.13,porchRailFront,i/5));
+  fenceSpan(mesh,[-frontFenceX,frontFenceZ],[frontFenceX,frontFenceZ]);
   for (const s of [-1,1]) {
     const x=s*porchRailX;
+    fenceSpan(mesh,[x,porchRailFront],[x,cornerFenceZ]);
+    fenceSpan(mesh,[x,cornerFenceZ],[s*frontFenceX,frontFenceZ]);
     for (const z of rails) {
       mesh.block(x,.05,z,.25,.10,.24,.022,M.steel);
       mesh.block(x,.54,z,.105,1.02,.115,.015,M.steel);
@@ -1097,6 +1120,7 @@ export function createWorld(renderer, coverAtlases) {
     ...[CABINET,SIGNAL_CABINET].map(({x,z})=>rectangle(x,z,1.27,1.16,2.50))
   ];
   city(distant);
+  buildNeighborhood(distant,DECK.front,DECK.frontHalf);
   platform(mesh);
   floorTiles(tile);
   storefront(mesh,glass,sign);
