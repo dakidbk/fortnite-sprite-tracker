@@ -2,6 +2,7 @@ import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webg
 import { GAMES, LATEST_RELEASE, RARITIES, coverUV, coversPerAtlas } from './catalog.js';
 import { accessories, avatarPalette } from './cosmetics.js?v=character-11';
 import { buildNeighborhood } from './neighborhood.js?v=neighborhood-15';
+import { stamps } from './hunt.js?v=store-hunt-18';
 
 const M = {
   lamp: m('#fff0d8', 1.05), white: m('#ffffff', 1),
@@ -19,6 +20,7 @@ const SIGN_FONT = 'Arial, "DejaVu Sans", sans-serif';
 export const STORE = { entryHalf: 6.15, rearHalf: 10.49, taperStart: -4.18, taperEnd: -8.56, back: -19.65 };
 export const CABINET = { x: .32, z: STORE.back + 1.33, approachZ: STORE.back + 2.43 };
 export const SIGNAL_CABINET = { x: 2.10, z: STORE.back + 1.33, approachZ: STORE.back + 2.43 };
+export const CIRCUIT_CABINET = { x: -1.50, z: STORE.back + 1.33, approachZ: STORE.back + 2.43 };
 const DECK = { frontHalf: 10.55, rearHalf: STORE.rearHalf + .34, front: 9.40, back: STORE.back - .26, corner: 1.20 };
 const porchCornerX = DECK.frontHalf - DECK.corner;
 const porchCornerZ = DECK.front - DECK.corner;
@@ -178,6 +180,32 @@ function relayArt(marquee) {
     });
     ctx.fillStyle='#f0e4c8'; ctx.font='700 22px monospace'; ctx.fillText('WATCH  /  REPEAT',w/2,257);
     ctx.fillStyle='#bfab8f'; ctx.font='600 15px monospace'; ctx.fillText('MEMORY CHALLENGE',w/2,287);
+  });
+}
+
+function circuitArt(marquee) {
+  return surface(520,marquee ? 158 : 330,(ctx,w,h) => {
+    ctx.fillStyle='#273a38'; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='#98b49e'; ctx.lineWidth=3; ctx.strokeRect(11,11,w-22,h-22);
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='#f0e8d8';
+    if (marquee) {
+      ctx.font='800 53px '+SIGN_FONT;
+      ctx.fillText('CIRCUIT SPRINT',w/2,h/2,w-54);
+      return;
+    }
+    for (let i=0; i<3; i++) {
+      const x=58+142*i;
+      ctx.fillStyle=i ? '#38534b' : '#a9c6aa';
+      ctx.fillRect(x,62,120,117);
+      ctx.fillStyle=i ? '#cfddcc' : '#26392e';
+      ctx.font='700 63px '+SIGN_FONT;
+      ctx.fillText(['←','↑','→'][i],x+60,122);
+    }
+    ctx.fillStyle='#f0e8d8'; ctx.font='700 24px monospace';
+    ctx.fillText('FOLLOW THE DIRECTIONS',w/2,229);
+    ctx.fillStyle='#b6ccbd'; ctx.font='600 17px monospace';
+    ctx.fillText('12 SIGNALS  /  3 TRIES',w/2,268);
   });
 }
 
@@ -802,7 +830,7 @@ function interior(geo, cases, display, harvest, logos, labels, stock) {
   GAME_TABLES.forEach(([x,z,w],i)=>gameTable(geo,cases,x,z,w,stock.tables[i]));
 
   const back = STORE.back+.155;
-  const arcadeCenter=(CABINET.x+SIGNAL_CABINET.x)/2;
+  const arcadeCenter=(CIRCUIT_CABINET.x+SIGNAL_CABINET.x)/2;
   geo.block(arcadeCenter,1.93,back+.045,5.86,3.57,.088,.044,M.sage);
   for (const s of [-1,1]) {
     const x=arcadeCenter+s*2.84;
@@ -871,9 +899,7 @@ function interior(geo, cases, display, harvest, logos, labels, stock) {
   geo.front(4.46,2.184,-1.409,.104,.021,M.sage);
 }
 
-function arcade(geo, marquee, screen, x, z, relay = false) {
-  const body=m(relay ? '#4b4036' : '#333f37'), inset=m(relay ? '#302726' : '#222c27');
-  const accent=relay ? M.copper : M.arcade;
+function arcade(geo, marquee, screen, x, z, body=M.sage, inset=M.dark, accent=M.arcade) {
   const p=[[.04,-.39],[.04,.36],[1.04,.47],[1.27,.53],[1.40,.25],[1.96,.15],[2.12,.26],[2.48,.25],[2.50,-.29],[2.39,-.40]];
   const l=x-.61,r=x+.61;
   for (let i=0; i<p.length; i++) {
@@ -909,6 +935,24 @@ function arcade(geo, marquee, screen, x, z, relay = false) {
   geo.front(x,.617,z+.447,.35,.022,M.copper);
   geo.box(x,.21,z+.402,.96,.062,.051,M.trim);
   geo.box(x,.057,z,1.25,.091,.86,M.dark);
+}
+
+function stampModel(color) {
+  const mesh = new Mesh();
+  const enamel = m(color,.56,1,.27), edge = m('#44392f',.18), gold = m('#d7b37c',.42), ink = m('#2e302d',.20);
+  mesh.rod([0,0,-.054],[0,0,.054],.29,.29,12,edge);
+  for (const direction of [-1,1]) {
+    mesh.inFrame(0,0,0,direction < 0 ? Math.PI : 0,face => {
+      face.rod([0,0,.052],[0,0,.067],.273,.273,12,gold);
+      face.rod([0,0,.065],[0,0,.079],.237,.237,12,enamel);
+      face.block(0,0,.086,.28,.156,.017,.008,ink);
+      face.front(-.071,0,.097,.069,.022,enamel);
+      face.front(-.071,0,.098,.022,.065,enamel);
+      face.front(.063,.028,.098,.033,.029,enamel);
+      face.front(.092,-.017,.098,.033,.029,enamel);
+    });
+  }
+  return mesh;
 }
 
 function avatar(renderer, palette, look = {}) {
@@ -1102,6 +1146,8 @@ export function createWorld(renderer, coverAtlases) {
   const screen=new Mesh(renderer.texture(arcadeArt(false)));
   const relayMarquee=new Mesh(renderer.texture(relayArt(true)));
   const relayScreen=new Mesh(renderer.texture(relayArt(false)));
+  const circuitMarquee=new Mesh(renderer.texture(circuitArt(true)));
+  const circuitScreen=new Mesh(renderer.texture(circuitArt(false)));
   const logo=new Mesh(renderer.texture(surface(200,155,ctx=>controller(ctx,19,1,162,'#e4e5d7',true))));
   const mat=new Mesh(renderer.texture(doorMat()));
   const shadowTex=renderer.texture(radial('#171b15d6'));
@@ -1117,7 +1163,7 @@ export function createWorld(renderer, coverAtlases) {
     ...GAME_TABLES.map(([x,z,w])=>rectangle(x,z,w+.06,1.13,1.22)),
     rectangle(DEMO.x,DEMO.z,DEMO.w+.08,DEMO.d+.08,1.80),
     rectangle(CHECKOUT.x,CHECKOUT.z,CHECKOUT.w+.11,CHECKOUT.d+.10,1.85),
-    ...[CABINET,SIGNAL_CABINET].map(({x,z})=>rectangle(x,z,1.27,1.16,2.50))
+    ...[CABINET,SIGNAL_CABINET,CIRCUIT_CABINET].map(({x,z})=>rectangle(x,z,1.27,1.16,2.50))
   ];
   city(distant);
   buildNeighborhood(distant,DECK.front,DECK.frontHalf);
@@ -1140,8 +1186,9 @@ export function createWorld(renderer, coverAtlases) {
   posterCover.front(coverX,coverY,poster.z+.008,
     poster.w*cover.w/POSTER_PRINT.w,poster.h*cover.h/POSTER_PRINT.h,M.white,coverUV(LATEST_RELEASE,'front'));
   posterCover.caseSlot=0;
-  arcade(mesh,marquee,screen,CABINET.x,CABINET.z);
-  arcade(mesh,relayMarquee,relayScreen,SIGNAL_CABINET.x,SIGNAL_CABINET.z,true);
+  arcade(mesh,marquee,screen,CABINET.x,CABINET.z,m('#333f37'),m('#222c27'));
+  arcade(mesh,relayMarquee,relayScreen,SIGNAL_CABINET.x,SIGNAL_CABINET.z,m('#4b4036'),m('#302726'),M.copper);
+  arcade(mesh,circuitMarquee,circuitScreen,CIRCUIT_CABINET.x,CIRCUIT_CABINET.z,m('#435457'),m('#253838'),m('#afd0bb',.31));
   mat.ground(0,.012,1.01,2.79,1.16,m('#f0eee4',.32));
   shadow.ground(-3.70,.009,1.39,2.34,1.93,M.white);
   shadow.ground(3.54,.009,1.39,2.34,1.93,M.white);
@@ -1155,7 +1202,7 @@ export function createWorld(renderer, coverAtlases) {
   avatarShadow.ground(0,.018,0,1.01,.75,M.white);
   const marker=m('#567560',.24);
   const brassMarker=m('#92724e',.24);
-  for (const [station,color] of [[CABINET,marker],[SIGNAL_CABINET,brassMarker],[CHECKOUT,brassMarker]]) {
+  for (const [station,color] of [[CABINET,marker],[SIGNAL_CABINET,brassMarker],[CIRCUIT_CABINET,marker],[CHECKOUT,brassMarker]]) {
     const p=(a,r)=>[station.x+Math.cos(a)*r,.020,station.approachZ+Math.sin(a)*r*.69];
     for (let i=0;i<32;i++) {
       if (i%8===0) continue;
@@ -1183,7 +1230,8 @@ export function createWorld(renderer, coverAtlases) {
   renderer.lights(sceneLights);
   const upload=meshes=>meshes.map(part=>renderer.upload(part));
   return {
-    opaque:upload([distant,mesh,tile,sign,...cases,display,harvest,labels,marquee,screen,relayMarquee,relayScreen,logo,mat,guide]),
+    opaque:upload([distant,mesh,tile,sign,...cases,display,harvest,labels,marquee,screen,relayMarquee,relayScreen,circuitMarquee,circuitScreen,logo,mat,guide]),
+    stamps:stamps.map(({color}) => renderer.upload(stampModel(color))),
     releasePosters, sceneLights,
     transparent:upload([glass]), decals:upload([shadow,rarityTags]),
     doors:[upload(door(-1)),upload(door(1))],

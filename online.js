@@ -19,7 +19,7 @@ async function request(payload, keepalive = false) {
   return result;
 }
 
-export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
+export function createOnline({ clearMovement, position, onEnter, canOccupy, onHunt }) {
   const $ = id => document.getElementById(id);
   const dialog = $('online-dialog'), button = $('online-button');
   const field = $('room-code'), status = $('room-status'), invite = $('room-invite');
@@ -118,6 +118,24 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
     }
   }
 
+  function applyHunt(state) {
+    if (!Number.isInteger(state.hunt) || typeof state.hunt_day !== 'string') return;
+    session.hunt = true;
+    onHunt(session.room,state.hunt,state.hunt_day);
+  }
+
+  async function collectStamp(stamp) {
+    const current = session;
+    if (!current?.hunt) throw Error('The room hunt is reconnecting. Try again.');
+    const state = await request({op:'stamp',room:current.room,token:current.token,stamp,...position()});
+    if (session !== current) return;
+    if (state.expired) {
+      clearSession('Your room connection expired. Create or join a room again.');
+      return;
+    }
+    applyHunt(state);
+  }
+
   function updateChatInput() {
     const characters = [...chatInput.value];
     if (!composing && characters.length > chatLimit) chatInput.value = characters.slice(0,chatLimit).join('');
@@ -172,6 +190,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
   function clearSession(message) {
     clearTimeout(timer);
     session = null;
+    onHunt(null,0);
     count = 0;
     reconnecting = false;
     peers.clear();
@@ -194,7 +213,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
     if (session !== current) return;
     const start = performance.now();
     try {
-      const state = await request({op:'sync',...current,...position(),chat:true});
+      const state = await request({op:'sync',room:current.room,token:current.token,...position(),chat:true,hunt:true});
       if (session !== current) return;
       if (state.expired) {
         clearSession('Your room connection expired. Create or join a room again.');
@@ -202,6 +221,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
       }
       apply(state.players);
       showMessages(state.messages,start);
+      applyHunt(state);
       showState(reconnecting ? 'Reconnected.' : undefined);
       reconnecting = false;
     } catch {
@@ -226,13 +246,14 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
     showState(op === 'create' ? 'Creating your room…' : 'Joining room…');
     const started = performance.now();
     try {
-      const state = await request({op,room,profileToken:profileToken(),...roomEntry,chat:true});
+      const state = await request({op,room,profileToken:profileToken(),...roomEntry,chat:true,hunt:true});
       const current = {room:state.room,token:state.token,slot:state.slot};
       if (!dialog.open) {
         await request({op:'leave',...current},true).catch(() => {});
         return;
       }
       session = current;
+      onHunt(current.room,0);
       const url = new URL(location.pathname,location.origin);
       url.searchParams.set('room',session.room);
       invite.value = url.href;
@@ -240,6 +261,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
       $('room-current-code').textContent = session.room;
       apply(state.players);
       showMessages(state.messages,started);
+      applyHunt(state);
       showState('Share the invite with up to three friends.');
       dialog.close();
       onEnter(roomEntry, session.room);
@@ -318,6 +340,9 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
   }
 
   return {
+    get connected() { return !!session; },
+    get friends() { return Array.from(peers.values(),peer => peer.target); },
+    collectStamp,
     get open() { return dialog.open || chatDialog.open; },
     openChat,
     openMenu: open,

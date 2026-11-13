@@ -64,7 +64,7 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; min-height: 23
 .waypoint.hint { cursor: default; pointer-events: none; }
 .waypoint.hint .waypoint-label { padding: 5px 8px; border-color: var(--line); font: 700 9px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
 .waypoint.hint kbd { display: none; }
-.toast { position: absolute; left: 50%; bottom: 83px; transform: translateX(-50%); background: var(--panel); color: var(--white); border: 1px solid var(--line); border-radius: 10px; padding: 11px 15px; font-size: 13px; white-space: nowrap; z-index: 2; }
+.toast { position: absolute; left: 50%; bottom: 83px; transform: translateX(-50%); max-width: calc(100% - 26px); width: max-content; background: var(--panel); color: var(--white); border: 1px solid var(--line); border-radius: 10px; padding: 11px 15px; font-size: 13px; text-align: center; overflow-wrap: anywhere; pointer-events: none; z-index: 2; }
 .load { z-index: 4; position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 13px; padding: 24px; color: var(--white); text-align: center; background: radial-gradient(ellipse at 50% 43%, #4e3149 0%, #1d1728 52%, #100e19 90%); }
 .load[data-stage=enter] { background: radial-gradient(ellipse at 50% 57%, #3b484a 0%, #242b39 46%, #131220 90%); }
 .load strong { font-size: clamp(27px, 6vw, 46px); line-height: .99; letter-spacing: -.045em; text-transform: uppercase; }
@@ -98,6 +98,9 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; min-height: 23
 .room-chat-log { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .chat-button { position: absolute; z-index: 2; top: calc(max(20px, env(safe-area-inset-top)) + 56px); right: max(clamp(18px, 2.3vw, 36px), env(safe-area-inset-right)); display: flex; justify-content: center; gap: 7px; width: auto; min-height: 40px; padding: 0 11px; font-size: 12px; font-weight: 750; }
 .chat-button svg { color: var(--accent); }
+.hunt-button { position: absolute; z-index: 2; top: calc(max(20px, env(safe-area-inset-top)) + 56px); left: max(clamp(18px, 2.3vw, 36px), env(safe-area-inset-left)); display: flex; justify-content: center; gap: 7px; width: auto; min-height: 40px; padding: 0 11px; font-size: 12px; font-weight: 750; }
+.hunt-button svg { color: #e4cb9e; }
+.hunt-button.hunt-ready { border-color: #e4cb9e; }
 .chat-dialog { touch-action: auto; }
 .chat-compose { display: flex; gap: 7px; margin-top: 5px; }
 .chat-compose input { flex: 1; min-width: 0; min-height: 42px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; color: var(--white); background: #191722; font-family: inherit; font-size: 16px; line-height: 1.3; }
@@ -229,7 +232,7 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; min-height: 23
 @media (max-width: 720px) {
   .hud-top, .hud-bottom { padding-inline: 14px; }
   .hud-top { padding-top: max(12px, env(safe-area-inset-top)); }
-  .chat-button { top: calc(max(12px, env(safe-area-inset-top)) + 47px); }
+  .chat-button, .hunt-button { top: calc(max(12px, env(safe-area-inset-top)) + 47px); }
   .hud-bottom { padding-bottom: max(13px, env(safe-area-inset-bottom)); }
   .brand { gap: 8px; }
   .brand-mark { width: 36px; height: 36px; border-radius: 10px; }
@@ -268,7 +271,7 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; min-height: 23
 }
 @media (max-height: 500px) {
   .hud-top { padding-top: 9px; }
-  .chat-button { top: 62px; }
+  .chat-button, .hunt-button { top: 62px; }
   .hud-bottom { padding-bottom: 10px; }
   .dialog { padding-top: 12px; padding-bottom: 13px; }
   .tile { height: 42px; }
@@ -276,7 +279,7 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; min-height: 23
 }
 .start-menu { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; margin: 0; overflow: auto; padding: 0; border: 0; color: #fff3e6; background: transparent; }
 .start-menu::backdrop { background: linear-gradient(90deg,#0b0813 0%,#100b19f7 24%,#160d1d92 52%,#19112116 80%), linear-gradient(0deg,#0a0713eb,transparent 44%,transparent 74%,#100a1b82); }
-.game:has(+ .start-menu[open]) :is(.hud-top,.hud-bottom,.touch-controls,.waypoint,.chat-button,.room-captions) { visibility: hidden; }
+.game:has(+ .start-menu[open]) :is(.hud-top,.hud-bottom,.touch-controls,.waypoint,.chat-button,.hunt-button,.room-captions) { visibility: hidden; }
 .menu-window { display: grid; grid-template-rows: auto 1fr auto; min-height: 100%; padding: clamp(20px,4.5vh,56px) clamp(23px,6vw,110px); }
 .menu-header, .menu-hints { display: flex; align-items: center; justify-content: space-between; gap: 14px; color: #e6d2e0; font: 750 10px var(--mono); letter-spacing: .16em; }
 .menu-header i { display: inline-block; width: 7px; height: 7px; margin-right: 7px; background: #ff846c; border-radius: 50%; box-shadow: 0 0 15px #ff6552; }
@@ -476,6 +479,58 @@ kbd { display: inline-grid; place-items: center; min-width: 22px; min-height: 23
 .shift-task span { color: #ffcf9e; font: 750 11px var(--mono); white-space: nowrap; }
 .shift-task p { margin: 6px 0 0; font-size: 11px; line-height: 1.4; color: #e2cedd; }
 .shift-task.complete { border-color: #b6d4ab99; background: #26312d; }
+.hunt-dialog { width: min(690px,calc(100vw - 26px)); touch-action: pan-y; overscroll-behavior: contain; background: linear-gradient(145deg,#303c36,#1d2526 72%); }
+.hunt-summary { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 7px; margin: 12px 0; color: #f0d4a7; font: 750 12px var(--mono); }
+.hunt-layout { display: grid; grid-template-columns: minmax(156px,.86fr) minmax(200px,1fr); gap: 14px; }
+.hunt-map { position: relative; isolation: isolate; min-height: 288px; margin: 0; overflow: hidden; border: 1px solid #a7b6a758; border-radius: 12px; background: #162020; }
+.hunt-map-plan { position: absolute; inset: 0; background: linear-gradient(90deg,#b3c3ae13 1px,transparent 1px),linear-gradient(#b3c3ae13 1px,transparent 1px),#3e5145; background-size: 14px 14px; clip-path: polygon(5% 3%,95% 3%,95% 37%,76% 54%,76% 64%,95% 64%,95% 90%,90% 95%,10% 95%,5% 90%,5% 64%,24% 64%,24% 54%,5% 37%); }
+.hunt-zone { position: absolute; transform: translate(-50%,-50%); color: #f1e7d4; font: 750 clamp(7px,1.6vw,10px) var(--mono); letter-spacing: .04em; white-space: nowrap; }
+.hunt-zone-arcade { top: 10%; left: 49%; }
+.hunt-zone-checkout { top: 17%; left: 75%; }
+.hunt-zone-library { top: 25%; left: 24%; }
+.hunt-zone-demo { top: 35%; left: 75%; }
+.hunt-zone-entry { top: 61%; left: 50%; }
+.hunt-zone-porch { top: 82%; left: 50%; }
+.hunt-map-player, .hunt-map-friend, .hunt-pin { position: absolute; display: grid; place-items: center; transform: translate(-50%,-50%); border-radius: 50%; }
+.hunt-map-player { z-index: 2; width: 12px; height: 12px; border: 2px solid #fff; background: #ff966d; box-shadow: 0 0 0 3px #ff966d6b; }
+.hunt-map-friend { z-index: 1; width: 10px; height: 10px; border: 1px solid #e7f8ea; background: #7ed2bc; box-shadow: 0 0 0 2px #7ed2bc66; }
+.hunt-legend { position: absolute; inset: auto 9px 6px; display: flex; justify-content: center; gap: 10px; color: #e7e5db; font: 700 9px var(--mono); }
+.hunt-legend span { display: flex; align-items: center; gap: 4px; }
+.hunt-legend span::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #ff966d; }
+#hunt-legend-friends::before { background: #7ed2bc; }
+.hunt-pin { width: 19px; height: 19px; border: 1px solid #f9d69c; background: #292720; color: #f9d69c; font: 750 10px var(--mono); }
+.hunt-pin.found { border-color: #e2efde; background: #b9d6ba; color: #26352e; }
+.hunt-clue-panel { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.hunt-clues { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; counter-reset: stamp; }
+.hunt-clues li { display: grid; grid-template-columns: 21px minmax(0,1fr); gap: 2px 7px; padding: 6px 8px; border: 1px solid #afbea438; border-radius: 7px; background: #27352d; counter-increment: stamp; }
+.hunt-clues li::before { content: counter(stamp); grid-row: span 2; align-self: center; display: grid; place-items: center; width: 20px; height: 20px; border: 1px solid #b7a480; border-radius: 50%; color: #f1d4a5; font: 750 10px var(--mono); }
+.hunt-clues li.found::before { content: '✓'; color: #1d2f26; border-color: #cfe2c8; background: #cfe2c8; }
+.hunt-clues strong { font-size: 12px; }
+.hunt-clues li > span { color: #d6ddd0; font-size: 11px; line-height: 1.25; }
+.hunt-hints { align-self: flex-start; }
+.hunt-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; color: #f0d4a7; font-size: 12px; }
+.circuit-dialog { background: radial-gradient(ellipse at 50% 39%,#344744,#1d272c 74%); }
+.circuit-dialog h2 em { color: #c4e0cb; }
+.circuit-stats { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.circuit-stats strong { white-space: nowrap; font-size: clamp(12px,4vw,19px); }
+#circuit-track { height: 100%; background: #afcfbb; transform-origin: left; }
+.circuit-queue { display: grid; grid-template-columns: 1.2fr 1fr 1fr; align-items: center; gap: 8px; margin: 13px 0 10px; }
+.circuit-cue, .circuit-pad { display: grid; place-items: center; border: 1px solid #9bb3a477; border-radius: 9px; color: #e4ede1; background: #253735; font: 800 24px/1 system-ui,sans-serif; }
+.circuit-cue { min-height: clamp(43px,10vh,66px); opacity: .68; }
+.circuit-cue.next { position: relative; overflow: hidden; min-height: clamp(52px,12vh,76px); border-color: #f3e8d0; color: #283b30; background: #c5dfc8; opacity: 1; font-size: 33px; }
+.circuit-cue.next::after { content: ''; position: absolute; inset: auto 0 0; height: 4px; background: #52795b; transform: scaleX(var(--cue-left,1)); transform-origin: left; }
+.circuit-controls { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 7px; }
+.circuit-pad { min-height: 43px; padding: 5px; touch-action: manipulation; cursor: pointer; }
+.circuit-pad:active { border-color: #e4eedd; background: #54745d; }
+.circuit-pad:disabled { opacity: .52; cursor: default; }
+#circuit-reward { color: #d8e2d5; font-size: 11px; }
+@media (max-width: 520px) {
+  .hunt-dialog { padding-inline: 15px; }
+  .hunt-layout { grid-template-columns: minmax(0,1fr); gap: 10px; }
+  .hunt-map { min-height: clamp(165px,28dvh,225px); }
+  .hunt-clues { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .hunt-clues li { padding: 5px; gap: 2px 4px; }
+}
 @media (max-width: 380px) {
   .hud-bottom .zone { min-width: 95px; gap: 4px; }
   .hud-bottom .zone svg { display: none; }

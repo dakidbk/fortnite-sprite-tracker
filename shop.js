@@ -4,6 +4,7 @@ import { listingQuote, listings, shopItems } from './cosmetics.js?v=character-11
 import { creatorIdPattern } from './creator.js?v=creator-inbox-8';
 
 import { shiftState, shiftComplete, shiftReward } from './shift.js?v=shift-14';
+import { fullStampMask, huntReward, huntState, stamps } from './hunt.js?v=store-hunt-18';
 
 const PROFILE_KEY = 'after-hours-collection-v1';
 const STARTING_CREDITS = 120;
@@ -39,12 +40,14 @@ function loadProfile(fallback) {
       credits: Number.isSafeInteger(saved.credits) && saved.credits >= 0 ? saved.credits : STARTING_CREDITS,
       owned,
       shift:saved.shift,
+      hunt:saved.hunt,
       creatorClaims: Array.isArray(saved.creatorClaims) ? [...new Set(saved.creatorClaims.filter(id => typeof id === 'string' && creatorIdPattern.test(id)))] : [],
       cosmetics: Object.keys(shopItems).filter(id => Array.isArray(saved.cosmetics) && saved.cosmetics.includes(id)),
       basket,
       caseSlots,
       arcadeEarned: saved.arcadeEarned === true,
-      signalBest: Number.isInteger(saved.signalBest) ? Math.max(0, Math.min(8, saved.signalBest)) : 0
+      signalBest: Number.isInteger(saved.signalBest) ? Math.max(0, Math.min(8, saved.signalBest)) : 0,
+      circuitBest: Number.isInteger(saved.circuitBest) ? Math.max(0, Math.min(12, saved.circuitBest)) : 0
     };
   } catch {
     return fallback;
@@ -53,7 +56,7 @@ function loadProfile(fallback) {
 
 export function createShop({ beforeOpen, onChange, paintCover, announce, onPurchase }) {
   const checkout = $('checkout-dialog'), collection = $('collection-dialog');
-  let profile = loadProfile({ credits: STARTING_CREDITS, owned: [], cosmetics: [], creatorClaims: [], basket: [], caseSlots: {}, arcadeEarned: false, signalBest: 0 });
+  let profile = loadProfile({ credits: STARTING_CREDITS, owned: [], cosmetics: [], creatorClaims: [], basket: [], caseSlots: {}, arcadeEarned: false, signalBest: 0, circuitBest: 0 });
   let inspected = null;
 
   function renderWallet() {
@@ -236,6 +239,34 @@ export function createShop({ beforeOpen, onChange, paintCover, announce, onPurch
         return {...current,shift:{...shift,inspected:[...new Set([...shift.inspected,index])].slice(0,3)}};
       });
     },
+    recordStamp(index) {
+      if (!Number.isInteger(index) || !stamps[index]) return false;
+      let collected = false;
+      commit(current => {
+        const hunt = huntState(current);
+        const mask = hunt.mask | (1 << index);
+        if (mask === hunt.mask) return current;
+        collected = true;
+        return {...current,hunt:{...hunt,mask}};
+      });
+      return collected;
+    },
+    async claimHunt(roomHunt) {
+      const claim = () => {
+        let claimed = false;
+        commit(current => {
+          const hunt = huntState(current);
+          const teamComplete = roomHunt?.day === hunt.day && roomHunt.mask === fullStampMask;
+          if (hunt.claimed || (hunt.mask !== fullStampMask && !teamComplete)) return current;
+          claimed = true;
+          return {...current,credits:Math.min(Number.MAX_SAFE_INTEGER,current.credits+huntReward),
+            hunt:{...hunt,claimed:true}};
+        },true);
+        if (claimed) announce('Stamp hunt complete · +'+huntReward+' CR');
+        return claimed;
+      };
+      return navigator.locks ? navigator.locks.request('after-hours-hunt-reward',claim) : claim();
+    },
     async claimShift() {
       const claim = () => {
         let claimed = false;
@@ -280,13 +311,15 @@ export function createShop({ beforeOpen, onChange, paintCover, announce, onPurch
     recordArcade(mode, score) {
       const reward = mode === 'signal'
         ? score * 11 + (score >= 5 ? 22 : 0)
+        : mode === 'circuit' ? score*4 + (score === 12 ? 12 : 0)
         : Math.floor(score / 25) + (score >= 800 ? 25 : 0);
       if (reward) commit(current => ({
         ...current,
         credits: Math.min(Number.MAX_SAFE_INTEGER,current.credits + reward),
         arcadeEarned: true,
         shift:{...shiftState(current),arcade:true},
-        signalBest: mode === 'signal' ? Math.max(current.signalBest,score) : current.signalBest
+        signalBest: mode === 'signal' ? Math.max(current.signalBest,score) : current.signalBest,
+        circuitBest: mode === 'circuit' ? Math.max(current.circuitBest || 0,score) : current.circuitBest
       }));
       return reward;
     }

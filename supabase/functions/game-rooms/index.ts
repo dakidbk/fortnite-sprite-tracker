@@ -29,7 +29,7 @@ Deno.serve(async request => {
   try {
     const text = await request.text();
     if (text.length > 1024) return respond({error:'Invalid request.'},400);
-    const {op,room,token,x,z,yaw,stride,profileToken,username,chat,message,messageId} = JSON.parse(text);
+    const {op,room,token,x,z,yaw,stride,profileToken,username,chat,message,messageId,hunt,stamp} = JSON.parse(text);
     if (op === 'username') {
       if (typeof profileToken !== 'string' || !uuid.test(profileToken)) return respond({error:'Invalid profile.'},400);
       if (typeof username !== 'string' || !usernamePattern.test(username)) return respond({error:'Use 3–16 letters, numbers or underscores, starting with a letter.'},400);
@@ -38,7 +38,7 @@ Deno.serve(async request => {
       const state = await result.json();
       return respond(state,state.error ? 409 : 200);
     }
-    if (!['create','join','sync','leave','chat'].includes(op)) return respond({error:'Invalid action.'},400);
+    if (!['create','join','sync','leave','chat','stamp'].includes(op)) return respond({error:'Invalid action.'},400);
     const joining = op === 'create' || op === 'join';
     const code = op === 'create' ? crypto.randomUUID().replaceAll('-','').slice(0,12).toUpperCase() : room;
     if (typeof code !== 'string' || !/^[A-F0-9]{12}$/.test(code)) return respond({error:'Enter a valid room code.'},400);
@@ -59,6 +59,14 @@ Deno.serve(async request => {
       }
       if (typeof messageId !== 'string' || !uuid.test(messageId)) return respond({error:'Invalid message.'},400);
       result = await rpc('after_hours_room_with_chat',{...parameters,message_text:body,nonce:messageId});
+    } else if (op === 'stamp') {
+      if (!Number.isInteger(stamp) || stamp < 0 || stamp > 5) return respond({error:'Invalid stamp.'},400);
+      if (typeof x !== 'number' || typeof z !== 'number' || !Number.isFinite(x) || !Number.isFinite(z)) {
+        return respond({error:'Step closer to pick up the stamp.'},400);
+      }
+      result = await rpc('after_hours_room_with_hunt',{...parameters,stamp_id:stamp,with_chat:false});
+    } else if (hunt === true && op !== 'leave') {
+      result = await rpc('after_hours_room_with_hunt',{...parameters,with_chat:withChat});
     } else {
       result = await rpc(withChat ? 'after_hours_room_with_chat' : 'after_hours_room_named',parameters);
     }

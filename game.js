@@ -1,14 +1,16 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=wardrobe-4';
-import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=speech-bubbles-17';
+import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=store-hunt-18';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js';
-import { createShop } from './shop.js?v=neighborhood-15';
+import { createShop } from './shop.js?v=store-hunt-18';
 import { createSignalRelay } from './signal.js';
-import { createOnline } from './online.js?v=speech-bubbles-17';
+import { createOnline } from './online.js?v=store-hunt-18';
 import { createShift } from './shift.js?v=shift-14';
 import { createDex } from './dex.js?v=neighborhood-15';
 import { createMenu } from './menu.js?v=neighborhood-15';
 import { createMusic } from './music.js?v=neighborhood-15';
 import { createReveal } from './reveal.js?v=neighborhood-15';
+import { createHunt, hasStamp, stampHeight, stamps } from './hunt.js?v=store-hunt-18';
+import { createCircuit } from './circuit.js?v=store-hunt-18';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');
@@ -29,6 +31,7 @@ const duration = 20000, goal = 800;
 const stations = {
   checkout: { spot: CHECKOUT, title: 'Checkout', prompt: 'Check out', radius: 1.43, y: 1.84 },
   arcade: { spot: CABINET, title: 'Neon Dash', prompt: 'Play Neon Dash', radius: 1.28, y: 2.66 },
+  circuit: { spot: CIRCUIT_CABINET, title: 'Circuit Sprint', prompt: 'Play Circuit Sprint', radius: 1.24, y: 2.66 },
   signal: { spot: SIGNAL_CABINET, title: 'Signal Relay', prompt: 'Play Signal Relay', radius: 1.28, y: 2.66 }
 };
 
@@ -51,14 +54,15 @@ const online = createOnline({
     camera = null;
     enterStore('Entering the online store…', 'Online room ready. Open Online to invite friends.');
   },
-  position: () => ({x:player.x,z:player.z,yaw:Math.atan2(Math.sin(player.yaw),Math.cos(player.yaw)),stride})
+  position: () => ({x:player.x,z:player.z,yaw:Math.atan2(Math.sin(player.yaw),Math.cos(player.yaw)),stride}),
+  onHunt: (room,mask,day) => hunt.setRoom(room,mask,day)
 });
 const music = createMusic(audioContext);
 const reveal = createReveal({ paintCover, playSound: revealSound, focusGame: () => canvas.focus() });
 
 const shop = createShop({
   beforeOpen: clearMovement, paintCover,
-  onChange() { syncCaseVisibility(); menu.refreshShop(); dex.refresh(); shift.refresh(); },
+  onChange() { syncCaseVisibility(); menu.refreshShop(); dex.refresh(); shift.refresh(); hunt.refresh(); },
   onPurchase: indexes => reveal.show(indexes),
   announce: message => { showToast(message); tone(523,.16,0,'triangle'); tone(784,.21,.095,'triangle'); }
 });
@@ -81,6 +85,14 @@ const dex = createDex({
 });
 const shift = createShift({shop,clearMovement,ready:() => !!world && !modalOpen()});
 const signal = createSignalRelay({ tone, best: () => shop.state.signalBest, award: score => shop.recordArcade('signal',score) });
+const circuit = createCircuit({ tone, best: () => shop.state.circuitBest, award: score => shop.recordArcade('circuit',score) });
+const hunt = createHunt({
+  shop, clearMovement, ready:() => !!world && !modalOpen(),
+  getPosition:() => player, getFriends:() => online.friends,
+  connected:() => online.connected, collectInRoom:online.collectStamp,
+  announce: message => { showToast(message); tone(587,.13,0,'triangle'); tone(784,.18,.095,'triangle'); }
+});
+hunt.refresh();
 
 const tiles = Array.from({length: 9}, (_, i) => {
   const button = document.createElement('button');
@@ -216,10 +228,12 @@ function clearMovement() {
 }
 
 function modalOpen() {
-  return entering || reveal.open || shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || shop.open;
+  return entering || reveal.open || shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || circuit.open || hunt.isOpen || shop.open;
 }
 
 function currentAction() {
+  const stamp = hunt.nearby();
+  if (stamp >= 0) return stamp;
   if (!doorOpened && player.z >= -.20 && Math.hypot(player.x, player.z - .28) <= 2.08) return 'doors';
   if (!inside) return null;
   let action = null, nearest = Infinity;
@@ -234,6 +248,7 @@ function currentAction() {
 function interact() {
   if (!world || modalOpen()) return;
   const item = currentAction();
+  if (Number.isInteger(item)) { hunt.collect(item); return; }
   if (item === 'doors') {
     doorOpened = true;
     tone(294, .19, 0, 'triangle');
@@ -243,6 +258,7 @@ function interact() {
   }
   if (item === 'arcade') openArcade();
   if (item === 'signal') { clearMovement(); signal.show(); }
+  if (item === 'circuit') { clearMovement(); circuit.show(); }
   if (item === 'checkout') shop.openCheckout();
 }
 
@@ -563,11 +579,12 @@ function cameraFor(dt, aspect, preview) {
 function waypoint(matrix) {
   const node = $('waypoint');
   const item = currentAction();
+  const stamp = Number.isInteger(item) ? stamps[item] : null;
   if (action !== item) {
     action = item;
-    const label = item === 'doors' ? 'Open doors' : stations[item]?.prompt || 'Interact';
+    const label = stamp ? 'Pick up stamp' : item === 'doors' ? 'Open doors' : stations[item]?.prompt || 'Interact';
     const button = $('touch-action');
-    button.disabled = !item;
+    button.disabled = item === null;
     button.setAttribute('aria-label',label);
     button.querySelector('span').textContent = label;
   }
@@ -576,17 +593,17 @@ function waypoint(matrix) {
   let guidance = null;
   if (inside && basket.length && shop.basketTotal <= credits) guidance = 'checkout';
   else if (inside && (basket.length || (owned.length && !arcadeEarned))) guidance = 'arcade';
-  const destination = item || (entrance ? 'doors' : guidance);
-  if (modalOpen() || !destination) { node.hidden = true; return; }
+  const destination = item ?? (entrance ? 'doors' : guidance);
+  if (modalOpen() || destination === null) { node.hidden = true; return; }
   const station = stations[destination];
-  const point = station ? [station.spot.x,station.y,station.spot.z+.32] : [0,2.48,.32];
+  const point = stamp ? [stamp.x,stampHeight+.64,stamp.z] : station ? [station.spot.x,station.y,station.spot.z+.32] : [0,2.48,.32];
   const [x,y,w] = project(matrix,point);
   if (w <= .3 || x < .07 || x > .93 || y < .13 || y > .88) { node.hidden = true; return; }
   node.style.left = x * 100 + '%';
   node.style.top = y * 100 + '%';
-  node.classList.toggle('hint', !item);
-  node.tabIndex = item ? 0 : -1;
-  $('waypoint-text').textContent = station ? (item ? station.prompt : station.title) : (item ? 'Open doors' : 'Entrance');
+  node.classList.toggle('hint', item === null);
+  node.tabIndex = item === null ? -1 : 0;
+  $('waypoint-text').textContent = stamp ? 'Pick up stamp' : station ? (item ? station.prompt : station.title) : (item ? 'Open doors' : 'Entrance');
   node.hidden = false;
 }
 
@@ -605,6 +622,14 @@ function draw(dt, now) {
   const doors = [model(-offset,0,0),model(offset,0,0)];
   renderer.begin(matrix,eye);
   world.opaque.forEach(mesh => renderer.draw(mesh));
+  if (!menu.open) {
+    const mask = hunt.activeMask();
+    const motion = reduced.matches ? 0 : now/1000;
+    stamps.forEach(({x,z},index) => {
+      if (hasStamp(mask,index)) return;
+      renderer.draw(world.stamps[index],model(x,stampHeight+Math.sin(motion*3+index)*.08,z,motion*1.5+index*.4));
+    });
+  }
   const { owned, basket } = shop.state;
   const releaseState = owned.includes(LATEST_RELEASE) ? 'sold' : basket.includes(LATEST_RELEASE) ? 'basket' : 'available';
   renderer.draw(world.releasePosters[releaseState]);
@@ -641,6 +666,8 @@ function frame(now) {
   if (doorOpened && door < 1) door = Math.min(1,door + dt * 1.91);
   tickRound(now);
   signal.tick(now);
+  circuit.tick(now);
+  hunt.tick(now);
   const interval = modalOpen() ? 65 : stride > .03 ? 12 : 28;
   if (now - lastDraw >= interval) {
     draw(Math.min((now - lastDraw) / 1000,.125),now);
@@ -836,6 +863,7 @@ document.addEventListener('keydown', event => {
     if (!event.repeat) signal.press(Number(event.key)-1);
     return;
   }
+  if (circuit.open) { circuit.keydown(event); return; }
   if (modalOpen()) return;
   if (movement.has(event.code)) {
     event.preventDefault();
@@ -850,6 +878,7 @@ document.addEventListener('keydown', event => {
   if (!event.repeat && event.code === 'KeyJ') { event.preventDefault(); shift.open(); }
   if (!event.repeat && event.code === 'KeyG') { event.preventDefault(); dex.open(); }
   if (!event.repeat && event.code === 'KeyT' && online.openChat()) event.preventDefault();
+  if (!event.repeat && event.code === 'KeyM') { event.preventDefault(); hunt.open(); }
 });
 document.addEventListener('keyup', event => keys.delete(event.code));
 window.addEventListener('blur', clearMovement);

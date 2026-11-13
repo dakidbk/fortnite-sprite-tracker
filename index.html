@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#1b221e">
-  <meta name="description" content="Build a game collection in a 3D store and earn credits at two arcade cabinets.">
+  <meta name="description" content="Collect games, hunt for hidden stamps, and play three arcade cabinets in a 3D game store.">
   <title>Game Store After Hours</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=speech-bubbles-17">
-  <script type="module" src="game.js?v=speech-bubbles-17"></script>
+  <link rel="stylesheet" href="style.css?v=store-hunt-18">
+  <script type="module" src="game.js?v=store-hunt-18"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -25,6 +25,7 @@
     <symbol id="i-reset" viewBox="0 0 24 24"><path d="M5 10a7.5 7.5 0 1 1 1.4 7.5M5 4.5V10h5.5"/></symbol>
     <symbol id="i-collection" viewBox="0 0 24 24"><rect x="5" y="3.5" width="11" height="15" rx="1.7"/><path d="M19 6.5v12a3 3 0 0 1-3 3H8m0-14h5m-5 4h3"/></symbol>
     <symbol id="i-chat" viewBox="0 0 24 24"><path d="M5 4.5h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-6 3v-14a2 2 0 0 1 2-2Z"/><path d="M7 9h10M7 13h7"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2V6Zm6-2v14m6-12v14"/></symbol>
   </svg>
 
   <main class="game" aria-label="Game Store After Hours">
@@ -56,6 +57,7 @@
     </header>
 
     <button class="icon-button chat-button" id="chat-button" type="button" title="Room chat (T)" aria-keyshortcuts="T" aria-haspopup="dialog" hidden><svg aria-hidden="true"><use href="#i-chat"></use></svg>Chat</button>
+    <button class="icon-button hunt-button" id="hunt-button" type="button" title="Map and stamp hunt (M)" aria-keyshortcuts="M" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-map"></use></svg>Map</button>
     <div class="room-chat-log" id="room-chat-log" role="log" aria-label="Room messages"></div>
 
     <button type="button" class="waypoint" id="waypoint" hidden><span class="waypoint-gem"></span><span class="waypoint-label"><kbd>E</kbd><span id="waypoint-text">Open doors</span></span></button>
@@ -135,7 +137,7 @@
     <dialog class="dialog help-dialog" id="help-dialog" aria-labelledby="help-title">
       <div class="dialog-head"><span class="micro">FIELD GUIDE</span><button type="button" class="icon-button" id="help-close" aria-label="Close help"><svg><use href="#i-cross"></use></svg></button></div>
       <h2 id="help-title">How to play</h2>
-      <p>Open Game Dex from the bottom-right corner or press G to view the games you’ve collected. Tap a case to add it to your basket. Pay at checkout with store credits and earn more at either arcade cabinet.</p>
+      <p>Tap a case to add it to your basket, then pay at checkout. Earn credits at any arcade cabinet or find the six stamps hidden around the store. Open Game Dex to view your collection.</p>
       <dl class="help-controls">
         <div><dt>Move</dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>or arrow keys</span></dd></div>
         <div><dt>Move on touch</dt><dd><span>Use the thumbstick on the left</span></dd></div>
@@ -143,6 +145,7 @@
         <div><dt>Run</dt><dd><kbd>Shift</kbd></dd></div>
         <div><dt>Interact</dt><dd><kbd>E</kbd> <span>or tap the prompt</span></dd></div>
         <div><dt>Room chat</dt><dd><kbd>T</kbd> <span>or tap Chat while online</span></dd></div>
+        <div><dt>Map and stamp hunt</dt><dd><kbd>M</kbd> <span>or tap Map</span></dd></div>
         <div><dt>Collection</dt><dd><kbd>C</kbd> <span>or tap your wallet</span></dd></div>
       </dl>
       <button class="primary-button" id="resume-button" type="button">Back to the store <svg><use href="#i-arrow"></use></svg></button>
@@ -231,6 +234,37 @@
       <ul class="collection-grid" id="collection-grid" aria-label="Collected games" hidden></ul>
     </dialog>
 
+    <dialog class="dialog hunt-dialog" id="hunt-dialog" aria-labelledby="hunt-title">
+      <div class="dialog-head"><span class="micro" id="hunt-mode">DAILY HUNT</span><button class="icon-button" id="hunt-close" type="button" aria-label="Close map"><svg aria-hidden="true"><use href="#i-cross"></use></svg></button></div>
+      <h2 id="hunt-title">Store map</h2>
+      <div class="hunt-summary"><strong id="hunt-progress">0 / 6 stamps</strong><span>120 CR reward</span></div>
+      <p>Walk up to a stamp and use Interact to pick it up. Claim one reward per day.</p>
+      <div class="hunt-layout">
+        <figure class="hunt-map" aria-label="Store floor plan with player positions">
+          <div class="hunt-map-plan" aria-hidden="true">
+            <span class="hunt-zone hunt-zone-arcade">ARCADE</span>
+            <span class="hunt-zone hunt-zone-checkout">CHECKOUT</span>
+            <span class="hunt-zone hunt-zone-library">LIBRARY</span>
+            <span class="hunt-zone hunt-zone-demo">DEMO</span>
+            <span class="hunt-zone hunt-zone-entry">ENTRANCE</span>
+            <span class="hunt-zone hunt-zone-porch">PORCH</span>
+          </div>
+          <div id="hunt-map-pins" aria-hidden="true"></div>
+          <div id="hunt-map-friends" aria-hidden="true"></div>
+          <span class="hunt-map-player" id="hunt-map-player" title="Your position" aria-hidden="true"></span>
+          <figcaption class="hunt-legend"><span>You</span><span id="hunt-legend-friends" hidden>Friends</span></figcaption>
+        </figure>
+        <div class="hunt-clue-panel">
+          <ol id="hunt-clues" class="hunt-clues"></ol>
+          <button class="menu-small hunt-hints" id="hunt-hints" type="button" aria-pressed="false">Show stamp locations</button>
+        </div>
+      </div>
+      <div class="hunt-foot">
+        <button class="primary-button" id="hunt-claim" type="button" disabled>Claim 120 CR</button>
+        <span id="hunt-status" role="status"></span>
+      </div>
+    </dialog>
+
     <dialog class="dialog arcade-dialog" id="arcade-dialog" aria-labelledby="arcade-title">
       <div class="dialog-head"><span class="micro"><span class="led"></span> ARCADE 01</span><button type="button" class="icon-button" id="arcade-close" aria-label="Leave arcade"><svg><use href="#i-cross"></use></svg></button></div>
       <h2 id="arcade-title">NEON <em>DASH</em></h2>
@@ -256,6 +290,22 @@
       <div class="signal-grid" id="signal-grid" aria-label="Signal Relay pads"></div>
       <div class="arcade-foot"><span id="signal-status">Earn credits for every completed level.</span><button type="button" class="primary-button" id="signal-start">Start relay</button></div>
     </dialog>
+
+    <dialog class="dialog arcade-dialog circuit-dialog" id="circuit-dialog" aria-labelledby="circuit-title">
+      <div class="dialog-head"><span class="micro">ARCADE</span><button type="button" class="icon-button" id="circuit-close" aria-label="Leave Circuit Sprint"><svg aria-hidden="true"><use href="#i-cross"></use></svg></button></div>
+      <h2 id="circuit-title">CIRCUIT <em>SPRINT</em></h2>
+      <p id="circuit-message" aria-live="polite">Match the directions before time runs out.</p>
+      <div class="arcade-stats circuit-stats">
+        <div><span class="micro">SIGNALS</span><strong id="circuit-score">0 / 12</strong></div>
+        <div><span class="micro">TIME LEFT</span><strong id="circuit-time">25.0</strong></div>
+        <div><span class="micro">TRIES LEFT</span><strong id="circuit-health">3</strong></div>
+        <div><span class="micro">BEST</span><strong id="circuit-best">0 / 12</strong></div>
+      </div>
+      <div class="time-track" aria-hidden="true"><div id="circuit-track"></div></div>
+      <div id="circuit-queue" class="circuit-queue" role="img" aria-label="Direction queue"></div>
+      <div id="circuit-controls" class="circuit-controls" aria-label="Direction controls"></div>
+      <div class="arcade-foot"><span id="circuit-reward">Earn credits for each correct direction.</span><button type="button" class="primary-button" id="circuit-start">Start run</button></div>
+    </dialog>
   </main>
   <dialog class="start-menu" id="start-menu" aria-labelledby="menu-title">
     <div class="menu-window">
@@ -263,7 +313,7 @@
       <section id="menu-home">
         <div class="menu-kicker">THE NIGHT SHIFT</div>
         <h1 id="menu-title">GAME STORE <span>AFTER HOURS</span></h1>
-        <p>Browse the shelves. Hit the arcade. Bring your friends.</p>
+        <p>Collect games, hunt for hidden stamps, or play the arcade with friends in the store.</p>
         <div class="menu-list">
           <button class="menu-choice" id="menu-create" type="button"><span>Create a Character</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
           <button class="menu-choice menu-play" id="menu-play" type="button"><span>Play</span><svg aria-hidden="true"><use href="#i-arrow"></use></svg></button>
