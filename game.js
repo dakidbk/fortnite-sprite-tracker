@@ -1,9 +1,9 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=wardrobe-4';
-import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=neighborhood-15';
+import { CABINET, CHECKOUT, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=speech-bubbles-17';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js';
 import { createShop } from './shop.js?v=neighborhood-15';
 import { createSignalRelay } from './signal.js';
-import { createOnline } from './online.js?v=room-chat-16';
+import { createOnline } from './online.js?v=speech-bubbles-17';
 import { createShift } from './shift.js?v=shift-14';
 import { createDex } from './dex.js?v=neighborhood-15';
 import { createMenu } from './menu.js?v=neighborhood-15';
@@ -616,16 +616,16 @@ function draw(dt, now) {
     renderer.draw(world.avatarShadow,model(spot.x,0,spot.z));
   }
   renderer.blend(false);
-  if (!hideAvatar) drawAvatar(renderer,world,player,walkPhase,stride,reduced.matches ? 0 : now/1000,menu.look);
+  const avatarTime = reduced.matches ? 0 : now/1000;
+  const localHead = hideAvatar ? null : drawAvatar(renderer,world,player,walkPhase,stride,avatarTime,menu.look);
   if (preview) {
     const turn = preview.angle-world.portraitAngle;
     const blend = reduced.matches ? 1 : 1-Math.exp(-dt*12);
     world.portraitAngle += Math.atan2(Math.sin(turn),Math.cos(turn))*blend;
-    drawAvatar(renderer,world,{...wardrobeSpot,yaw:Math.PI+world.portraitAngle},0,0,reduced.matches ? 0 : now/1000,preview.look);
+    drawAvatar(renderer,world,{...wardrobeSpot,yaw:Math.PI+world.portraitAngle},0,0,avatarTime,preview.look);
   }
-  if (!menu.open) online.draw(matrix,eye,dt,peer => {
-    drawAvatar(renderer,world,peer,peer.phase,peer.stride,reduced.matches ? 0 : now/1000);
-  });
+  if (!menu.open) online.draw(matrix,eye,dt,localHead,
+    peer => drawAvatar(renderer,world,peer,peer.phase,peer.stride,avatarTime));
   renderer.blend(true);
   world.transparent.forEach(mesh => renderer.draw(mesh));
   world.doors.forEach(([,glass],i) => renderer.draw(glass,doors[i]));

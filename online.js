@@ -28,6 +28,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
   const chatButton = $('chat-button'), chatDialog = $('chat-dialog'), chatLog = $('room-chat-log');
   const chatInput = $('chat-message'), chatSend = $('chat-send'), chatStatus = $('chat-status');
   const peers = new Map();
+  const captions = new Map();
   const recentMessages = new Map();
   let session, timer, pending = false, count = 0, reconnecting = false;
   let composing = false, draft, sending;
@@ -44,6 +45,27 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
     if (message !== undefined) status.textContent = message;
   }
 
+  function captionFor(slot) {
+    if (captions.has(slot)) return captions.get(slot);
+    const label = document.createElement('div');
+    label.className = 'room-caption';
+    label.dataset.slot = slot;
+    label.style.visibility = 'hidden';
+    const bubbles = document.createElement('div');
+    bubbles.className = 'room-bubbles';
+    label.append(bubbles);
+    const caption = {label,bubbles};
+    if (slot !== session.slot) {
+      const name = document.createElement('span');
+      name.className = 'room-tag';
+      label.append(name);
+      caption.name = name;
+    }
+    tags.append(label);
+    captions.set(slot,caption);
+    return caption;
+  }
+
   function apply(roster) {
     count = roster.length;
     const slots = new Set();
@@ -52,19 +74,16 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
       slots.add(player.slot);
       let peer = peers.get(player.slot);
       if (!peer) {
-        const tag = document.createElement('span');
-        tag.className = 'room-tag';
-        tag.dataset.slot = player.slot;
-        tags.append(tag);
-        peer = {...player, phase:0, tag};
+        peer = {...player, phase:0};
         peers.set(player.slot,peer);
       }
       peer.target = player;
-      peer.tag.textContent = player.username || 'Player '+player.slot;
+      captionFor(player.slot).name.textContent = player.username || 'Player '+player.slot;
     }
-    for (const [slot,peer] of peers) {
+    for (const slot of peers.keys()) {
       if (slots.has(slot)) continue;
-      peer.tag.remove();
+      captions.get(slot).label.remove();
+      captions.delete(slot);
       peers.delete(slot);
     }
   }
@@ -81,20 +100,19 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
       const remaining = Math.min(chatLifetime,remaining_ms) - (now-started)/2;
       if (recentMessages.has(key) || !(remaining > 0)) continue;
 
-      const row = document.createElement('div');
-      const name = document.createElement('strong');
-      const body = document.createElement('span');
-      row.className = 'room-chat-message';
-      name.textContent = username || 'Player '+slot;
-      body.dir = 'auto';
-      body.textContent = text;
+      const announcement = document.createElement('div');
+      announcement.textContent = (username || 'Player '+slot)+': '+text;
+      chatLog.append(announcement);
+      const bubble = document.createElement('div');
+      bubble.className = 'room-chat-message';
+      bubble.dir = 'auto';
+      bubble.textContent = text;
       const fade = Math.min(1500,remaining);
-      row.style.setProperty('--fade-delay',(remaining-fade)+'ms');
-      row.style.setProperty('--fade-duration',fade+'ms');
-      row.append(name,body);
-      chatLog.append(row);
+      bubble.style.setProperty('--fade-delay',(remaining-fade)+'ms');
+      bubble.style.setProperty('--fade-duration',fade+'ms');
+      captionFor(slot).bubbles.append(bubble);
       recentMessages.set(key,{
-        timer: setTimeout(() => row.remove(),remaining),
+        timer: setTimeout(() => { bubble.remove(); announcement.remove(); },remaining),
         forgetAt: now+chatLifetime+requestTimeout
       });
     }
@@ -157,6 +175,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
     count = 0;
     reconnecting = false;
     peers.clear();
+    captions.clear();
     tags.replaceChildren();
     for (const {timer} of recentMessages.values()) clearTimeout(timer);
     recentMessages.clear();
@@ -283,6 +302,21 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
   });
   window.addEventListener('pagehide',leave);
 
+  function positionCaption(caption, matrix, eye, head) {
+    const {label,bubbles,name} = caption;
+    if (!head || (!name && !bubbles.firstElementChild)) {
+      label.style.visibility = 'hidden';
+      return;
+    }
+    const [x,y,w] = project(matrix,head);
+    const visible = w >= .3 && Math.hypot(eye[0]-head[0],eye[2]-head[2]) <= 26 && x >= .04 && x <= .96 && y >= .11 && y <= .88;
+    label.style.visibility = visible ? '' : 'hidden';
+    if (visible) {
+      label.style.setProperty('--caption-x',(clamp(x,0,1)*100)+'vw');
+      label.style.top = (clamp(y,0,1)*100)+'%';
+    }
+  }
+
   return {
     get open() { return dialog.open || chatDialog.open; },
     openChat,
@@ -294,7 +328,10 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
       enter('join');
       return true;
     },
-    draw(matrix, eye, dt, render) {
+    draw(matrix, eye, dt, localHead, render) {
+      if (!session) return;
+      const localCaption = captions.get(session.slot);
+      if (localCaption) positionCaption(localCaption,matrix,eye,localHead);
       const blend = 1-Math.exp(-dt*13);
       for (const peer of peers.values()) {
         const target = peer.target;
@@ -310,14 +347,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy }) {
         const difference = target.yaw-peer.yaw;
         peer.yaw += Math.atan2(Math.sin(difference),Math.cos(difference))*blend;
         peer.phase += dt*13.6;
-        render(peer);
-        const [screenX,screenY,w] = project(matrix,[peer.x,2.08,peer.z]);
-        const distance = Math.hypot(eye[0]-peer.x,eye[2]-peer.z);
-        peer.tag.hidden = w < .3 || distance > 26 || screenX < .04 || screenX > .96 || screenY < .11 || screenY > .88;
-        if (!peer.tag.hidden) {
-          peer.tag.style.left = (clamp(screenX,0,1)*100)+'%';
-          peer.tag.style.top = (clamp(screenY,0,1)*100)+'%';
-        }
+        positionCaption(captions.get(peer.slot),matrix,eye,render(peer));
       }
     }
   };

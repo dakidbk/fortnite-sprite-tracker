@@ -1213,4 +1213,7 @@ export function drawAvatar(renderer, world, player, phase, stride, time, look) {
   const armOffset = look?.gender === 1 ? .319 : look?.gender === 2 ? .265 : .301;
   renderer.draw(leftArm,multiply(body,model(-armOffset,1.443,-.025,0,-swing*.71)));
   renderer.draw(rightArm,multiply(body,model(armOffset,1.443,-.025,0,swing*.71)));
+  // Place player captions just above the tallest hairstyle using the animated body transform.
+  const headHeight = 2.25;
+  return [body[12]+body[4]*headHeight,body[13]+body[5]*headHeight,body[14]+body[6]*headHeight];
 }
