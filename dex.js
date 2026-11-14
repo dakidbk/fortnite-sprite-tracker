@@ -1,4 +1,4 @@
-import { GAMES, RARITIES } from './catalog.js';
+import { GAMES, RARITIES } from './catalog.js?v=store-economy-19';
 
 const $ = id => document.getElementById(id);
 
@@ -21,7 +21,7 @@ export function createDex({getProfile, paintCover, clearMovement, ready}) {
     $('dex-entry-description').textContent = game.blurb;
     $('dex-entry-rarity').textContent = tier.label;
     $('dex-entry-rarity').style.color = tier.color;
-    $('dex-entry-price').textContent = tier.price+' CR';
+    $('dex-entry-price').textContent = tier.price.toLocaleString('en-US')+' CR';
     const art = $('dex-entry-art');
     paintCover(art,selected,face);
     art.setAttribute('aria-label',(face === 'front' ? 'Front' : 'Back')+' cover of '+game.title);

@@ -1,4 +1,4 @@
-import { GAMES } from './catalog.js';
+import { GAMES } from './catalog.js?v=store-economy-19';
 
 export const shiftReward = 75;
 const $ = id => document.getElementById(id);
@@ -28,7 +28,7 @@ export function createShift({shop,clearMovement,ready}) {
     const tasks = [
       ['Browse the shelves','Inspect three different game cases in the store.',state.inspected.length,3],
       ['Add to your collection','Buy a game at checkout. A complete library also qualifies.',Number(state.purchase),1],
-      ['Arcade break','Finish a round and earn credits at either arcade.',Number(state.arcade),1]
+      ['Arcade break','Finish a round and earn credits at an arcade cabinet.',Number(state.arcade),1]
     ];
     const completed = tasks.filter(([, ,count,goal]) => count >= goal).length;
     $('shift-hud').textContent = state.claimed ? 'Done' : completed+'/3';

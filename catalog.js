@@ -1,11 +1,11 @@
 export const RARITIES = {
-  common: { label: 'Common', mark: 'C', color: '#c3c8bf', copies: 5, price: 35 },
-  uncommon: { label: 'Uncommon', mark: 'U', color: '#a5c6a4', copies: 4, price: 55 },
-  rare: { label: 'Rare', mark: 'R', color: '#a2c5ec', copies: 3, price: 85 },
-  superRare: { label: 'Super Rare', mark: 'SR', color: '#c8b5eb', copies: 2, price: 125 },
-  ultraRare: { label: 'Ultra Rare', mark: 'UR', color: '#eba6c4', copies: 1, price: 175 },
-  legendary: { label: 'Legendary', mark: 'L', color: '#e9c176', copies: 1, price: 245 },
-  mythic: { label: 'Mythic', mark: 'M', color: '#f09681', copies: 1, price: 360 }
+  common: { label: 'Common', mark: 'C', color: '#c3c8bf', copies: 5, price: 150 },
+  uncommon: { label: 'Uncommon', mark: 'U', color: '#a5c6a4', copies: 4, price: 220 },
+  rare: { label: 'Rare', mark: 'R', color: '#a2c5ec', copies: 3, price: 320 },
+  superRare: { label: 'Super Rare', mark: 'SR', color: '#c8b5eb', copies: 2, price: 460 },
+  ultraRare: { label: 'Ultra Rare', mark: 'UR', color: '#eba6c4', copies: 1, price: 650 },
+  legendary: { label: 'Legendary', mark: 'L', color: '#e9c176', copies: 1, price: 900 },
+  mythic: { label: 'Mythic', mark: 'M', color: '#f09681', copies: 1, price: 1350 }
 };
 
 export const GAMES = [

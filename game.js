@@ -1,16 +1,19 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=wardrobe-4';
-import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=store-hunt-18';
-import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js';
-import { createShop } from './shop.js?v=store-hunt-18';
+import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, WORK_DESK, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=store-economy-19';
+import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js?v=store-economy-19';
+import { createShop } from './shop.js?v=store-economy-19';
 import { createSignalRelay } from './signal.js';
 import { createOnline } from './online.js?v=store-hunt-18';
-import { createShift } from './shift.js?v=shift-14';
-import { createDex } from './dex.js?v=neighborhood-15';
+import { createShift } from './shift.js?v=store-economy-19';
+import { createDex } from './dex.js?v=store-economy-19';
 import { createMenu } from './menu.js?v=neighborhood-15';
 import { createMusic } from './music.js?v=neighborhood-15';
 import { createReveal } from './reveal.js?v=neighborhood-15';
-import { createHunt, hasStamp, stampHeight, stamps } from './hunt.js?v=store-hunt-18';
+import { createHunt, hasStamp, stampHeight, stamps } from './hunt.js?v=store-economy-19';
 import { createCircuit } from './circuit.js?v=store-hunt-18';
+import { stockDestination, stockRunState } from './economy.js?v=store-economy-19';
+import { createWork } from './work.js?v=store-economy-19';
+import { cashier, createStaff, staffLooks } from './staff.js?v=store-economy-19';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');
@@ -29,6 +32,7 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const touchLayout = matchMedia('(max-width: 550px), (any-pointer: coarse)');
 const duration = 20000, goal = 800;
 const stations = {
+  work: { spot: WORK_DESK, title: 'Stock Runs', prompt: 'Stock runs', radius: 1.30, y: 1.86 },
   checkout: { spot: CHECKOUT, title: 'Checkout', prompt: 'Check out', radius: 1.43, y: 1.84 },
   arcade: { spot: CABINET, title: 'Neon Dash', prompt: 'Play Neon Dash', radius: 1.28, y: 2.66 },
   circuit: { spot: CIRCUIT_CABINET, title: 'Circuit Sprint', prompt: 'Play Circuit Sprint', radius: 1.24, y: 2.66 },
@@ -62,8 +66,9 @@ const reveal = createReveal({ paintCover, playSound: revealSound, focusGame: () 
 
 const shop = createShop({
   beforeOpen: clearMovement, paintCover,
-  onChange() { syncCaseVisibility(); menu.refreshShop(); dex.refresh(); shift.refresh(); hunt.refresh(); },
+  onChange() { syncCaseVisibility(); menu.refreshShop(); dex.refresh(); shift.refresh(); hunt.refresh(); if (work.isOpen) work.refresh(); },
   onPurchase: indexes => reveal.show(indexes),
+  onEarn: () => work.open(),
   announce: message => { showToast(message); tone(523,.16,0,'triangle'); tone(784,.21,.095,'triangle'); }
 });
 const menu = createMenu({
@@ -91,6 +96,15 @@ const hunt = createHunt({
   getPosition:() => player, getFriends:() => online.friends,
   connected:() => online.connected, collectInRoom:online.collectStamp,
   announce: message => { showToast(message); tone(587,.13,0,'triangle'); tone(784,.18,.095,'triangle'); }
+});
+const work = createWork({
+  shop, clearMovement, ready:() => !!world && !modalOpen(),
+  openMap:hunt.open, openShift:shift.open,
+  announce: message => { showToast(message); tone(392,.11,0,'triangle'); tone(587,.18,.09,'triangle'); }
+});
+const staff = createStaff({
+  getPlayer:() => player, getProfile:() => shop.state, canWalk:allow, clearMovement,
+  openCase: inspectShelfCase, announce:showToast
 });
 hunt.refresh();
 
@@ -228,21 +242,24 @@ function clearMovement() {
 }
 
 function modalOpen() {
-  return entering || reveal.open || shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || circuit.open || hunt.isOpen || shop.open;
+  return entering || reveal.open || shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || circuit.open || hunt.isOpen || work.isOpen || staff.isOpen || shop.open;
 }
 
 function currentAction() {
   const stamp = hunt.nearby();
   if (stamp >= 0) return stamp;
   if (!doorOpened && player.z >= -.20 && Math.hypot(player.x, player.z - .28) <= 2.08) return 'doors';
-  if (!inside) return null;
+  const stop = stockDestination(stockRunState(shop.state));
+  if (stop && Math.hypot(player.x-stop.x,player.z-stop.z) <= 1.20) return 'deliver';
+  if (staff.guidedCase()) return 'guided-case';
   let action = null, nearest = Infinity;
   for (const id in stations) {
+    if (id === 'work' ? inside : !inside) continue;
     const {spot,radius} = stations[id];
     const distance = Math.hypot(player.x-spot.x,player.z-spot.approachZ);
     if (distance <= radius && distance < nearest) { action = id; nearest = distance; }
   }
-  return action;
+  return action || (inside && staff.nearby() ? 'manager' : null);
 }
 
 function interact() {
@@ -260,6 +277,10 @@ function interact() {
   if (item === 'signal') { clearMovement(); signal.show(); }
   if (item === 'circuit') { clearMovement(); circuit.show(); }
   if (item === 'checkout') shop.openCheckout();
+  if (item === 'work') work.open(true);
+  if (item === 'deliver') work.deliver();
+  if (item === 'manager') staff.open();
+  if (item === 'guided-case') inspectShelfCase(staff.guidedCase().slot);
 }
 
 function paintCover(art,index,face) {
@@ -299,6 +320,11 @@ function inspectCase(clientX,clientY) {
   if (!width || !height) return;
   const hit = renderer.pickCase(world.cases,(clientX-left)/width,(clientY-top)/height);
   const slot = hit === world.posterSlot ? world.caseGames.indexOf(LATEST_RELEASE) : hit;
+  inspectShelfCase(slot);
+}
+
+function inspectShelfCase(slot) {
+  if (!world || modalOpen()) return;
   const index = world.caseGames[slot];
   const entry = GAMES[index];
   if (!entry) return;
@@ -580,9 +606,12 @@ function waypoint(matrix) {
   const node = $('waypoint');
   const item = currentAction();
   const stamp = Number.isInteger(item) ? stamps[item] : null;
+  const delivery = stockDestination(stockRunState(shop.state));
+  const interaction = stamp ? 'Pick up stamp' : item === 'deliver' ? 'Deliver stock' : item === 'doors' ? 'Open doors'
+    : item === 'manager' ? 'Talk to Maya' : item === 'guided-case' ? 'Inspect case' : stations[item]?.prompt;
   if (action !== item) {
     action = item;
-    const label = stamp ? 'Pick up stamp' : item === 'doors' ? 'Open doors' : stations[item]?.prompt || 'Interact';
+    const label = interaction || 'Interact';
     const button = $('touch-action');
     button.disabled = item === null;
     button.setAttribute('aria-label',label);
@@ -592,18 +621,21 @@ function waypoint(matrix) {
   const { owned, basket, arcadeEarned, credits } = shop.state;
   let guidance = null;
   if (inside && basket.length && shop.basketTotal <= credits) guidance = 'checkout';
-  else if (inside && (basket.length || (owned.length && !arcadeEarned))) guidance = 'arcade';
+  else if (inside && !delivery && (basket.length || (owned.length && !arcadeEarned))) guidance = 'arcade';
   const destination = item ?? (entrance ? 'doors' : guidance);
-  if (modalOpen() || destination === null) { node.hidden = true; return; }
+  if (modalOpen() || destination === null || item === 'guided-case') { node.hidden = true; return; }
   const station = stations[destination];
-  const point = stamp ? [stamp.x,stampHeight+.64,stamp.z] : station ? [station.spot.x,station.y,station.spot.z+.32] : [0,2.48,.32];
+  const point = stamp ? [stamp.x,stampHeight+.64,stamp.z]
+    : item === 'deliver' ? [delivery.x,1.17,delivery.z]
+    : item === 'manager' ? [staff.manager.x,2.87,staff.manager.z]
+    : station ? [station.spot.x,station.y,station.spot.z+.32] : [0,2.48,.32];
   const [x,y,w] = project(matrix,point);
   if (w <= .3 || x < .07 || x > .93 || y < .13 || y > .88) { node.hidden = true; return; }
   node.style.left = x * 100 + '%';
   node.style.top = y * 100 + '%';
   node.classList.toggle('hint', item === null);
   node.tabIndex = item === null ? -1 : 0;
-  $('waypoint-text').textContent = stamp ? 'Pick up stamp' : station ? (item ? station.prompt : station.title) : (item ? 'Open doors' : 'Entrance');
+  $('waypoint-text').textContent = interaction || station?.title || 'Entrance';
   node.hidden = false;
 }
 
@@ -623,6 +655,8 @@ function draw(dt, now) {
   renderer.begin(matrix,eye);
   world.opaque.forEach(mesh => renderer.draw(mesh));
   if (!menu.open) {
+    const delivery = stockDestination(stockRunState(shop.state));
+    if (delivery) renderer.draw(world.stockCrate,model(delivery.x,.018,delivery.z));
     const mask = hunt.activeMask();
     const motion = reduced.matches ? 0 : now/1000;
     stamps.forEach(({x,z},index) => {
@@ -640,6 +674,11 @@ function draw(dt, now) {
     const spot = preview ? wardrobeSpot : player;
     renderer.draw(world.avatarShadow,model(spot.x,0,spot.z));
   }
+  if (inside && !menu.open) {
+    const manager=staff.manager;
+    renderer.draw(world.avatarShadow,model(manager.x,0,manager.z));
+    renderer.draw(world.avatarShadow,model(cashier.x,0,cashier.z));
+  }
   renderer.blend(false);
   const avatarTime = reduced.matches ? 0 : now/1000;
   const localHead = hideAvatar ? null : drawAvatar(renderer,world,player,walkPhase,stride,avatarTime,menu.look);
@@ -651,6 +690,13 @@ function draw(dt, now) {
   }
   if (!menu.open) online.draw(matrix,eye,dt,localHead,
     peer => drawAvatar(renderer,world,peer,peer.phase,peer.stride,avatarTime));
+  let managerHead;
+  if (!menu.open) {
+    drawAvatar(renderer,world,cashier,0,0,avatarTime,staffLooks.cashier,world.staffAvatars.cashier);
+    const manager=staff.manager;
+    managerHead=drawAvatar(renderer,world,manager,manager.phase,manager.stride,avatarTime,staffLooks.manager,world.staffAvatars.manager);
+  }
+  staff.draw(point=>project(matrix,point),managerHead,modalOpen() || !inside);
   renderer.blend(true);
   world.transparent.forEach(mesh => renderer.draw(mesh));
   world.doors.forEach(([,glass],i) => renderer.draw(glass,doors[i]));
@@ -663,6 +709,7 @@ function frame(now) {
   const dt = Math.min((now - lastFrame) / 1000, .20);
   lastFrame = now;
   move(dt);
+  if (inside && !modalOpen()) staff.tick(dt);
   if (doorOpened && door < 1) door = Math.min(1,door + dt * 1.91);
   tickRound(now);
   signal.tick(now);
@@ -687,6 +734,7 @@ async function startup() {
   try {
     renderer = new Renderer(canvas);
     world = createWorld(renderer,coverAtlases);
+    staff.setup(world.casePositions);
     syncCaseVisibility();
     camera = null;
     draw(1,performance.now());
@@ -792,6 +840,7 @@ $('main-menu-button').addEventListener('click', () => {
 $('waypoint').addEventListener('click', interact);
 $('touch-action').addEventListener('click', interact);
 $('collection-button').addEventListener('click',openCollection);
+$('earn-button').addEventListener('click',() => work.open());
 $('reset-camera').addEventListener('click', resetCamera);
 $('help-button').addEventListener('click', () => {
   clearMovement();
@@ -879,6 +928,7 @@ document.addEventListener('keydown', event => {
   if (!event.repeat && event.code === 'KeyG') { event.preventDefault(); dex.open(); }
   if (!event.repeat && event.code === 'KeyT' && online.openChat()) event.preventDefault();
   if (!event.repeat && event.code === 'KeyM') { event.preventDefault(); hunt.open(); }
+  if (!event.repeat && event.code === 'KeyB') { event.preventDefault(); work.open(); }
 });
 document.addEventListener('keyup', event => keys.delete(event.code));
 window.addEventListener('blur', clearMovement);

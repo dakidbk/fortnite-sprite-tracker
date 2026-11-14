@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#1b221e">
-  <meta name="description" content="Collect games, hunt for hidden stamps, and play three arcade cabinets in a 3D game store.">
+  <meta name="description" content="Earn credits on stock runs, hunt for hidden stamps, and collect rare games in a 3D game store.">
   <title>Game Store After Hours</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=store-hunt-18">
-  <script type="module" src="game.js?v=store-hunt-18"></script>
+  <link rel="stylesheet" href="style.css?v=store-economy-19">
+  <script type="module" src="game.js?v=store-economy-19"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -26,6 +26,7 @@
     <symbol id="i-collection" viewBox="0 0 24 24"><rect x="5" y="3.5" width="11" height="15" rx="1.7"/><path d="M19 6.5v12a3 3 0 0 1-3 3H8m0-14h5m-5 4h3"/></symbol>
     <symbol id="i-chat" viewBox="0 0 24 24"><path d="M5 4.5h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-6 3v-14a2 2 0 0 1 2-2Z"/><path d="M7 9h10M7 13h7"/></symbol>
     <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2V6Zm6-2v14m6-12v14"/></symbol>
+    <symbol id="i-credits" viewBox="0 0 24 24"><ellipse cx="12" cy="7.5" rx="7.5" ry="3.5"/><path d="M4.5 7.5V12c0 1.9 3.4 3.5 7.5 3.5s7.5-1.6 7.5-3.5V7.5M4.5 12v4.5c0 1.9 3.4 3.5 7.5 3.5s7.5-1.6 7.5-3.5V12"/></symbol>
   </svg>
 
   <main class="game" aria-label="Game Store After Hours">
@@ -58,9 +59,12 @@
 
     <button class="icon-button chat-button" id="chat-button" type="button" title="Room chat (T)" aria-keyshortcuts="T" aria-haspopup="dialog" hidden><svg aria-hidden="true"><use href="#i-chat"></use></svg>Chat</button>
     <button class="icon-button hunt-button" id="hunt-button" type="button" title="Map and stamp hunt (M)" aria-keyshortcuts="M" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-map"></use></svg>Map</button>
+    <button class="icon-button earn-button" id="earn-button" type="button" title="Earn Credits (B)" aria-keyshortcuts="B" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-credits"></use></svg>Earn Credits</button>
     <div class="room-chat-log" id="room-chat-log" role="log" aria-label="Room messages"></div>
 
     <button type="button" class="waypoint" id="waypoint" hidden><span class="waypoint-gem"></span><span class="waypoint-label"><kbd>E</kbd><span id="waypoint-text">Open doors</span></span></button>
+    <span class="staff-tag" id="manager-tag" hidden>Maya · Manager</span>
+    <button type="button" class="staff-case-marker" id="manager-case-marker" hidden>Inspect case</button>
     <div class="toast" id="toast" role="status" hidden></div>
 
     <footer class="hud-bottom">
@@ -79,7 +83,7 @@
       <button class="collection-button shift-button" id="shift-button" type="button" aria-label="Open daily Shift Challenge" title="Shift Challenge (J)"><span>Shift</span><strong id="shift-hud">0/3</strong></button>
       <button class="collection-button dex-button" id="dex-button" type="button" aria-label="Open Game Dex" title="Game Dex (G)"><svg aria-hidden="true"><use href="#i-collection"></use></svg><span>Game Dex</span></button>
       <button type="button" class="collection-button" id="collection-button" aria-label="Open collection" title="Collection (C)">
-        <svg aria-hidden="true"><use href="#i-collection"></use></svg><span><strong id="wallet-credits">120 CR</strong><span id="wallet-count">0/48 collected</span></span>
+        <svg aria-hidden="true"><use href="#i-collection"></use></svg><span><strong id="wallet-credits">0 CR</strong><span id="wallet-count">0/48 collected</span></span>
       </button>
       </div>
     </footer>
@@ -137,7 +141,7 @@
     <dialog class="dialog help-dialog" id="help-dialog" aria-labelledby="help-title">
       <div class="dialog-head"><span class="micro">FIELD GUIDE</span><button type="button" class="icon-button" id="help-close" aria-label="Close help"><svg><use href="#i-cross"></use></svg></button></div>
       <h2 id="help-title">How to play</h2>
-      <p>Tap a case to add it to your basket, then pay at checkout. Earn credits at any arcade cabinet or find the six stamps hidden around the store. Open Game Dex to view your collection.</p>
+      <p>Earn credits on stock runs, at the arcade, or through daily challenges. Tap a case to add it to your basket, then pay at checkout. Rarer games cost more.</p>
       <dl class="help-controls">
         <div><dt>Move</dt><dd><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>or arrow keys</span></dd></div>
         <div><dt>Move on touch</dt><dd><span>Use the thumbstick on the left</span></dd></div>
@@ -146,6 +150,7 @@
         <div><dt>Interact</dt><dd><kbd>E</kbd> <span>or tap the prompt</span></dd></div>
         <div><dt>Room chat</dt><dd><kbd>T</kbd> <span>or tap Chat while online</span></dd></div>
         <div><dt>Map and stamp hunt</dt><dd><kbd>M</kbd> <span>or tap Map</span></dd></div>
+        <div><dt>Earn Credits</dt><dd><kbd>B</kbd> <span>or tap Earn Credits</span></dd></div>
         <div><dt>Collection</dt><dd><kbd>C</kbd> <span>or tap your wallet</span></dd></div>
       </dl>
       <button class="primary-button" id="resume-button" type="button">Back to the store <svg><use href="#i-arrow"></use></svg></button>
@@ -173,11 +178,25 @@
     <dialog class="dialog checkout-dialog" id="checkout-dialog" aria-labelledby="checkout-title">
       <div class="dialog-head"><span class="micro">GAME STORE</span><button type="button" class="icon-button" id="checkout-close" aria-label="Leave checkout"><svg><use href="#i-cross"></use></svg></button></div>
       <h2 id="checkout-title">Checkout</h2>
+      <p class="cashier-line" id="cashier-line"><strong>Jordan</strong> · Cashier</p>
       <p id="checkout-empty">Your basket is empty. Tap a game cover to pick something from the shelves.</p>
       <ul class="basket-items" id="checkout-items" aria-label="Games in your basket" hidden></ul>
-      <div class="checkout-totals"><span><span class="micro">BASKET TOTAL</span><strong id="checkout-total">0 CR</strong></span><span><span class="micro">YOUR WALLET</span><strong id="checkout-wallet">120 CR</strong></span></div>
+      <div class="checkout-totals"><span><span class="micro">BASKET TOTAL</span><strong id="checkout-total">0 CR</strong></span><span><span class="micro">YOUR WALLET</span><strong id="checkout-wallet">0 CR</strong></span></div>
       <p class="checkout-status" id="checkout-status" role="status"></p>
-      <button type="button" class="primary-button" id="checkout-buy" disabled>Buy game</button>
+      <div class="checkout-actions">
+        <button type="button" class="primary-button" id="checkout-buy" disabled>Buy game</button>
+        <button type="button" class="menu-small" id="checkout-earn" hidden>Earn Credits</button>
+      </div>
+    </dialog>
+
+    <dialog class="dialog manager-dialog" id="manager-dialog" aria-labelledby="manager-title">
+      <div class="dialog-head"><span class="micro">STORE MANAGER</span><button type="button" class="icon-button" id="manager-close" aria-label="Close conversation"><svg aria-hidden="true"><use href="#i-cross"></use></svg></button></div>
+      <h2 id="manager-title">Maya</h2>
+      <p class="manager-message" id="manager-message" aria-live="polite"></p>
+      <div class="manager-actions">
+        <button class="primary-button" id="manager-popular" type="button">What’s popular?</button>
+        <button class="primary-button manager-follow" id="manager-follow" type="button" hidden>Show me</button>
+      </div>
     </dialog>
 
     <dialog class="dialog reveal-dialog" id="reveal-dialog" aria-labelledby="reveal-title">
@@ -232,6 +251,35 @@
       <ul class="collection-rarities" id="collection-rarities" aria-label="Collection by rarity"></ul>
       <p class="collection-empty" id="collection-empty">Your collection starts with the first case you buy at checkout.</p>
       <ul class="collection-grid" id="collection-grid" aria-label="Collected games" hidden></ul>
+      <button class="menu-small collection-earn" id="collection-earn" type="button">Earn Credits</button>
+    </dialog>
+
+    <dialog class="dialog work-dialog" id="work-dialog" aria-labelledby="work-title">
+      <div class="dialog-head"><h2 id="work-title">Earn Credits</h2><button class="icon-button" id="work-close" type="button" aria-label="Close Earn Credits"><svg aria-hidden="true"><use href="#i-cross"></use></svg></button></div>
+      <p class="work-balance">Wallet <strong id="work-wallet">0 CR</strong></p>
+      <section class="work-card" aria-labelledby="work-stock-title">
+        <div class="work-card-head"><h3 id="work-stock-title">Stock runs</h3><strong id="work-stock-pay"></strong></div>
+        <p id="work-location">The stock desk is on the left side of the porch.</p>
+        <p id="work-next"></p>
+        <div class="work-action"><button class="primary-button" id="work-start" type="button">Start stock run</button><span id="work-progress"></span></div>
+        <p class="work-status" id="work-status" role="status"></p>
+      </section>
+      <section class="work-card" aria-labelledby="work-arcade-title">
+        <h3 id="work-arcade-title">Arcade</h3>
+        <p>Play a cabinet at the back of the store. Better scores earn more.</p>
+        <dl class="work-payouts">
+          <div><dt>Neon Dash</dt><dd id="work-neon-pay"></dd></div>
+          <div><dt>Signal Relay</dt><dd id="work-signal-pay"></dd></div>
+          <div><dt>Circuit Sprint</dt><dd id="work-circuit-pay"></dd></div>
+        </dl>
+      </section>
+      <section class="work-card" aria-labelledby="work-daily-title">
+        <h3 id="work-daily-title">Daily rewards</h3>
+        <div class="work-daily">
+          <button class="menu-small" id="work-map" type="button">Stamp hunt <strong id="work-hunt-pay"></strong></button>
+          <button class="menu-small" id="work-shift" type="button">Shift Challenge <strong id="work-shift-pay"></strong></button>
+        </div>
+      </section>
     </dialog>
 
     <dialog class="dialog hunt-dialog" id="hunt-dialog" aria-labelledby="hunt-title">
@@ -252,7 +300,8 @@
           <div id="hunt-map-pins" aria-hidden="true"></div>
           <div id="hunt-map-friends" aria-hidden="true"></div>
           <span class="hunt-map-player" id="hunt-map-player" title="Your position" aria-hidden="true"></span>
-          <figcaption class="hunt-legend"><span>You</span><span id="hunt-legend-friends" hidden>Friends</span></figcaption>
+          <span class="hunt-map-stock" id="hunt-map-stock" hidden aria-hidden="true"></span>
+          <figcaption class="hunt-legend"><span>You</span><span id="hunt-legend-friends" hidden>Friends</span><span id="hunt-legend-stock" hidden>Delivery</span></figcaption>
         </figure>
         <div class="hunt-clue-panel">
           <ol id="hunt-clues" class="hunt-clues"></ol>

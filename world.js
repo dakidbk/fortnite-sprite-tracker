@@ -1,8 +1,9 @@
 import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webgl.js';
-import { GAMES, LATEST_RELEASE, RARITIES, coverUV, coversPerAtlas } from './catalog.js';
+import { GAMES, LATEST_RELEASE, RARITIES, coverUV, coversPerAtlas } from './catalog.js?v=store-economy-19';
 import { accessories, avatarPalette } from './cosmetics.js?v=character-11';
 import { buildNeighborhood } from './neighborhood.js?v=neighborhood-15';
-import { stamps } from './hunt.js?v=store-hunt-18';
+import { stamps } from './hunt.js?v=store-economy-19';
+import { staffLooks } from './staff.js?v=store-economy-19';
 
 const M = {
   lamp: m('#fff0d8', 1.05), white: m('#ffffff', 1),
@@ -21,6 +22,7 @@ export const STORE = { entryHalf: 6.15, rearHalf: 10.49, taperStart: -4.18, tape
 export const CABINET = { x: .32, z: STORE.back + 1.33, approachZ: STORE.back + 2.43 };
 export const SIGNAL_CABINET = { x: 2.10, z: STORE.back + 1.33, approachZ: STORE.back + 2.43 };
 export const CIRCUIT_CABINET = { x: -1.50, z: STORE.back + 1.33, approachZ: STORE.back + 2.43 };
+export const WORK_DESK = { x: -3.95, z: 5.68, approachZ: 6.79, w: 1.46, d: .64 };
 const DECK = { frontHalf: 10.55, rearHalf: STORE.rearHalf + .34, front: 9.40, back: STORE.back - .26, corner: 1.20 };
 const porchCornerX = DECK.frontHalf - DECK.corner;
 const porchCornerZ = DECK.front - DECK.corner;
@@ -309,6 +311,30 @@ function doorMat() {
     ctx.font = '700 24px monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#e2dfcd';
     ctx.fillText('PLAYER ONE',240,166);
   });
+}
+
+function workDesk(mesh,sign) {
+  const {x,z,w,d}=WORK_DESK;
+  mesh.block(x,.56,z,w,1.11,d,.055,M.walnut);
+  mesh.block(x,1.13,z,w+.10,.12,d+.12,.037,M.ceramic);
+  mesh.block(x,.11,z,w+.015,.15,d+.015,.031,M.steel);
+  mesh.box(x,.64,z+d/2+.006,w-.20,.51,.026,M.dark);
+  sign.front(x,.64,z+d/2+.026,w-.27,.43,M.white);
+  mesh.block(x-.36,1.27,z-.08,.46,.18,.29,.026,M.steel);
+  mesh.block(x+.22,1.26,z+.04,.37,.13,.27,.023,M.sage);
+  mesh.box(x-.38,1.367,z-.08,.21,.018,.14,M.ceramic);
+}
+
+function stockCrate() {
+  const mesh=new Mesh();
+  const paper=m('#b59670',.26), tape=m('#d8c5a1',.35), strap=m('#86a895',.37);
+  mesh.block(0,.24,0,.55,.46,.45,.031,paper);
+  mesh.box(0,.479,0,.58,.045,.473,M.steel);
+  mesh.box(0,.507,0,.13,.012,.446,tape);
+  mesh.front(0,.257,.23,.36,.218,strap);
+  mesh.front(0,.277,.233,.225,.028,M.dark);
+  mesh.front(0,.217,.233,.165,.026,M.dark);
+  return mesh;
 }
 
 function materialTexture() {
@@ -724,6 +750,7 @@ function gameCase(geo, cases, x, y, z, yaw, w, h, d, index) {
   const cover=cases.covers[Math.floor(index/coversPerAtlas)], tags=cases.tags;
   geo.caseSlot = cover.caseSlot = tags.caseSlot = cases.titles.length;
   cases.titles.push(index);
+  cases.positions.push({index,x,y,z,yaw});
   geo.inFrame(x,y,z,yaw,part => part.block(0,0,0,w,h,d,.009,M.black));
   const [front,back,spine] = casePrint[index];
   const width = w - .018, height = h - .020;
@@ -1116,6 +1143,10 @@ function avatar(renderer, palette, look = {}) {
     torso.block(0,1.10,.353,.27,.19,.071,.027,m(gear.hood));
     torso.box(0,1.17,.394,.215,.022,.021,m(gear.accent,.24));
   }
+  if (look.staff) {
+    torso.block(-.126,1.402,-.192,.157,.079,.027,.012,m('#e2d2ab',.18));
+    torso.front(-.126,1.404,-.208,.104,.012,M.dark);
+  }
   const back=new Mesh(renderer.texture(surface(160,110,(ctx)=>controller(ctx,20,-1,120,'#b4c9bb',true))));
   back.front(0,1.195,.209,.328,.239,m('#dce0d4',.35));
   return Object.fromEntries(Object.entries({torso,back,leftLeg,rightLeg,leftArm,rightArm}).map(([k,mesh])=>[k,renderer.upload(mesh)]));
@@ -1127,7 +1158,7 @@ export function createWorld(renderer, coverAtlases) {
   const sign=new Mesh(renderer.texture(storeSign()));
   const cases=coverAtlases.map(atlas => new Mesh(renderer.texture(atlas)));
   const rarityTags=new Mesh(renderer.texture(rarityArt())), stock=planStock();
-  const caseGames=[-1];
+  const caseGames=[-1], casePositions=[null];
   const display=new Mesh(renderer.texture(displayArt()));
   const harvest=new Mesh(renderer.texture(harvestArt()));
   const poster=RELEASE_POSTER;
@@ -1150,6 +1181,13 @@ export function createWorld(renderer, coverAtlases) {
   const circuitScreen=new Mesh(renderer.texture(circuitArt(false)));
   const logo=new Mesh(renderer.texture(surface(200,155,ctx=>controller(ctx,19,1,162,'#e4e5d7',true))));
   const mat=new Mesh(renderer.texture(doorMat()));
+  const workSign=new Mesh(renderer.texture(surface(480,176,(ctx,w,h)=>{
+    ctx.fillStyle='#3a5147'; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='#9eb6a3'; ctx.lineWidth=4; ctx.strokeRect(11,11,w-22,h-22);
+    ctx.fillStyle='#f4ead7'; ctx.textAlign='center';
+    ctx.font='800 60px '+SIGN_FONT; ctx.fillText('STOCK RUNS',w/2,103,w-58);
+    ctx.font='600 22px monospace'; ctx.fillText('EARN STORE CREDITS',w/2,137);
+  })));
   const shadowTex=renderer.texture(radial('#171b15d6'));
   const shadow=new Mesh(shadowTex), avatarShadow=new Mesh(shadowTex);
   const guide=new Mesh();
@@ -1158,6 +1196,7 @@ export function createWorld(renderer, coverAtlases) {
     rectangle(-3.70,1.37,1.53,1.32,1.63),rectangle(3.54,1.37,1.53,1.32,1.63),
     ...PORCH_BENCHES.map(([x,z])=>rectangle(x,z-.06,2.51,.86,1.06)),
     ...PUMPKINS.filter(([,y])=>y===0).map(([x,,z,r])=>rectangle(x,z,r*1.90,r*1.90,r*1.72)),
+    rectangle(WORK_DESK.x,WORK_DESK.z,WORK_DESK.w+.10,WORK_DESK.d+.12,1.39),
     rectangle(-3.92,-1.22,2.99,.96,1.74),rectangle(4.46,-1.31,2.28,.92,3.20),
     ...SHELVES.map(([x,z,turn,w])=>rectangle(x,z,turn ? .74 : w,turn ? w : .74,2.80)),
     ...GAME_TABLES.map(([x,z,w])=>rectangle(x,z,w+.06,1.13,1.22)),
@@ -1173,11 +1212,13 @@ export function createWorld(renderer, coverAtlases) {
   planter(mesh,-3.70,1.37,12);
   planter(mesh,3.54,1.37,24);
   harvestPorch(mesh);
+  workDesk(mesh,workSign);
+  shadow.ground(WORK_DESK.x,.010,WORK_DESK.z,2.05,1.25,M.white);
   for (const [x,z] of PORCH_BENCHES) {
     bench(mesh,x,z);
     shadow.ground(x,.011,z,3.40,1.36,M.white);
   }
-  interior(mesh,{covers:cases,tags:rarityTags,titles:caseGames},display,harvest,logo,labels,stock);
+  interior(mesh,{covers:cases,tags:rarityTags,titles:caseGames,positions:casePositions},display,harvest,logo,labels,stock);
   const cover=POSTER_COVER;
   const coverX=poster.x+poster.w*((cover.left+cover.w/2)/POSTER_PRINT.w-.5);
   const coverY=poster.y+poster.h*(.5-(cover.top+cover.h/2)/POSTER_PRINT.h);
@@ -1230,18 +1271,21 @@ export function createWorld(renderer, coverAtlases) {
   renderer.lights(sceneLights);
   const upload=meshes=>meshes.map(part=>renderer.upload(part));
   return {
-    opaque:upload([distant,mesh,tile,sign,...cases,display,harvest,labels,marquee,screen,relayMarquee,relayScreen,circuitMarquee,circuitScreen,logo,mat,guide]),
+    opaque:upload([distant,mesh,tile,sign,...cases,display,harvest,labels,marquee,screen,relayMarquee,relayScreen,circuitMarquee,circuitScreen,logo,mat,workSign,guide]),
     stamps:stamps.map(({color}) => renderer.upload(stampModel(color))),
+    stockCrate:renderer.upload(stockCrate()),
     releasePosters, sceneLights,
     transparent:upload([glass]), decals:upload([shadow,rarityTags]),
     doors:[upload(door(-1)),upload(door(1))],
-    avatar:avatar(renderer,avatarPalette({outfit:'forest',skin:0,hair:0})), avatarShadow:renderer.upload(avatarShadow), obstacles, cases, caseGames, posterSlot, stockCopies:stock.copies
+    avatar:avatar(renderer,avatarPalette({outfit:'forest',skin:0,hair:0})),
+    staffAvatars:Object.fromEntries(Object.entries(staffLooks).map(([role,look])=>[role,avatar(renderer,avatarPalette(look),look)])),
+    avatarShadow:renderer.upload(avatarShadow), obstacles, cases, caseGames, casePositions, posterSlot, stockCopies:stock.copies
   };
 }
 
-export function drawAvatar(renderer, world, player, phase, stride, time, look) {
-  let meshes = world.avatar;
-  if (look && (look.outfit !== 'forest' || look.skin !== 0 || look.hair !== 0 || look.style || look.gender || look.accessory)) {
+export function drawAvatar(renderer, world, player, phase, stride, time, look, preparedAvatar) {
+  let meshes = preparedAvatar || world.avatar;
+  if (!preparedAvatar && look && (look.outfit !== 'forest' || look.skin !== 0 || look.hair !== 0 || look.style || look.gender || look.accessory)) {
     const key = [look.outfit,look.skin,look.hair,look.style,look.gender,look.accessory].join(':');
     if (world.customAvatar?.key !== key) {
       if (world.customAvatar) Object.values(world.customAvatar.meshes).forEach(mesh => renderer.release(mesh));

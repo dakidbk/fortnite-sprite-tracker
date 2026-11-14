@@ -1,4 +1,5 @@
 import { clamp } from './webgl.js';
+import { stockDestination, stockRunState } from './economy.js?v=store-economy-19';
 
 export const huntReward = 120;
 export const stamps = [
@@ -30,6 +31,7 @@ const mapY = z => clamp((z+20.4)*3.16,4,96);
 export function createHunt({ shop, ready, clearMovement, getPosition, getFriends, connected, collectInRoom, announce }) {
   const dialog = $('hunt-dialog'), claim = $('hunt-claim');
   const status = $('hunt-status'), mapPlayer = $('hunt-map-player');
+  const stockPin = $('hunt-map-stock'), stockLegend = $('hunt-legend-stock');
   const mapFriends = Array.from({length:3},() => {
     const dot = document.createElement('span');
     dot.className = 'hunt-map-friend';
@@ -83,6 +85,13 @@ export function createHunt({ shop, ready, clearMovement, getPosition, getFriends
     const {x,z} = getPosition();
     mapPlayer.style.left = mapX(x)+'%';
     mapPlayer.style.top = mapY(z)+'%';
+    const delivery = stockDestination(stockRunState(shop.state));
+    stockPin.hidden = stockLegend.hidden = !delivery;
+    if (delivery) {
+      stockPin.style.left = mapX(delivery.x)+'%';
+      stockPin.style.top = mapY(delivery.z)+'%';
+      stockLegend.textContent = delivery.label;
+    }
     const friends = getFriends();
     mapFriends.forEach((dot,index) => {
       const friend = friends[index];

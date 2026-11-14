@@ -1,13 +1,13 @@
-import { GAMES, LATEST_RELEASE, RARITIES } from './catalog.js';
+import { GAMES, LATEST_RELEASE, RARITIES } from './catalog.js?v=store-economy-19';
 import { listingQuote, listings, shopItems } from './cosmetics.js?v=character-11';
 
 import { creatorIdPattern } from './creator.js?v=creator-inbox-8';
 
-import { shiftState, shiftComplete, shiftReward } from './shift.js?v=shift-14';
-import { fullStampMask, huntReward, huntState, stamps } from './hunt.js?v=store-hunt-18';
+import { shiftState, shiftComplete, shiftReward } from './shift.js?v=store-economy-19';
+import { fullStampMask, huntReward, huntState, stamps } from './hunt.js?v=store-economy-19';
+import { arcadePayout, startingCredits, stockDestination, stockRunPay, stockRunState, stockStops } from './economy.js?v=store-economy-19';
 
 const PROFILE_KEY = 'after-hours-collection-v1';
-const STARTING_CREDITS = 120;
 const $ = id => document.getElementById(id);
 const price = index => RARITIES[GAMES[index].rarity].price;
 const credits = value => value.toLocaleString('en-US') + ' CR';
@@ -37,10 +37,11 @@ function loadProfile(fallback) {
       if (Number.isSafeInteger(slot) && slot > 0) caseSlots[index] = slot;
     }
     return {
-      credits: Number.isSafeInteger(saved.credits) && saved.credits >= 0 ? saved.credits : STARTING_CREDITS,
+      credits: Number.isSafeInteger(saved.credits) && saved.credits >= 0 ? saved.credits : startingCredits,
       owned,
       shift:saved.shift,
       hunt:saved.hunt,
+      stockRun:saved.stockRun,
       creatorClaims: Array.isArray(saved.creatorClaims) ? [...new Set(saved.creatorClaims.filter(id => typeof id === 'string' && creatorIdPattern.test(id)))] : [],
       cosmetics: Object.keys(shopItems).filter(id => Array.isArray(saved.cosmetics) && saved.cosmetics.includes(id)),
       basket,
@@ -54,9 +55,9 @@ function loadProfile(fallback) {
   }
 }
 
-export function createShop({ beforeOpen, onChange, paintCover, announce, onPurchase }) {
+export function createShop({ beforeOpen, onChange, paintCover, announce, onPurchase, onEarn }) {
   const checkout = $('checkout-dialog'), collection = $('collection-dialog');
-  let profile = loadProfile({ credits: STARTING_CREDITS, owned: [], cosmetics: [], creatorClaims: [], basket: [], caseSlots: {}, arcadeEarned: false, signalBest: 0, circuitBest: 0 });
+  let profile = loadProfile({ credits: startingCredits, owned: [], cosmetics: [], creatorClaims: [], basket: [], caseSlots: {}, arcadeEarned: false, signalBest: 0, circuitBest: 0 });
   let inspected = null;
 
   function renderWallet() {
@@ -80,8 +81,11 @@ export function createShop({ beforeOpen, onChange, paintCover, announce, onPurch
     button.disabled = bought;
     button.textContent = bought ? 'Collected' : added ? 'Remove from basket' : 'Add to basket';
     button.setAttribute('aria-pressed',String(added));
+    const due = added ? basketCost(profile.basket) : price(index);
+    const missing = Math.max(0,due-profile.credits);
     $('case-basket-note').textContent = bought
       ? 'In your collection'
+      : missing ? 'Earn ' + credits(missing) + ' more to afford ' + (added ? 'your basket.' : 'this game.')
       : added ? 'Ready to pay at the checkout counter.' : 'Your wallet has ' + credits(profile.credits) + '.';
   }
 
@@ -113,7 +117,8 @@ export function createShop({ beforeOpen, onChange, paintCover, announce, onPurch
     $('checkout-empty').hidden = items.length > 0;
     $('checkout-total').textContent = credits(total);
     $('checkout-wallet').textContent = credits(profile.credits);
-    $('checkout-status').textContent = missing ? 'Earn ' + credits(missing) + ' more at the arcade to buy this basket.' : '';
+    $('checkout-status').textContent = missing ? 'You need ' + credits(missing) + ' more for this basket.' : '';
+    $('checkout-earn').hidden = !missing;
     const buy = $('checkout-buy');
     buy.disabled = !items.length || missing > 0;
     buy.textContent = items.length > 1 ? 'Buy ' + items.length + ' games' : 'Buy game';
@@ -168,10 +173,14 @@ export function createShop({ beforeOpen, onChange, paintCover, announce, onPurch
   function commit(change, requireSave = false) {
     const current = loadProfile(profile);
     const next = change(current);
-    try { localStorage.setItem(PROFILE_KEY,JSON.stringify(next)); }
+    try { if (next !== current) localStorage.setItem(PROFILE_KEY,JSON.stringify(next)); }
     catch (error) { if (requireSave) throw error; }
     profile = next;
     refresh();
+  }
+
+  function updateStock(action) {
+    return navigator.locks ? navigator.locks.request('after-hours-stock-run',action) : action();
   }
 
   function openCheckout() {
@@ -215,7 +224,9 @@ export function createShop({ beforeOpen, onChange, paintCover, announce, onPurch
     }
   });
   $('checkout-close').addEventListener('click',() => checkout.close());
+  $('checkout-earn').addEventListener('click',() => { checkout.close(); onEarn(); });
   $('collection-close').addEventListener('click',() => collection.close());
+  $('collection-earn').addEventListener('click',() => { collection.close(); onEarn(); });
   window.addEventListener('storage',event => {
     if (event.key !== PROFILE_KEY) return;
     profile = loadProfile(profile);
@@ -237,6 +248,34 @@ export function createShop({ beforeOpen, onChange, paintCover, announce, onPurch
       commit(current => {
         const shift = shiftState(current);
         return {...current,shift:{...shift,inspected:[...new Set([...shift.inspected,index])].slice(0,3)}};
+      });
+    },
+    async startStockRun() {
+      return updateStock(() => {
+        commit(current => {
+          const run = stockRunState(current);
+          return run.progress === null ? {...current,stockRun:{...run,progress:0}} : current;
+        },true);
+        return stockDestination(stockRunState(profile));
+      });
+    },
+    async deliverStock(expected) {
+      return updateStock(() => {
+        let result;
+        commit(current => {
+          const run = stockRunState(current);
+          if (run.progress === null || run.progress !== expected.progress || run.completed !== expected.completed) return current;
+          const progress = run.progress+1;
+          if (progress < stockStops.length) {
+            const stockRun = {...run,progress};
+            result = stockDestination(stockRun);
+            return {...current,stockRun};
+          }
+          result = true;
+          return {...current,stockRun:{completed:Math.min(Number.MAX_SAFE_INTEGER,run.completed+1),progress:null},
+            credits:Math.min(Number.MAX_SAFE_INTEGER,current.credits+stockRunPay)};
+        },true);
+        return result;
       });
     },
     recordStamp(index) {
@@ -309,10 +348,7 @@ export function createShop({ beforeOpen, onChange, paintCover, announce, onPurch
       return purchased;
     },
     recordArcade(mode, score) {
-      const reward = mode === 'signal'
-        ? score * 11 + (score >= 5 ? 22 : 0)
-        : mode === 'circuit' ? score*4 + (score === 12 ? 12 : 0)
-        : Math.floor(score / 25) + (score >= 800 ? 25 : 0);
+      const reward = arcadePayout(mode,score);
       if (reward) commit(current => ({
         ...current,
         credits: Math.min(Number.MAX_SAFE_INTEGER,current.credits + reward),
