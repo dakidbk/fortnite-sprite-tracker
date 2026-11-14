@@ -4,6 +4,7 @@ import { accessories, avatarPalette } from './cosmetics.js?v=character-11';
 import { buildNeighborhood } from './neighborhood.js?v=neighborhood-15';
 import { stamps } from './hunt.js?v=store-economy-19';
 import { staffLooks } from './staff.js?v=store-economy-19';
+import { buildLounge, LOUNGE } from './lounge-world.js?v=back-room-20';
 
 const M = {
   lamp: m('#fff0d8', 1.05), white: m('#ffffff', 1),
@@ -519,7 +520,11 @@ function storeShell(mesh, cladding, upper) {
       });
     }
   }
-  mesh.box(0,2.13,back,rearHalf*2+.36,4.26,.31,M.plaster);
+  const left=-rearHalf-.18, right=rearHalf+.18;
+  const opening=[LOUNGE.doorX-LOUNGE.doorHalf,LOUNGE.doorX+LOUNGE.doorHalf];
+  for (const [a,b] of [[left,opening[0]],[opening[1],right]]) {
+    mesh.box((a+b)/2,2.13,back,b-a,4.26,.31,M.plaster);
+  }
   const roof=[[-rearHalf-.29,back-.25],[-rearHalf-.29,taperEnd],[-entryHalf-.29,taperStart+.04],
     [entryHalf+.29,taperStart+.04],[rearHalf+.29,taperEnd],[rearHalf+.29,back-.25]];
   mesh.polygonXZ(roof,4.53,upper,4.22);
@@ -988,6 +993,7 @@ function avatar(renderer, palette, look = {}) {
   const shoulder = gender === 1 ? .624 : fitted ? .519 : .587;
   const jaw = gender === 1 ? .276 : gender === 2 ? .222 : .250;
   const torso=new Mesh(), leftLeg=new Mesh(), rightLeg=new Mesh(), leftArm=new Mesh(), rightArm=new Mesh();
+  const sittingLegs=[new Mesh(),new Mesh()];
   const coat=m(palette.coat,0,1,.26), hood=m(palette.hood,0,1,.23);
   const denim=m('#282934',0,1,.16), seam=m('#474759'), welt=m('#191824');
   const accent=m(palette.accent,.055), lining=m('#ded2c4'), skin=m(palette.skin,0,1,.11), lightSkin=m(palette.lightSkin,0,1,.12);
@@ -1116,6 +1122,13 @@ function avatar(renderer, palette, look = {}) {
     arm.box(side*.041,-.373,-.080,.139,.022,.019,accent);
     arm.block(side*.032,-.493,.001,.104,.151,.110,.032,skin);
     arm.ellipsoid(side*.005,-.476,-.042,.030,.048,.027,8,5,lightSkin);
+    const bent=sittingLegs[side<0 ? 0 : 1];
+    bent.block(0,.09,-.153,.217,.198,.383,.047,denim);
+    bent.block(0,-.101,-.318,.200,.39,.211,.044,denim);
+    bent.block(0,-.274,-.345,.198,.082,.216,.029,hood);
+    bent.block(0,-.352,-.404,.239,.139,.328,.047,hood);
+    bent.block(0,-.420,-.406,.250,.041,.344,.021,sole);
+    bent.box(0,-.289,-.466,.176,.016,.043,lining);
   }
   const gear = accessories[accessory];
   if (accessory === 'headband') {
@@ -1149,7 +1162,8 @@ function avatar(renderer, palette, look = {}) {
   }
   const back=new Mesh(renderer.texture(surface(160,110,(ctx)=>controller(ctx,20,-1,120,'#b4c9bb',true))));
   back.front(0,1.195,.209,.328,.239,m('#dce0d4',.35));
-  return Object.fromEntries(Object.entries({torso,back,leftLeg,rightLeg,leftArm,rightArm}).map(([k,mesh])=>[k,renderer.upload(mesh)]));
+  const [seatedLeft,seatedRight]=sittingLegs;
+  return Object.fromEntries(Object.entries({torso,back,leftLeg,rightLeg,leftArm,rightArm,seatedLeft,seatedRight}).map(([k,mesh])=>[k,renderer.upload(mesh)]));
 }
 
 export function createWorld(renderer, coverAtlases) {
@@ -1188,6 +1202,12 @@ export function createWorld(renderer, coverAtlases) {
     ctx.font='800 60px '+SIGN_FONT; ctx.fillText('STOCK RUNS',w/2,103,w-58);
     ctx.font='600 22px monospace'; ctx.fillText('EARN STORE CREDITS',w/2,137);
   })));
+  const loungeSign=new Mesh(renderer.texture(surface(500,100,(ctx,w,h)=>{
+    ctx.fillStyle='#2d443d'; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='#b7c5a9'; ctx.lineWidth=3; ctx.strokeRect(11,11,w-22,h-22);
+    ctx.fillStyle='#f2e2be'; ctx.font='800 52px '+SIGN_FONT; ctx.textAlign='center';
+    ctx.fillText('GAME LOUNGE',w/2,69,w-48);
+  })));
   const shadowTex=renderer.texture(radial('#171b15d6'));
   const shadow=new Mesh(shadowTex), avatarShadow=new Mesh(shadowTex);
   const guide=new Mesh();
@@ -1219,6 +1239,7 @@ export function createWorld(renderer, coverAtlases) {
     shadow.ground(x,.011,z,3.40,1.36,M.white);
   }
   interior(mesh,{covers:cases,tags:rarityTags,titles:caseGames,positions:casePositions},display,harvest,logo,labels,stock);
+  obstacles.push(...buildLounge(mesh,loungeSign,STORE.back));
   const cover=POSTER_COVER;
   const coverX=poster.x+poster.w*((cover.left+cover.w/2)/POSTER_PRINT.w-.5);
   const coverY=poster.y+poster.h*(.5-(cover.top+cover.h/2)/POSTER_PRINT.h);
@@ -1266,12 +1287,14 @@ export function createWorld(renderer, coverAtlases) {
     [[0,3.77,-7.30],'#fff0d9',6.4,1.20],[[0,3.85,-11.24],'#fff1d9',6.2,1.16],
     [[-6.74,3.73,-9.21],'#fff0d9',6.05,1.23],[[-7.31,3.56,-16.09],'#ffedd2',6.1,1.20],
     [[6.15,3.76,-8.23],'#fff1da',6.0,1.15],[[6.16,3.63,-16.44],'#ffcdb3',6.38,1.30],
+    [[1.9,3.38,-23.35],'#ffe4b8',6.95,1.46],[[6.4,3.40,-25.28],'#fff0d9',7.1,1.48],
+    [[8.46,3.38,-21.1],'#ffdb9b',5.65,1.30],
     [[0,4.72,2.05],'#ff6558',8.3,1.18],[[SIGNAL_CABINET.x,2.62,SIGNAL_CABINET.z+.75],'#9d9aff',4.9,.9]
   ];
   renderer.lights(sceneLights);
   const upload=meshes=>meshes.map(part=>renderer.upload(part));
   return {
-    opaque:upload([distant,mesh,tile,sign,...cases,display,harvest,labels,marquee,screen,relayMarquee,relayScreen,circuitMarquee,circuitScreen,logo,mat,workSign,guide]),
+    opaque:upload([distant,mesh,tile,sign,...cases,display,harvest,labels,marquee,screen,relayMarquee,relayScreen,circuitMarquee,circuitScreen,logo,mat,workSign,loungeSign,guide]),
     stamps:stamps.map(({color}) => renderer.upload(stampModel(color))),
     stockCrate:renderer.upload(stockCrate()),
     releasePosters, sceneLights,
@@ -1293,18 +1316,20 @@ export function drawAvatar(renderer, world, player, phase, stride, time, look, p
     }
     meshes = world.customAvatar.meshes;
   }
+  const sitting=player.sitting === true;
   const idle=Math.sin(time*2.7)*.010;
   const swing=Math.sin(phase) * stride;
-  const body=model(player.x,.029+Math.abs(Math.sin(phase))*.044*stride+idle,player.z,player.yaw,.060*stride,1.035);
-  const {torso,back,leftLeg,rightLeg,leftArm,rightArm}=meshes;
+  const body=model(player.x,(sitting ? -.338 : .029)+Math.abs(Math.sin(phase))*.044*stride+idle,player.z,player.yaw,.060*stride,1.035);
+  const {torso,back,leftLeg,rightLeg,leftArm,rightArm,seatedLeft,seatedRight}=meshes;
   renderer.draw(torso,body);
   renderer.draw(back,body);
   const legOffset = look?.gender === 2 ? .148 : .138;
-  renderer.draw(leftLeg,multiply(body,model(-legOffset,.812,.006,0,swing*.62)));
-  renderer.draw(rightLeg,multiply(body,model(legOffset,.812,.006,0,-swing*.62)));
+  const leg=(side)=>model(side*legOffset,.812,.006,0,sitting ? 0 : -side*swing*.62);
+  renderer.draw(sitting ? seatedLeft : leftLeg,multiply(body,leg(-1)));
+  renderer.draw(sitting ? seatedRight : rightLeg,multiply(body,leg(1)));
   const armOffset = look?.gender === 1 ? .319 : look?.gender === 2 ? .265 : .301;
-  renderer.draw(leftArm,multiply(body,model(-armOffset,1.443,-.025,0,-swing*.71)));
-  renderer.draw(rightArm,multiply(body,model(armOffset,1.443,-.025,0,swing*.71)));
+  renderer.draw(leftArm,multiply(body,model(-armOffset,1.443,-.025,0,sitting ? .32 : -swing*.71)));
+  renderer.draw(rightArm,multiply(body,model(armOffset,1.443,-.025,0,sitting ? .32 : swing*.71)));
   // Place player captions just above the tallest hairstyle using the animated body transform.
   const headHeight = 2.25;
   return [body[12]+body[4]*headHeight,body[13]+body[5]*headHeight,body[14]+body[6]*headHeight];

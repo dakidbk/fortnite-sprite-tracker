@@ -26,7 +26,7 @@ export function huntState(profile) {
 
 const $ = id => document.getElementById(id);
 const mapX = x => clamp(50+x*4.31,4,96);
-const mapY = z => clamp((z+20.4)*3.16,4,96);
+const mapY = z => clamp(4+(z+28.6)*2.38,4,96);
 
 export function createHunt({ shop, ready, clearMovement, getPosition, getFriends, connected, collectInRoom, announce }) {
   const dialog = $('hunt-dialog'), claim = $('hunt-claim');

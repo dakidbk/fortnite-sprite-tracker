@@ -30,6 +30,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy, onHu
   const peers = new Map();
   const captions = new Map();
   const recentMessages = new Map();
+  let tableStates = [], tablesSupported = false, tableEpoch = 0;
   let session, timer, pending = false, count = 0, reconnecting = false;
   let composing = false, draft, sending;
   let codeFromLink = new URL(location.href).searchParams.get('room')?.toUpperCase();
@@ -124,6 +125,29 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy, onHu
     onHunt(session.room,state.hunt,state.hunt_day);
   }
 
+  function applyTables(state) {
+    if (!Array.isArray(state.tables)) return;
+    tableStates = state.tables;
+    tablesSupported = true;
+  }
+
+  async function tableAction(board,verb,fields) {
+    const current=session;
+    if (!current || !tablesSupported) throw Error('The room tables are reconnecting.');
+    tableEpoch++;
+    try {
+      const state=await request({op:'table',room:current.room,token:current.token,...position(),...fields,board,verb});
+      if (session!==current) return;
+      if (state.expired) {
+        clearSession('Your room connection expired. Create or join a room again.');
+        return;
+      }
+      applyTables(state);
+    } finally {
+      tableEpoch++;
+    }
+  }
+
   async function collectStamp(stamp) {
     const current = session;
     if (!current?.hunt) throw Error('The room hunt is reconnecting. Try again.');
@@ -190,6 +214,8 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy, onHu
   function clearSession(message) {
     clearTimeout(timer);
     session = null;
+    tablesSupported = false;
+    tableStates = [];
     onHunt(null,0);
     count = 0;
     reconnecting = false;
@@ -212,8 +238,9 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy, onHu
   async function sync(current) {
     if (session !== current) return;
     const start = performance.now();
+    const epoch=tableEpoch;
     try {
-      const state = await request({op:'sync',room:current.room,token:current.token,...position(),chat:true,hunt:true});
+      const state = await request({op:'sync',room:current.room,token:current.token,...position(),chat:true,hunt:true,lounge:true});
       if (session !== current) return;
       if (state.expired) {
         clearSession('Your room connection expired. Create or join a room again.');
@@ -222,6 +249,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy, onHu
       apply(state.players);
       showMessages(state.messages,start);
       applyHunt(state);
+      if (epoch===tableEpoch) applyTables(state);
       showState(reconnecting ? 'Reconnected.' : undefined);
       reconnecting = false;
     } catch {
@@ -246,7 +274,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy, onHu
     showState(op === 'create' ? 'Creating your room…' : 'Joining room…');
     const started = performance.now();
     try {
-      const state = await request({op,room,profileToken:profileToken(),...roomEntry,chat:true,hunt:true});
+      const state = await request({op,room,profileToken:profileToken(),...roomEntry,chat:true,hunt:true,lounge:true});
       const current = {room:state.room,token:state.token,slot:state.slot};
       if (!dialog.open) {
         await request({op:'leave',...current},true).catch(() => {});
@@ -262,6 +290,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy, onHu
       apply(state.players);
       showMessages(state.messages,started);
       applyHunt(state);
+      applyTables(state);
       showState('Share the invite with up to three friends.');
       dialog.close();
       onEnter(roomEntry, session.room);
@@ -341,6 +370,10 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy, onHu
 
   return {
     get connected() { return !!session; },
+    get slot() { return session?.slot; },
+    get tables() { return tableStates; },
+    get tablesSupported() { return tablesSupported; },
+    tableAction,
     get friends() { return Array.from(peers.values(),peer => peer.target); },
     collectStamp,
     get open() { return dialog.open || chatDialog.open; },
@@ -369,6 +402,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy, onHu
           peer.z = target.z;
         }
         peer.stride = mix(peer.stride,target.stride,blend);
+        peer.sitting = target.sitting === true;
         const difference = target.yaw-peer.yaw;
         peer.yaw += Math.atan2(Math.sin(difference),Math.cos(difference))*blend;
         peer.phase += dt*13.6;

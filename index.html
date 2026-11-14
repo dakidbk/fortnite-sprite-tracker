@@ -7,8 +7,8 @@
   <meta name="description" content="Earn credits on stock runs, hunt for hidden stamps, and collect rare games in a 3D game store.">
   <title>Game Store After Hours</title>
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=store-economy-19">
-  <script type="module" src="game.js?v=store-economy-19"></script>
+  <link rel="stylesheet" href="style.css?v=back-room-20">
+  <script type="module" src="game.js?v=back-room-20"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -151,6 +151,7 @@
         <div><dt>Room chat</dt><dd><kbd>T</kbd> <span>or tap Chat while online</span></dd></div>
         <div><dt>Map and stamp hunt</dt><dd><kbd>M</kbd> <span>or tap Map</span></dd></div>
         <div><dt>Earn Credits</dt><dd><kbd>B</kbd> <span>or tap Earn Credits</span></dd></div>
+        <div><dt>Game lounge</dt><dd><span>Go through the doorway beside checkout. Use Interact at a sofa or game table.</span></dd></div>
         <div><dt>Collection</dt><dd><kbd>C</kbd> <span>or tap your wallet</span></dd></div>
       </dl>
       <button class="primary-button" id="resume-button" type="button">Back to the store <svg><use href="#i-arrow"></use></svg></button>
@@ -290,6 +291,7 @@
       <div class="hunt-layout">
         <figure class="hunt-map" aria-label="Store floor plan with player positions">
           <div class="hunt-map-plan" aria-hidden="true">
+            <span class="hunt-zone hunt-zone-lounge">GAME LOUNGE</span>
             <span class="hunt-zone hunt-zone-arcade">ARCADE</span>
             <span class="hunt-zone hunt-zone-checkout">CHECKOUT</span>
             <span class="hunt-zone hunt-zone-library">LIBRARY</span>
@@ -312,6 +314,34 @@
         <button class="primary-button" id="hunt-claim" type="button" disabled>Claim 120 CR</button>
         <span id="hunt-status" role="status"></span>
       </div>
+    </dialog>
+
+    <dialog class="dialog table-dialog" id="table-dialog" aria-labelledby="table-title">
+      <div class="dialog-head">
+        <span class="micro">GAME LOUNGE</span>
+        <button class="icon-button" id="table-close" type="button" aria-label="Close game table"><svg aria-hidden="true"><use href="#i-cross"></use></svg></button>
+      </div>
+      <h2 id="table-title">Game table</h2>
+      <p id="table-tip"></p>
+      <p class="table-status" id="table-status" role="status"></p>
+      <section id="table-lobby" aria-label="Choose a game">
+        <div class="table-games" id="table-games"></div>
+        <div class="table-actions">
+          <button class="primary-button" id="table-host" type="button" hidden>Start online table</button>
+          <button class="menu-small" id="table-house" type="button">Play the house</button>
+          <button class="menu-small" id="table-local" type="button">Pass &amp; play</button>
+        </div>
+      </section>
+      <section id="table-playing" aria-label="Current game" hidden>
+        <div class="table-players"><strong id="table-player-1"></strong><strong id="table-player-2"></strong></div>
+        <div class="table-board" id="table-board" aria-label="Game board"></div>
+        <div class="table-actions">
+          <button class="primary-button" id="table-join" type="button" hidden>Join table</button>
+          <button class="primary-button" id="table-reset" type="button" hidden>Rematch</button>
+          <button class="menu-small" id="table-leave" type="button">Leave game</button>
+        </div>
+      </section>
+      <p class="table-notice" id="table-notice" role="status"></p>
     </dialog>
 
     <dialog class="dialog arcade-dialog" id="arcade-dialog" aria-labelledby="arcade-title">

@@ -1,19 +1,21 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=wardrobe-4';
-import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, WORK_DESK, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=store-economy-19';
+import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, WORK_DESK, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=back-room-20';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js?v=store-economy-19';
 import { createShop } from './shop.js?v=store-economy-19';
 import { createSignalRelay } from './signal.js';
-import { createOnline } from './online.js?v=store-hunt-18';
+import { createOnline } from './online.js?v=back-room-20';
 import { createShift } from './shift.js?v=store-economy-19';
 import { createDex } from './dex.js?v=store-economy-19';
 import { createMenu } from './menu.js?v=neighborhood-15';
 import { createMusic } from './music.js?v=neighborhood-15';
 import { createReveal } from './reveal.js?v=neighborhood-15';
-import { createHunt, hasStamp, stampHeight, stamps } from './hunt.js?v=store-economy-19';
+import { createHunt, hasStamp, stampHeight, stamps } from './hunt.js?v=back-room-20';
 import { createCircuit } from './circuit.js?v=store-hunt-18';
 import { stockDestination, stockRunState } from './economy.js?v=store-economy-19';
 import { createWork } from './work.js?v=store-economy-19';
 import { cashier, createStaff, staffLooks } from './staff.js?v=store-economy-19';
+import { createLounge } from './lounge.js?v=back-room-20';
+import { LOUNGE, loungeSeats, loungeSofaSeats, loungeTables } from './lounge-world.js?v=back-room-20';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');
@@ -44,6 +46,7 @@ let door = 0, doorOpened = false, walkPhase = 0, stride = 0, inside = false, vis
 let toastTimeout, audio, camera = null, action = null;
 let moveGesture = null, lookGesture = null;
 let selectedGame = -1;
+let occupiedSeat, locationLabel = 'Storefront';
 let sound = read('after-hours-sound') === 'on';
 let musicEnabled = read('after-hours-music') !== 'off', musicStarted = false;
 let best = Math.max(0, Number(read('after-hours-best')) || 0);
@@ -52,13 +55,15 @@ let round = null, target = -1, nextAt = 0, targetUntil = 0, lastTarget = -1;
 const online = createOnline({
   clearMovement, canOccupy: withinStoreBounds,
   onEnter(entry) {
+    occupiedSeat = null;
+    player.sitting = false;
     Object.assign(player,entry);
     stride = 0;
     resetCamera();
     camera = null;
     enterStore('Entering the online store…', 'Online room ready. Open Online to invite friends.');
   },
-  position: () => ({x:player.x,z:player.z,yaw:Math.atan2(Math.sin(player.yaw),Math.cos(player.yaw)),stride}),
+  position: () => ({x:player.x,z:player.z,yaw:Math.atan2(Math.sin(player.yaw),Math.cos(player.yaw)),stride,sitting:player.sitting===true}),
   onHunt: (room,mask,day) => hunt.setRoom(room,mask,day)
 });
 const music = createMusic(audioContext);
@@ -106,6 +111,7 @@ const staff = createStaff({
   getPlayer:() => player, getProfile:() => shop.state, canWalk:allow, clearMovement,
   openCase: inspectShelfCase, announce:showToast
 });
+const lounge = createLounge({online,clearMovement,seat:seatAtTable,announce:showToast,tone});
 hunt.refresh();
 
 const tiles = Array.from({length: 9}, (_, i) => {
@@ -242,10 +248,67 @@ function clearMovement() {
 }
 
 function modalOpen() {
-  return entering || reveal.open || shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || circuit.open || hunt.isOpen || work.isOpen || staff.isOpen || shop.open;
+  return entering || reveal.open || shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || circuit.open || hunt.isOpen || work.isOpen || staff.isOpen || lounge.isOpen || shop.open;
+}
+
+function loungeAction() {
+  if (player.z >= STORE.back-.38) return null;
+  if (occupiedSeat && occupiedSeat.board===undefined) return 'stand';
+  if (occupiedSeat) return 'table-'+occupiedSeat.board;
+  if (nearestSofa()) return 'sit';
+  for (const [index,table] of loungeTables.entries()) {
+    if (Math.hypot(player.x-table.x,player.z-table.z)<2.06) return 'table-'+index;
+  }
+  return null;
+}
+
+function seatFree(seat) {
+  return !online.friends.some(peer=>peer.sitting && Math.hypot(peer.x-seat.x,peer.z-seat.z)<.40);
+}
+
+function nearestSofa() {
+  return loungeSofaSeats.filter(seatFree).find(seat=>Math.hypot(player.x-seat.x,player.z-(seat.z+.62))<.89);
+}
+
+function sit(seat,board) {
+  occupiedSeat={...seat,board,returnX:player.x,returnZ:player.z};
+  Object.assign(player,seat,{sitting:true});
+  clearMovement();
+  stride=0;
+}
+
+function seatAtTable(board,seatIndex) {
+  const options=loungeSeats(board);
+  if (occupiedSeat?.board===board) {
+    const seat=options[seatIndex];
+    if (seat && (occupiedSeat.x!==seat.x || occupiedSeat.z!==seat.z)) {
+      Object.assign(occupiedSeat,seat);
+      Object.assign(player,seat);
+      camera=null;
+    }
+    return;
+  }
+  const reserved=online.tables.find(table=>table.board===board);
+  const preferred=seatIndex ?? (reserved && reserved.host!==online.slot ? 1 : 0);
+  for (const index of [preferred,1-preferred]) {
+    if (reserved?.host && index===0 && reserved.host!==online.slot) continue;
+    if (reserved?.guest && index===1 && reserved.guest!==online.slot) continue;
+    if (seatIndex===undefined && !seatFree(options[index])) continue;
+    sit(options[index],board);
+    return;
+  }
+}
+
+function stand() {
+  if (!occupiedSeat) return;
+  player.x=occupiedSeat.returnX;
+  player.z=occupiedSeat.returnZ;
+  player.sitting=false;
+  occupiedSeat=null;
 }
 
 function currentAction() {
+  if (player.z<STORE.back-.38) return loungeAction();
   const stamp = hunt.nearby();
   if (stamp >= 0) return stamp;
   if (!doorOpened && player.z >= -.20 && Math.hypot(player.x, player.z - .28) <= 2.08) return 'doors';
@@ -281,6 +344,12 @@ function interact() {
   if (item === 'deliver') work.deliver();
   if (item === 'manager') staff.open();
   if (item === 'guided-case') inspectShelfCase(staff.guidedCase().slot);
+  if (item?.startsWith('table-')) lounge.open(Number(item.at(-1)));
+  if (item === 'sit') {
+    const seat=nearestSofa();
+    if (seat) sit(seat);
+  }
+  if (item === 'stand') stand();
 }
 
 function paintCover(art,index,face) {
@@ -466,6 +535,10 @@ function hit(i) {
 }
 
 function withinStoreBounds(x,z) {
+  if (z < STORE.back+.41) {
+    if (z < LOUNGE.back+.42 || x < LOUNGE.left+.42 || x > LOUNGE.right-.42) return false;
+    return z < STORE.back-.41 || Math.abs(x-LOUNGE.doorX) < LOUNGE.doorHalf-.34;
+  }
   return z < -.27
     ? Math.abs(x) <= storeHalfWidth(z) - .54 && z >= STORE.back + .41
     : canWalkOnPorch(x,z);
@@ -491,6 +564,7 @@ function move(dt) {
   const effort = Math.min(1,active);
   let traveled = 0;
   if (active) {
+    stand();
     const yaw = orbit.active ? orbit.yaw : 0;
     const c = Math.cos(yaw), s = Math.sin(yaw);
     const speed = sprint ? 8.4 : 5.6;
@@ -510,9 +584,11 @@ function move(dt) {
   stride = mix(stride, traveled > 0 ? (sprint ? 1.10 : .83) * Math.sqrt(effort) : 0, 1 - Math.exp(-dt * 14));
   walkPhase += dt * (sprint ? 18.2 : 13.6) * (.53 + .47*effort);
   const newInside = player.z < -.52;
-  if (newInside !== inside) {
-    inside = newInside;
-    $('zone').textContent = inside ? 'Inside the store' : 'Storefront';
+  const label=player.z<STORE.back-.40 ? 'Game lounge' : newInside ? 'Inside the store' : 'Storefront';
+  inside=newInside;
+  if (label!==locationLabel) {
+    locationLabel=label;
+    $('zone').textContent=label;
     $('storefront-time').hidden = inside;
     if (inside && !visited) {
       visited = true;
@@ -524,10 +600,14 @@ function move(dt) {
 function cameraBlocked(x,y,z) {
   if (z < -.15) {
     const ceiling = z < STORE.taperStart ? 4.08 : 3.53;
-    if (z < STORE.back+.32 || Math.abs(x) > storeHalfWidth(z)-.26 || y > ceiling) return true;
+    if (z<STORE.back+.30) {
+      if (z<LOUNGE.back+.25 || x<LOUNGE.left+.23 || x>LOUNGE.right-.23 || y>3.65) return true;
+      if (z>STORE.back-.28 && (Math.abs(x-LOUNGE.doorX)>LOUNGE.doorHalf-.25 || y>2.78)) return true;
+    } else if (Math.abs(x) > storeHalfWidth(z)-.26 || y > ceiling) return true;
   }
   if (z >= -.23 && z <= .36 && Math.abs(x) < 1.66 && (door < .78 || y > 2.99)) return true;
   const pad = .11;
+  if (occupiedSeat && Math.hypot(x-player.x,z-player.z)<.72 && y>1.04) return false;
   return world.obstacles.some(([l,r,b,f,height]) => y < height + pad && x > l-pad && x < r+pad && z > b-pad && z < f+pad);
 }
 
@@ -581,6 +661,17 @@ function cameraFor(dt, aspect, preview) {
     };
   }
   if (orbit.active) return orbitCamera(dt,aspect);
+  if (player.z<STORE.back-.20) {
+    const {x,z}=player;
+    const eyeZ=Math.min(STORE.back-.45,z+3.90);
+    const next={eye:[clamp(x+.24,LOUNGE.left+.38,LOUNGE.right-.37),2.92,eyeZ],
+      aim:[x,1.23,z-1.82],fov:Math.max(1.04,2*Math.atan(.34/Math.max(aspect,.43))),hideAvatar:eyeZ-z<.40};
+    if (!camera || camera.eye[2]>STORE.back-.43) camera=next;
+    const a=1-Math.exp(-dt*10);
+    camera={...next,eye:camera.eye.map((v,i)=>mix(v,next.eye[i],a)),aim:camera.aim.map((v,i)=>mix(v,next.aim[i],a))};
+    return camera;
+  }
+  if (camera?.eye[2] < STORE.back-.40) camera=null;
   const blend = doorOpened ? smooth(.27,-2.78,player.z) : 0;
   const rear = smooth(STORE.taperStart,STORE.taperEnd,player.z);
   const exterior = [player.x * .48, 6.40, 24.10 + (player.z - 4.55) * .58];
@@ -608,7 +699,8 @@ function waypoint(matrix) {
   const stamp = Number.isInteger(item) ? stamps[item] : null;
   const delivery = stockDestination(stockRunState(shop.state));
   const interaction = stamp ? 'Pick up stamp' : item === 'deliver' ? 'Deliver stock' : item === 'doors' ? 'Open doors'
-    : item === 'manager' ? 'Talk to Maya' : item === 'guided-case' ? 'Inspect case' : stations[item]?.prompt;
+    : item === 'manager' ? 'Talk to Maya' : item === 'guided-case' ? 'Inspect case' : item==='sit' ? 'Sit down'
+    : item==='stand' ? 'Stand up' : item?.startsWith('table-') ? 'Play table games' : stations[item]?.prompt;
   if (action !== item) {
     action = item;
     const label = interaction || 'Interact';
@@ -619,15 +711,21 @@ function waypoint(matrix) {
   }
   const entrance = !inside && !doorOpened;
   const { owned, basket, arcadeEarned, credits } = shop.state;
+  const nearLounge = Math.abs(player.x-LOUNGE.doorX)<2.25 && player.z<STORE.back+4 && player.z>=STORE.back-.38;
   let guidance = null;
-  if (inside && basket.length && shop.basketTotal <= credits) guidance = 'checkout';
+  if (nearLounge) guidance = 'lounge';
+  else if (inside && basket.length && shop.basketTotal <= credits) guidance = 'checkout';
   else if (inside && !delivery && (basket.length || (owned.length && !arcadeEarned))) guidance = 'arcade';
   const destination = item ?? (entrance ? 'doors' : guidance);
   if (modalOpen() || destination === null || item === 'guided-case') { node.hidden = true; return; }
   const station = stations[destination];
+  const table=typeof item==='string' && item.startsWith('table-') ? loungeTables[Number(item.at(-1))] : null;
   const point = stamp ? [stamp.x,stampHeight+.64,stamp.z]
     : item === 'deliver' ? [delivery.x,1.17,delivery.z]
     : item === 'manager' ? [staff.manager.x,2.87,staff.manager.z]
+    : table ? [table.x,1.48,table.z]
+    : item==='sit' || item==='stand' ? [player.x,1.67,player.z-.48]
+    : destination==='lounge' ? [LOUNGE.doorX,2.54,STORE.back+.34]
     : station ? [station.spot.x,station.y,station.spot.z+.32] : [0,2.48,.32];
   const [x,y,w] = project(matrix,point);
   if (w <= .3 || x < .07 || x > .93 || y < .13 || y > .88) { node.hidden = true; return; }
@@ -635,7 +733,7 @@ function waypoint(matrix) {
   node.style.top = y * 100 + '%';
   node.classList.toggle('hint', item === null);
   node.tabIndex = item === null ? -1 : 0;
-  $('waypoint-text').textContent = interaction || station?.title || 'Entrance';
+  $('waypoint-text').textContent = interaction || station?.title || (destination==='lounge' ? 'Game lounge' : 'Entrance');
   node.hidden = false;
 }
 
@@ -709,12 +807,13 @@ function frame(now) {
   const dt = Math.min((now - lastFrame) / 1000, .20);
   lastFrame = now;
   move(dt);
-  if (inside && !modalOpen()) staff.tick(dt);
+  if (inside && player.z>=STORE.back && !modalOpen()) staff.tick(dt);
   if (doorOpened && door < 1) door = Math.min(1,door + dt * 1.91);
   tickRound(now);
   signal.tick(now);
   circuit.tick(now);
   hunt.tick(now);
+  lounge.tick(now);
   const interval = modalOpen() ? 65 : stride > .03 ? 12 : 28;
   if (now - lastDraw >= interval) {
     draw(Math.min((now - lastDraw) / 1000,.125),now);
