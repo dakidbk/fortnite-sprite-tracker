@@ -1,11 +1,11 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=wardrobe-4';
 import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, WORK_DESK, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=back-room-20';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js?v=store-economy-19';
-import { createShop } from './shop.js?v=store-economy-19';
+import { createShop } from './shop.js?v=collector-21';
 import { createSignalRelay } from './signal.js';
 import { createOnline } from './online.js?v=back-room-20';
 import { createShift } from './shift.js?v=store-economy-19';
-import { createDex } from './dex.js?v=store-economy-19';
+import { createDex } from './dex.js?v=collector-21';
 import { createMenu } from './menu.js?v=neighborhood-15';
 import { createMusic } from './music.js?v=neighborhood-15';
 import { createReveal } from './reveal.js?v=neighborhood-15';
@@ -90,7 +90,7 @@ const menu = createMenu({
 });
 
 const dex = createDex({
-  getProfile: () => shop.state, paintCover, clearMovement,
+  getProfile: () => shop.state, claimReward: shop.claimCollectorReward, paintCover, clearMovement,
   ready: () => !!world && !modalOpen()
 });
 const shift = createShift({shop,clearMovement,ready:() => !!world && !modalOpen()});

@@ -617,3 +617,14 @@ button.table-cell.legal, .table-column.legal, .table-edge.legal { cursor: pointe
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
   .room-chat-message { animation-name: none; }
 }
+
+.dex-reward-track { margin-bottom: 12px; padding: 8px 10px; border: 1px solid #bd978c66; border-radius: 7px; background: #2f2038; }
+.dex-reward-track summary { cursor: pointer; font-weight: 800; font-size: 13px; }
+#dex-next-reward { float: right; color: #ffd0a8; font: 700 10px var(--mono); }
+#dex-rewards { display: grid; grid-template-columns: repeat(auto-fit,minmax(135px,1fr)); gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+#dex-rewards li { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; padding: 5px; border: 1px solid var(--line); border-radius: 5px; font-size: 11px; }
+#dex-rewards li.reward-ready { border-color: #ffc392; background: #493044; }
+#dex-rewards button { min-height: 32px; padding: 4px 6px; font-size: 10px; }
+#dex-rewards button:disabled { opacity: .72; cursor: default; }
+#dex-reward-status { margin: 7px 0 0; color: #ffd0a8; }
+#dex-reward-status:empty { display: none; }

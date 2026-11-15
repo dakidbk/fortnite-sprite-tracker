@@ -1,4 +1,12 @@
 export const startingCredits = 0;
+export const collectorMilestones = [
+  {count:1,reward:25},
+  {count:5,reward:100},
+  {count:12,reward:250},
+  {count:24,reward:500},
+  {count:36,reward:750},
+  {count:48,reward:1200}
+];
 export const stockRunPay = 50;
 export const arcadePayLimit = {neon:60, signal:80, circuit:60};
 

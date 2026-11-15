@@ -1,8 +1,10 @@
 import { GAMES, RARITIES } from './catalog.js?v=store-economy-19';
 
+import { collectorMilestones } from './economy.js?v=collector-21';
+
 const $ = id => document.getElementById(id);
 
-export function createDex({getProfile, paintCover, clearMovement, ready}) {
+export function createDex({getProfile, claimReward, paintCover, clearMovement, ready}) {
   const dialog = $('dex-dialog'), grid = $('dex-grid'), search = $('dex-search');
   const rarity = $('dex-rarity');
   let selected = null, face = 'front';
@@ -29,7 +31,47 @@ export function createDex({getProfile, paintCover, clearMovement, ready}) {
     $('dex-back').setAttribute('aria-pressed',String(face === 'back'));
   }
 
+  const rewardStatus = $('dex-reward-status');
+  const rewards = collectorMilestones.map(({count,reward}) => {
+    const row = document.createElement('li');
+    const label = document.createElement('span');
+    label.textContent = count+' '+(count === 1 ? 'game' : 'games');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'menu-small';
+    button.addEventListener('click',async () => {
+      button.disabled = true;
+      try {
+        await claimReward(count);
+        if (getProfile().collectorClaims?.includes(count)) rewardStatus.textContent = reward.toLocaleString('en-US')+' CR added to your wallet.';
+      } catch {
+        rewardStatus.textContent = 'Could not save your reward. Try again.';
+      } finally {
+        refreshRewards();
+      }
+    });
+    row.append(label,button);
+    $('dex-rewards').append(row);
+    return {count,reward,button,row};
+  });
+
+  function refreshRewards() {
+    const {owned,collectorClaims = []} = getProfile();
+    const next = collectorMilestones.find(tier => tier.count > owned.length);
+    $('dex-next-reward').textContent = next ? 'Next at '+next.count+' games' : 'Full collection';
+    for (const {count,reward,button,row} of rewards) {
+      const claimed = collectorClaims.includes(count);
+      const available = owned.length >= count && !claimed;
+      row.classList.toggle('reward-ready',available);
+      button.disabled = !available;
+      const amount = reward.toLocaleString('en-US')+' CR';
+      button.textContent = claimed ? 'Claimed' : available ? 'Claim '+amount : amount;
+      button.setAttribute('aria-label',button.textContent+' for collecting '+count+' games');
+    }
+  }
+
   function refresh() {
+    refreshRewards();
     const {owned} = getProfile();
     const query = search.value.trim().toLowerCase();
     const entries = owned.map(index => ({game:GAMES[index],index})).filter(({game}) =>

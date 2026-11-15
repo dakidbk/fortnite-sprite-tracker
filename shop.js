@@ -5,7 +5,7 @@ import { creatorIdPattern } from './creator.js?v=creator-inbox-8';
 
 import { shiftState, shiftComplete, shiftReward } from './shift.js?v=store-economy-19';
 import { fullStampMask, huntReward, huntState, stamps } from './hunt.js?v=store-economy-19';
-import { arcadePayout, startingCredits, stockDestination, stockRunPay, stockRunState, stockStops } from './economy.js?v=store-economy-19';
+import { arcadePayout, collectorMilestones, startingCredits, stockDestination, stockRunPay, stockRunState, stockStops } from './economy.js?v=collector-21';
 
 const PROFILE_KEY = 'after-hours-collection-v1';
 const $ = id => document.getElementById(id);
@@ -39,6 +39,7 @@ function loadProfile(fallback) {
     return {
       credits: Number.isSafeInteger(saved.credits) && saved.credits >= 0 ? saved.credits : startingCredits,
       owned,
+      collectorClaims: collectorMilestones.map(tier => tier.count).filter(count => Array.isArray(saved.collectorClaims) && saved.collectorClaims.includes(count)),
       shift:saved.shift,
       hunt:saved.hunt,
       stockRun:saved.stockRun,
@@ -305,6 +306,19 @@ export function createShop({ beforeOpen, onChange, paintCover, announce, onPurch
         return claimed;
       };
       return navigator.locks ? navigator.locks.request('after-hours-hunt-reward',claim) : claim();
+    },
+    async claimCollectorReward(count) {
+      const tier = collectorMilestones.find(entry => entry.count === count);
+      if (!tier) return;
+      const claim = () => commit(current => {
+        if (current.owned.length < count || current.collectorClaims?.includes(count)) return current;
+        return {
+          ...current,
+          credits:Math.min(Number.MAX_SAFE_INTEGER,current.credits+tier.reward),
+          collectorClaims:[...(current.collectorClaims || []),count]
+        };
+      },true);
+      return navigator.locks ? navigator.locks.request('after-hours-collector-reward',claim) : claim();
     },
     async claimShift() {
       const claim = () => {
