@@ -137,20 +137,36 @@ export class Mesh {
     this.quad([a,u,f], [b,u,f], [b,u,r], [a,u,r], mat);
     this.quad([a,l,r], [b,l,r], [b,l,f], [a,l,f], mat);
   }
-  layers(levels, mat) {
+  layers(levels, mat, smoothSides = false) {
     const rings = levels.map(([x, y, z, w, d, bevel]) => {
       const a = x - w / 2, b = x + w / 2, r = z - d / 2, f = z + d / 2;
-      return [[a+bevel,y,r],[a,y,r+bevel],[a,y,f-bevel],[a+bevel,y,f],[b-bevel,y,f],[b,y,f-bevel],[b,y,r+bevel],[b-bevel,y,r]];
+      const corners = [[a+bevel,y,r],[a,y,r+bevel],[a,y,f-bevel],[a+bevel,y,f],
+        [b-bevel,y,f],[b,y,f-bevel],[b,y,r+bevel],[b-bevel,y,r]];
+      if (!smoothSides) return corners;
+      return corners.flatMap((point,i) => {
+        const next = corners[(i+1)%corners.length];
+        return [.18,.82].map(t => point.map((value,axis) => mix(value,next[axis],t)));
+      });
     });
+    const sides = rings[0].length;
+    const normals = smoothSides ? rings.map((ring,j) => ring.map((point,i) => {
+      const around = minus(ring[(i+1)%sides],ring[(i+sides-1)%sides]);
+      const up = minus(rings[Math.min(j+1,rings.length-1)][i],rings[Math.max(j-1,0)][i]);
+      return normal(cross(around,up));
+    })) : null;
     for (let j = 1; j < rings.length; j++) {
       const a = rings[j - 1], b = rings[j];
-      for (let i = 0; i < 8; i++) {
-        const k = (i + 1) % 8;
-        this.quad(a[i], a[k], b[k], b[i], mat);
+      for (let i = 0; i < sides; i++) {
+        const k = (i + 1) % sides;
+        if (normals) {
+          const lower = normals[j-1], upper = normals[j];
+          this.triangle(a[i],a[k],b[k],mat,UV,[lower[i],lower[k],upper[k]]);
+          this.triangle(a[i],b[k],b[i],mat,UV,[lower[i],upper[k],upper[i]]);
+        } else this.quad(a[i], a[k], b[k], b[i], mat);
       }
     }
     const bottom = rings[0], top = rings.at(-1);
-    for (let i = 1; i < 7; i++) {
+    for (let i = 1; i < sides-1; i++) {
       this.triangle(top[0], top[i], top[i + 1], mat);
       this.triangle(bottom[0], bottom[i + 1], bottom[i], mat);
     }
@@ -253,7 +269,10 @@ void main() {
   vec3 key = normalize(mix(vec3(-.35,.86,.55),vec3(-.79,.35,.34),outside));
   float diffuse = max(0.,dot(N,key));
   vec3 base = texel.rgb;
-  vec3 ambient = mix(vec3(.67,.70,.69),vec3(.35,.40,.59),outside);
+  float skyExposure = N.y * .5 + .5;
+  vec3 indoorAmbient = mix(vec3(.49,.45,.46),vec3(.70,.73,.76),skyExposure);
+  vec3 outdoorAmbient = mix(vec3(.31,.29,.35),vec3(.46,.52,.68),skyExposure);
+  vec3 ambient = mix(indoorAmbient,outdoorAmbient,outside);
   vec3 direct = mix(vec3(.36,.32,.27),vec3(.29,.20,.16),outside);
   vec3 c = base * (ambient + diffuse * direct);
   float reflectance = pow(max(0.,dot(N,normalize(key+V))),18.);
@@ -269,7 +288,7 @@ void main() {
     vec3 L = ray / d;
     float angle = max(0.,dot(N,L));
     float spec = pow(max(0.,dot(N,normalize(L+V))),22.) * vSurface.y;
-    c += uLightColor[i].rgb * amp * (base * (.23 + .78 * angle) + .15 * angle + .43 * spec);
+    c += uLightColor[i].rgb * amp * (base * (.14 + .87 * angle) + .08 * angle + .54 * spec * angle);
   }
   c = mix(c, base * (1. + max(0.,vSurface.x - 1.) * .25), min(vSurface.x,1.));
   float haze = smoothstep(28.,79.,distance(uEye,vWorld));

@@ -1,4 +1,4 @@
-import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webgl.js';
+import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webgl.js?v=lighting-22';
 import { GAMES, LATEST_RELEASE, RARITIES, coverUV, coversPerAtlas } from './catalog.js?v=store-economy-19';
 import { accessories, avatarPalette } from './cosmetics.js?v=character-11';
 import { buildNeighborhood } from './neighborhood.js?v=neighborhood-15';
@@ -339,18 +339,21 @@ function stockCrate() {
 }
 
 function materialTexture() {
-  return surface(128, 128, (ctx, w, h) => {
+  return surface(256, 256, (ctx, w, h) => {
     const rand = seeded(32);
     const base = ctx.createLinearGradient(0,0,w,h);
     base.addColorStop(0,'#f3f2eb'); base.addColorStop(1,'#cdd0c6');
     ctx.fillStyle = base; ctx.fillRect(0,0,w,h);
     const map = ctx.getImageData(0,0,w,h);
     for (let i = 0; i < map.data.length; i += 4) {
-      const v = (rand() - .49) * 19;
+      const x = (i/4)%w, y = Math.floor(i/4/w);
+      const grain = Math.sin(x*.063+y*.081+Math.sin(y*.056)*1.5)*3
+        + Math.sin(x*.122-y*.068)*2;
+      const v = grain + (rand() - .49)*13;
       for (let k = 0; k < 3; k++) map.data[i+k] += v;
     }
     ctx.putImageData(map,0,0);
-    ctx.fillStyle = '#ffffff38'; ctx.fillRect(0,0,w,2); ctx.fillRect(0,0,2,h);
+    ctx.fillStyle = '#ffffff25'; ctx.fillRect(0,0,w,2); ctx.fillRect(0,0,2,h);
     ctx.fillStyle = '#2e332b45'; ctx.fillRect(0,h-2,w,2); ctx.fillRect(w-2,0,2,h);
   });
 }
@@ -1009,7 +1012,7 @@ function avatar(renderer, palette, look = {}) {
   ] : [
     [0,.795,0,.426,.316,.063],[0,.873,0,.506,.365,.068],[0,1.12,-.005,.543,.405,.081],
     [0,1.405,-.012,shoulder,.394,.085],[0,1.52,-.029,.480,.325,.069],[0,1.58,-.034,.294,.262,.052]
-  ],coat);
+  ],coat,true);
   torso.block(0,.817,0,fitted ? .500 : .456,.076,fitted ? .370 : .343,.024,hood);
   torso.block(0,.765,0,fitted ? .498 : .454,.074,fitted ? .352 : .326,.026,denim);
   torso.block(0,1.574,-.034,.210,.190,.182,.038,skin);
@@ -1048,15 +1051,15 @@ function avatar(renderer, palette, look = {}) {
     [0,1.597,-.068,.130,.119,.037],[0,1.643,-.057,jaw,.216,.061],
     [0,1.744,-.039,.369,.305,.088],[0,1.861,-.019,.414,.350,.091],
     [0,1.965,.006,.372,.323,.088],[0,2.016,.017,.261,.231,.067]
-  ],skin);
+  ],skin,true);
   if (style === 0) {
-    torso.ellipsoid(0,1.96,.048,.212,.151,.179,12,7,hair);
+    torso.ellipsoid(0,1.96,.048,.212,.151,.179,22,12,hair);
     torso.ellipsoid(0,1.845,.120,.192,.138,.106,10,6,hair);
     torso.layers([
       [.015,1.955,.012,.400,.330,.096],[.025,2.025,.005,.425,.352,.090],
       [.050,2.083,.007,.380,.311,.081],[.081,2.127,.024,.257,.217,.072],
       [.100,2.154,.034,.138,.131,.041]
-    ],hair);
+    ],hair,true);
     const sweptLocks = [
       [[-.196,1.953,-.122],[-.113,2.077,-.175],[.113,2.122,-.123],[.006,1.963,-.226]],
       [[-.100,2.067,-.153],[.035,2.132,-.166],[.225,2.092,-.064],[.102,2.018,-.206]],
@@ -1079,7 +1082,7 @@ function avatar(renderer, palette, look = {}) {
       torso.ellipsoid(x-.021,y+r*.57,z-.034,r*.46,r*.27,r*.38,8,5,hairLight);
     }
   } else {
-    torso.ellipsoid(0,1.951,.036,.230,.166,.191,14,8,hair);
+    torso.ellipsoid(0,1.951,.036,.230,.166,.191,22,12,hair);
     torso.ellipsoid(0,1.805,.112,.210,.222,.114,12,7,hair);
     for (const side of [-1,1]) {
       torso.layers([[side*.183,1.690,.026,.078,.112,.031],[side*.197,1.766,.032,.113,.176,.044],
@@ -1104,7 +1107,7 @@ function avatar(renderer, palette, look = {}) {
     leg.layers([
       [0,-.57,.007,.167,.202,.037],[0,-.49,.003,.203,.224,.044],[0,-.264,.013,.227,.245,.052],
       [side*.011,-.045,.002,.247,.265,.046],[0,.033,0,.233,.237,.043]
-    ],denim);
+    ],denim,true);
     leg.block(side*.091,-.240,.021,.098,.183,.183,.025,seam);
     leg.box(side*.139,-.203,.025,.019,.042,.139,welt);
     leg.block(0,-.555,0,.190,.072,.205,.022,hood);
@@ -1117,7 +1120,7 @@ function avatar(renderer, palette, look = {}) {
     arm.layers([
       [side*.032,-.451,.010,.117,.136,.036],[side*.046,-.377,.009,.148,.166,.039],
       [side*.037,-.194,.014,.176,.198,.044],[side*.009,-.025,.005,.209,.217,.052],[0,.052,0,.157,.159,.041]
-    ],coat);
+    ],coat,true);
     arm.block(side*.041,-.400,.008,.153,.087,.170,.019,hood);
     arm.box(side*.041,-.373,-.080,.139,.022,.019,accent);
     arm.block(side*.032,-.493,.001,.104,.151,.110,.032,skin);
