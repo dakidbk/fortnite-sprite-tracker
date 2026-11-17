@@ -18,7 +18,7 @@ import { createLounge } from './lounge.js?v=lounge-23';
 import { LOUNGE, loungeLights, loungeReach, loungeSeats, loungeSofaSeats, loungeTables } from './lounge-world.js?v=lounge-23';
 import { createLeaderboards } from './leaderboard.js?v=cabinet-25';
 import { neonDwell, neonRules, nextArcadeCue } from './supabase/functions/arcade-rankings/arcade-rules.js?v=arcade-rankings-24';
-import { createLot } from './lot.js?v=property-26';
+import { createLot } from './lot.js?v=lot-zoom-27';
 import { lotSpawn } from './lot-layout.js?v=property-26';
 
 const $ = id => document.getElementById(id);

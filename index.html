@@ -9,8 +9,8 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css?v=cabinet-25">
   <link rel="stylesheet" href="lounge.css?v=lounge-23">
-  <link rel="stylesheet" href="lot.css?v=property-26">
-  <script type="module" src="game.js?v=property-26"></script>
+  <link rel="stylesheet" href="lot.css?v=lot-zoom-27">
+  <script type="module" src="game.js?v=lot-zoom-27"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -115,8 +115,12 @@
       <div id="lot-builder" hidden>
         <nav class="lot-camera" aria-label="Build camera">
           <button class="lot-tool" id="lot-turn-view" type="button">Turn view</button>
-          <button class="lot-tool lot-zoom" id="lot-zoom-out" type="button" aria-label="Zoom out">−</button>
-          <button class="lot-tool lot-zoom" id="lot-zoom-in" type="button" aria-label="Zoom in">+</button>
+          <div class="lot-zoom-controls" role="group" aria-label="Build zoom">
+            <button class="lot-tool lot-zoom" id="lot-zoom-out" type="button" aria-label="Zoom out" title="Zoom out">−</button>
+            <span id="lot-zoom-value" aria-label="Zoom level">100%</span>
+            <button class="lot-tool lot-zoom" id="lot-zoom-in" type="button" aria-label="Zoom in" title="Zoom in">+</button>
+          </div>
+          <button class="lot-tool" id="lot-fit-view" type="button">Fit lot</button>
         </nav>
         <aside class="lot-tools" aria-label="Build tools">
           <div class="lot-tool-row">
@@ -203,7 +207,7 @@
         <div><dt>Room chat</dt><dd><kbd>T</kbd> <span>or tap Chat while online</span></dd></div>
         <div><dt>Map and stamp hunt</dt><dd><kbd>M</kbd> <span>or tap Map</span></dd></div>
         <div><dt>Earn Credits</dt><dd><kbd>B</kbd> <span>or tap Earn Credits</span></dd></div>
-        <div><dt>My Lot</dt><dd><span>Open My Lot to build your own place. In Build, tap to place pieces and drag to pan. Switch to Walk to explore.</span></dd></div>
+        <div><dt>My Lot</dt><dd><span>In Build, tap to place pieces, drag to pan, and pinch or use + and − to zoom. Fit lot shows the whole property. Switch to Walk to explore.</span></dd></div>
         <div><dt>Game lounge</dt><dd><span>Go through the doorway beside checkout. Use Interact at any of the 10 game tables or at a sofa.</span></dd></div>
         <div><dt>Collection</dt><dd><kbd>C</kbd> <span>or tap your wallet</span></dd></div>
       </dl>

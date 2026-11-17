@@ -85,6 +85,10 @@
   pointer-events: auto;
 }
 .lot-camera button { box-shadow: 0 2px 9px #171f1b65; }
+.lot-camera > .lot-tool { min-height: 44px; }
+.lot-zoom-controls { display: flex; align-items: center; gap: 3px; padding: 2px; border: 1px solid var(--lot-border); border-radius: 8px; background: #203028; }
+.lot-zoom-controls .lot-zoom { width: 44px; min-height: 40px; padding: 4px; }
+#lot-zoom-value { width: 43px; color: #f2e6c6; font: 700 11px var(--mono); text-align: center; font-variant-numeric: tabular-nums; }
 .lot-tools {
   display: flex;
   flex-direction: column;

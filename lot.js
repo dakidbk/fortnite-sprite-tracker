@@ -7,6 +7,7 @@ import { createBuildGrid, createLotGround, makeMarker, makeProperty, propertyPhy
 
 const $ = id => document.getElementById(id);
 const keys = {ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
+const minZoom = .72, maxZoom = 4;
 
 export function propertyView(aspect, floor, angle, zoom, x=0, z=0) {
   const distance=Math.max(38.4,32.7/aspect)/zoom, y=floor*floorHeight;
@@ -39,7 +40,8 @@ export function createLot({canvas,clearMovement,onMode,onExit}) {
   catch { layout=readLot(null); }
   let active=false, building=false, level=0, category=categories[0], selected='timber', finish=pieces[selected].color, rotation=0, mode='place';
   let angle=.36, zoom=1, focusX=0, focusZ=0;
-  let cursor, gesture, meshes, property, marker, markerKey, markerItems, lastView, physics=propertyPhysics(layout.items), dirty=true;
+  let cursor, gesture, pinch, meshes, property, marker, markerKey, markerItems, lastView, physics=propertyPhysics(layout.items), dirty=true;
+  const pointers=new Map();
   const previous=[], next=[];
   const buttons={};
 
@@ -114,9 +116,14 @@ export function createLot({canvas,clearMovement,onMode,onExit}) {
     toolRotate.disabled=mode!=='place' || pieces[selected].layer==='decor' || pieces[selected].layer==='floor' || pieces[selected].layer==='roof';
     undo.disabled=!previous.length;
     redo.disabled=!next.length;
-    zoomIn.disabled=zoom>=2.22;
-    zoomOut.disabled=zoom<=.73;
+    refreshZoom();
     name.value=layout.name;
+  }
+
+  function refreshZoom() {
+    zoomIn.disabled=zoom>=maxZoom;
+    zoomOut.disabled=zoom<=minZoom;
+    $('lot-zoom-value').textContent=Math.round(zoom*100)+'%';
   }
 
   function choose(id) {
@@ -171,16 +178,33 @@ export function createLot({canvas,clearMovement,onMode,onExit}) {
     guidance();
   }
 
-  function changeZoom(factor) {
-    zoom=clamp(zoom*factor,.72,2.23);
-    refreshTools();
+  function changeZoom(factor,from,to=from) {
+    const before=from && point(from.x,from.y);
+    zoom=clamp(zoom*factor,minZoom,maxZoom);
+    const after=to && point(to.x,to.y);
+    if (before && after) {
+      focusX=clamp(focusX+before[0]-after[0],-lotHalf,lotHalf);
+      focusZ=clamp(focusZ+before[1]-after[1],-lotHalf,lotHalf);
+    }
+    cursor=undefined;
+    refreshZoom();
+  }
+
+  function fitView() {
+    zoom=1;
+    focusX=focusZ=0;
+    cursor=undefined;
+    refreshZoom();
   }
 
   function centerView() {
     angle=.36;
-    zoom=1;
-    focusX=focusZ=0;
-    refreshTools();
+    fitView();
+  }
+
+  function clearGesture() {
+    pointers.clear();
+    gesture=pinch=undefined;
   }
 
   function setMode(build) {
@@ -193,7 +217,7 @@ export function createLot({canvas,clearMovement,onMode,onExit}) {
     $('lot-walk-mode').setAttribute('aria-pressed',String(!build));
     canvas.tabIndex=build ? 0 : -1;
     cursor=undefined;
-    gesture=undefined;
+    clearGesture();
     dirty=true;
     onMode(build);
     if (build) guidance();
@@ -214,7 +238,8 @@ export function createLot({canvas,clearMovement,onMode,onExit}) {
   function leave() {
     active=building=false;
     shell.hidden=true;
-    gesture=cursor=undefined;
+    cursor=undefined;
+    clearGesture();
     canvas.tabIndex=-1;
     canvas.parentElement.classList.remove('lot-open','lot-building');
     canvas.setAttribute('aria-label','3D game store. Move with WASD, arrow keys, or the left thumbstick. Drag to look around. Tap or click a game cover to inspect it.');
@@ -241,7 +266,8 @@ export function createLot({canvas,clearMovement,onMode,onExit}) {
   function point(x,y) {
     const rect=canvas.getBoundingClientRect();
     if (!lastView || !rect.width || !rect.height) return;
-    return screenToFloor(lastView,(x-rect.left)/rect.width,(y-rect.top)/rect.height,level*floorHeight+.047);
+    const view=propertyView(lastView.aspect,level,angle,zoom,focusX,focusZ);
+    return screenToFloor(view,(x-rect.left)/rect.width,(y-rect.top)/rect.height,level*floorHeight+.047);
   }
 
   const updateCursor=(x,y)=>{
@@ -250,16 +276,35 @@ export function createLot({canvas,clearMovement,onMode,onExit}) {
   };
 
   function pointerDown(event) {
-    if (gesture) return;
+    if (pointers.size>=2) { event.preventDefault(); return; }
     const {pointerId,clientX,clientY}=event;
-    gesture={id:pointerId,x:clientX,y:clientY,dragging:false};
-    updateCursor(clientX,clientY);
+    pointers.set(pointerId,{x:clientX,y:clientY});
+    if (pointers.size===2) {
+      pinch=pinchPosition();
+      gesture=cursor=undefined;
+    } else {
+      gesture={id:pointerId,x:clientX,y:clientY,dragging:false};
+      updateCursor(clientX,clientY);
+    }
     canvas.setPointerCapture(pointerId);
     event.preventDefault();
   }
 
+  function pinchPosition() {
+    const [a,b]=pointers.values();
+    return {x:(a.x+b.x)/2,y:(a.y+b.y)/2,distance:Math.max(1,Math.hypot(a.x-b.x,a.y-b.y))};
+  }
+
   function pointerMove(event) {
     const {pointerId,clientX:x,clientY:y}=event;
+    if (pointers.has(pointerId)) pointers.set(pointerId,{x,y});
+    if (pointers.size===2) {
+      const next=pinchPosition();
+      changeZoom(next.distance/pinch.distance,pinch,next);
+      pinch=next;
+      event.preventDefault();
+      return;
+    }
     if (!gesture) { if (event.pointerType!=='touch') updateCursor(x,y); return; }
     if (gesture.id!==pointerId || (!gesture.dragging && Math.hypot(x-gesture.x,y-gesture.y)<6)) return;
     gesture.dragging=true;
@@ -273,9 +318,15 @@ export function createLot({canvas,clearMovement,onMode,onExit}) {
   }
 
   function pointerEnd(event) {
-    if (gesture?.id!==event.pointerId) return;
-    const tap=event.type==='pointerup' && !gesture.dragging && Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)<6;
+    if (!pointers.has(event.pointerId)) return;
+    const tap=gesture && event.type==='pointerup' && !gesture.dragging && Math.hypot(event.clientX-gesture.x,event.clientY-gesture.y)<6;
+    pointers.delete(event.pointerId);
+    pinch=undefined;
     gesture=undefined;
+    if (pointers.size) {
+      const [id,point]=pointers.entries().next().value;
+      gesture={id,...point,dragging:true};
+    }
     if (tap) {
       updateCursor(event.clientX,event.clientY);
       place();
@@ -355,6 +406,7 @@ export function createLot({canvas,clearMovement,onMode,onExit}) {
   redo.addEventListener('click',()=>revise(next,previous));
   zoomIn.addEventListener('click',()=>changeZoom(1.25));
   zoomOut.addEventListener('click',()=>changeZoom(.8));
+  $('lot-fit-view').addEventListener('click',fitView);
   $('lot-turn-view').addEventListener('click',()=>{ angle+=Math.PI/4; cursor=undefined; });
   name.addEventListener('change',()=>commit({...layout,name:lotName(name.value)}));
   name.addEventListener('keydown',event=>{
@@ -383,11 +435,11 @@ export function createLot({canvas,clearMovement,onMode,onExit}) {
     node.append(title,detail);
   }
 
-  canvas.addEventListener('pointerleave',()=>{ if (building && !gesture) cursor=undefined; });
+  canvas.addEventListener('pointerleave',()=>{ if (building && !pointers.size) cursor=undefined; });
   canvas.addEventListener('wheel',event=>{
-    if (!building || templateDialog.open) return;
+    if (!building || templateDialog.open || !event.deltaY) return;
     event.preventDefault();
-    changeZoom(event.deltaY<0 ? 1.14 : 1/1.14);
+    changeZoom(event.deltaY<0 ? 1.14 : 1/1.14,{x:event.clientX,y:event.clientY});
   },{passive:false});
 
   return {
