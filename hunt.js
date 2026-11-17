@@ -1,5 +1,6 @@
 import { clamp } from './webgl.js';
 import { stockDestination, stockRunState } from './economy.js?v=store-economy-19';
+import { LOUNGE, loungeTables } from './lounge-world.js?v=lounge-23';
 
 export const huntReward = 120;
 export const stamps = [
@@ -26,12 +27,22 @@ export function huntState(profile) {
 
 const $ = id => document.getElementById(id);
 const mapX = x => clamp(50+x*4.31,4,96);
-const mapY = z => clamp(4+(z+28.6)*2.38,4,96);
+const mapY = z => clamp(4+(z-LOUNGE.back)*1.88,4,96);
 
 export function createHunt({ shop, ready, clearMovement, getPosition, getFriends, connected, collectInRoom, announce }) {
   const dialog = $('hunt-dialog'), claim = $('hunt-claim');
   const status = $('hunt-status'), mapPlayer = $('hunt-map-player');
   const stockPin = $('hunt-map-stock'), stockLegend = $('hunt-legend-stock');
+  for (const {index,x,z,name,color} of loungeTables) {
+    const pin=document.createElement('span');
+    pin.className='hunt-table-pin';
+    pin.style.left=mapX(x)+'%';
+    pin.style.top=mapY(z)+'%';
+    pin.style.setProperty('--pin-color',color);
+    pin.title=name;
+    pin.textContent=String(index+1);
+    $('hunt-map-tables').append(pin);
+  }
   const mapFriends = Array.from({length:3},() => {
     const dot = document.createElement('span');
     dot.className = 'hunt-map-friend';

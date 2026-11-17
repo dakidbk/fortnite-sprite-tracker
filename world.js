@@ -1,10 +1,10 @@
 import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webgl.js?v=lighting-22';
 import { GAMES, LATEST_RELEASE, RARITIES, coverUV, coversPerAtlas } from './catalog.js?v=store-economy-19';
 import { accessories, avatarPalette } from './cosmetics.js?v=character-11';
-import { buildNeighborhood } from './neighborhood.js?v=neighborhood-15';
-import { stamps } from './hunt.js?v=store-economy-19';
+import { buildNeighborhood } from './neighborhood.js?v=lounge-23';
+import { stamps } from './hunt.js?v=lounge-23';
 import { staffLooks } from './staff.js?v=store-economy-19';
-import { buildLounge, LOUNGE } from './lounge-world.js?v=back-room-20';
+import { buildLounge, LOUNGE, paintTableAtlas } from './lounge-world.js?v=lounge-23';
 
 const M = {
   lamp: m('#fff0d8', 1.05), white: m('#ffffff', 1),
@@ -412,7 +412,7 @@ function floorTiles(mesh) {
 }
 
 function city(mesh) {
-  const rows = [[-43,1.3,.65],[-32,1,.78]];
+  const rows = [[LOUNGE.back-22,1.3,.65],[LOUNGE.back-12,1,.78]];
   for (const [z, size, dim] of rows) {
     for (let x=-40; x<42;) {
       const w=1.3+random()*3.3, h=.8+random()*7.2;
@@ -1211,6 +1211,7 @@ export function createWorld(renderer, coverAtlases) {
     ctx.fillStyle='#f2e2be'; ctx.font='800 52px '+SIGN_FONT; ctx.textAlign='center';
     ctx.fillText('GAME LOUNGE',w/2,69,w-48);
   })));
+  const loungeArt=new Mesh(renderer.texture(surface(1024,1600,paintTableAtlas)));
   const shadowTex=renderer.texture(radial('#171b15d6'));
   const shadow=new Mesh(shadowTex), avatarShadow=new Mesh(shadowTex);
   const guide=new Mesh();
@@ -1228,7 +1229,7 @@ export function createWorld(renderer, coverAtlases) {
     ...[CABINET,SIGNAL_CABINET,CIRCUIT_CABINET].map(({x,z})=>rectangle(x,z,1.27,1.16,2.50))
   ];
   city(distant);
-  buildNeighborhood(distant,DECK.front,DECK.frontHalf);
+  buildNeighborhood(distant,DECK.front,DECK.frontHalf,LOUNGE.back);
   platform(mesh);
   floorTiles(tile);
   storefront(mesh,glass,sign);
@@ -1242,7 +1243,7 @@ export function createWorld(renderer, coverAtlases) {
     shadow.ground(x,.011,z,3.40,1.36,M.white);
   }
   interior(mesh,{covers:cases,tags:rarityTags,titles:caseGames,positions:casePositions},display,harvest,logo,labels,stock);
-  obstacles.push(...buildLounge(mesh,loungeSign,STORE.back));
+  obstacles.push(...buildLounge(mesh,loungeSign,loungeArt,STORE.back));
   const cover=POSTER_COVER;
   const coverX=poster.x+poster.w*((cover.left+cover.w/2)/POSTER_PRINT.w-.5);
   const coverY=poster.y+poster.h*(.5-(cover.top+cover.h/2)/POSTER_PRINT.h);
@@ -1290,14 +1291,12 @@ export function createWorld(renderer, coverAtlases) {
     [[0,3.77,-7.30],'#fff0d9',6.4,1.20],[[0,3.85,-11.24],'#fff1d9',6.2,1.16],
     [[-6.74,3.73,-9.21],'#fff0d9',6.05,1.23],[[-7.31,3.56,-16.09],'#ffedd2',6.1,1.20],
     [[6.15,3.76,-8.23],'#fff1da',6.0,1.15],[[6.16,3.63,-16.44],'#ffcdb3',6.38,1.30],
-    [[1.9,3.38,-23.35],'#ffe4b8',6.95,1.46],[[6.4,3.40,-25.28],'#fff0d9',7.1,1.48],
-    [[8.46,3.38,-21.1],'#ffdb9b',5.65,1.30],
-    [[0,4.72,2.05],'#ff6558',8.3,1.18],[[SIGNAL_CABINET.x,2.62,SIGNAL_CABINET.z+.75],'#9d9aff',4.9,.9]
+    [[8.46,3.38,-21.1],'#ffdb9b',5.65,1.30]
   ];
   renderer.lights(sceneLights);
   const upload=meshes=>meshes.map(part=>renderer.upload(part));
   return {
-    opaque:upload([distant,mesh,tile,sign,...cases,display,harvest,labels,marquee,screen,relayMarquee,relayScreen,circuitMarquee,circuitScreen,logo,mat,workSign,loungeSign,guide]),
+    opaque:upload([distant,mesh,tile,sign,...cases,display,harvest,labels,marquee,screen,relayMarquee,relayScreen,circuitMarquee,circuitScreen,logo,mat,workSign,loungeSign,loungeArt,guide]),
     stamps:stamps.map(({color}) => renderer.upload(stampModel(color))),
     stockCrate:renderer.upload(stockCrate()),
     releasePosters, sceneLights,

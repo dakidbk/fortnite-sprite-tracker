@@ -1,4 +1,4 @@
-import { boardGames, newBoard, playBoard } from './lounge-rules.js';
+import { boardGames, maxBoardMove, newBoard, playBoard, tableLayout, turnLimit } from './lounge-rules.js';
 
 const origin = 'https://gamestorehunt.mooo.com';
 const headers = {
@@ -28,18 +28,20 @@ type TableInput = {
 };
 async function tableAction(input: TableInput, code: string, token: string, px: number, pz: number) {
   const {board,verb,kind,version,index,move}=input;
-  if ((board!==0 && board!==1) || typeof verb!=='string' || !['host','join','move','reset','leave'].includes(verb)) {
+  if (typeof board!=='number' || !Number.isInteger(board) || !tableLayout[board] ||
+      typeof verb!=='string' || !['host','join','move','reset','leave'].includes(verb)) {
     return respond({error:'Choose a table and action.'},400);
   }
   const base={code,session_id:token,table_id:board,px,pz};
   let action={...base,verb};
   if (verb==='host') {
-    if (typeof kind!=='string' || !Object.hasOwn(boardGames,kind)) return respond({error:'Choose a table game.'},400);
+    const dedicated=tableLayout[board].kind;
+    if (kind!==dedicated) return respond({error:'This table is for '+boardGames[dedicated].name+'. Refresh for the lounge layout.'},409);
     action=Object.assign(action,{game_kind:kind});
   }
   if (verb==='move' || verb==='reset') {
-    if (typeof version!=='number' || !Number.isSafeInteger(version) || version<=0 || typeof index!=='number' || !Number.isInteger(index) || index<0 || index>42
-        || (verb==='move' && (typeof move!=='number' || !Number.isInteger(move) || move<0 || move>41))) {
+    if (typeof version!=='number' || !Number.isSafeInteger(version) || version<=0 || typeof index!=='number' || !Number.isInteger(index) || index<0 || index>turnLimit
+        || (verb==='move' && (typeof move!=='number' || !Number.isInteger(move) || move<0 || move>maxBoardMove))) {
       return respond({error:'Choose a valid move.'},400);
     }
     const snapshot=await rpc('after_hours_table_action',{...base,verb:'view'});
@@ -96,7 +98,7 @@ Deno.serve(async request => {
     const code = op === 'create' ? crypto.randomUUID().replaceAll('-','').slice(0,12).toUpperCase() : room;
     if (typeof code !== 'string' || !/^[A-F0-9]{12}$/.test(code)) return respond({error:'Enter a valid room code.'},400);
     if (!joining && (typeof token !== 'string' || !uuid.test(token))) return respond({error:'Invalid session.'},401);
-    const px=bounded(x,-11,11,0), pz=bounded(z,-29,10,4.55);
+    const px=bounded(x,-11,11,0), pz=bounded(z,-40,10,4.55);
     if (op==='table') return await tableAction({board,verb,kind,version,index,move},code,token,px,pz);
     const session = joining ? crypto.randomUUID() : token;
     const parameters = {
@@ -120,7 +122,7 @@ Deno.serve(async request => {
         return respond({error:'Step closer to pick up the stamp.'},400);
       }
       result = await rpc('after_hours_room_with_hunt',{...parameters,stamp_id:stamp,with_chat:false});
-    } else if (lounge === true && op !== 'leave') {
+    } else if ((lounge === true || lounge === 2) && op !== 'leave') {
       result = await rpc('after_hours_room_with_lounge',{...parameters,with_chat:withChat,with_hunt:hunt===true,is_sitting:sitting===true});
     } else if (hunt === true && op !== 'leave') {
       result = await rpc('after_hours_room_with_hunt',{...parameters,with_chat:withChat});
@@ -131,6 +133,9 @@ Deno.serve(async request => {
     const state = await result.json();
     if (state.rate_limited) return respond(state,429);
     if (state.error || state.expired) return respond(state,state.expired ? 410 : 409);
+    if (lounge===true && Array.isArray(state.tables)) {
+      state.tables=state.tables.filter((table: {board:number})=>table.board<2);
+    }
     return respond(joining ? {...state,token:session} : state);
   } catch {
     return respond({error:'Could not reach the room server.'},400);

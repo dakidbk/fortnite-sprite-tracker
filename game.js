@@ -1,21 +1,21 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=lighting-22';
-import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, WORK_DESK, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=lighting-22';
+import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, WORK_DESK, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=lounge-23';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js?v=store-economy-19';
 import { createShop } from './shop.js?v=collector-21';
 import { createSignalRelay } from './signal.js';
-import { createOnline } from './online.js?v=back-room-20';
+import { createOnline } from './online.js?v=lounge-23';
 import { createShift } from './shift.js?v=store-economy-19';
 import { createDex } from './dex.js?v=collector-21';
 import { createMenu } from './menu.js?v=neighborhood-15';
 import { createMusic } from './music.js?v=neighborhood-15';
 import { createReveal } from './reveal.js?v=neighborhood-15';
-import { createHunt, hasStamp, stampHeight, stamps } from './hunt.js?v=back-room-20';
+import { createHunt, hasStamp, stampHeight, stamps } from './hunt.js?v=lounge-23';
 import { createCircuit } from './circuit.js?v=store-hunt-18';
 import { stockDestination, stockRunState } from './economy.js?v=store-economy-19';
 import { createWork } from './work.js?v=store-economy-19';
 import { cashier, createStaff, staffLooks } from './staff.js?v=store-economy-19';
-import { createLounge } from './lounge.js?v=back-room-20';
-import { LOUNGE, loungeSeats, loungeSofaSeats, loungeTables } from './lounge-world.js?v=back-room-20';
+import { createLounge } from './lounge.js?v=lounge-23';
+import { LOUNGE, loungeLights, loungeReach, loungeSeats, loungeSofaSeats, loungeTables } from './lounge-world.js?v=lounge-23';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');
@@ -256,11 +256,17 @@ function loungeAction() {
   if (occupiedSeat && occupiedSeat.board===undefined) return 'stand';
   if (occupiedSeat) return 'table-'+occupiedSeat.board;
   if (nearestSofa()) return 'sit';
-  for (const [index,table] of loungeTables.entries()) {
-    if (Math.hypot(player.x-table.x,player.z-table.z)<2.06) return 'table-'+index;
+  let nearest=null, distance=loungeReach;
+  for (const table of loungeTables) {
+    const reach=Math.hypot(player.x-table.x,player.z-table.z);
+    if (reach>=distance) continue;
+    nearest='table-'+table.index;
+    distance=reach;
   }
-  return null;
+  return nearest;
 }
+
+const actionTable = item => typeof item==='string' && item.startsWith('table-') ? loungeTables[Number(item.slice(6))] : undefined;
 
 function seatFree(seat) {
   return !online.friends.some(peer=>peer.sitting && Math.hypot(peer.x-seat.x,peer.z-seat.z)<.40);
@@ -344,7 +350,8 @@ function interact() {
   if (item === 'deliver') work.deliver();
   if (item === 'manager') staff.open();
   if (item === 'guided-case') inspectShelfCase(staff.guidedCase().slot);
-  if (item?.startsWith('table-')) lounge.open(Number(item.at(-1)));
+  const table=actionTable(item);
+  if (table) lounge.open(table.index);
   if (item === 'sit') {
     const seat=nearestSofa();
     if (seat) sit(seat);
@@ -697,10 +704,11 @@ function waypoint(matrix) {
   const node = $('waypoint');
   const item = currentAction();
   const stamp = Number.isInteger(item) ? stamps[item] : null;
+  const table = actionTable(item);
   const delivery = stockDestination(stockRunState(shop.state));
   const interaction = stamp ? 'Pick up stamp' : item === 'deliver' ? 'Deliver stock' : item === 'doors' ? 'Open doors'
     : item === 'manager' ? 'Talk to Maya' : item === 'guided-case' ? 'Inspect case' : item==='sit' ? 'Sit down'
-    : item==='stand' ? 'Stand up' : item?.startsWith('table-') ? 'Play table games' : stations[item]?.prompt;
+    : item==='stand' ? 'Stand up' : table ? 'Play '+table.name : stations[item]?.prompt;
   if (action !== item) {
     action = item;
     const label = interaction || 'Interact';
@@ -719,7 +727,6 @@ function waypoint(matrix) {
   const destination = item ?? (entrance ? 'doors' : guidance);
   if (modalOpen() || destination === null || item === 'guided-case') { node.hidden = true; return; }
   const station = stations[destination];
-  const table=typeof item==='string' && item.startsWith('table-') ? loungeTables[Number(item.at(-1))] : null;
   const point = stamp ? [stamp.x,stampHeight+.64,stamp.z]
     : item === 'deliver' ? [delivery.x,1.17,delivery.z]
     : item === 'manager' ? [staff.manager.x,2.87,staff.manager.z]
@@ -741,10 +748,11 @@ function draw(dt, now) {
   renderer.resize();
   const aspect = canvas.width / canvas.height;
   const preview = menu.preview;
-  if (world.portraitLighting !== !!preview) {
-    world.portraitLighting = !!preview;
+  const lightArea = preview ? 'portrait' : player.z<STORE.back-.38 && !menu.open ? 'lounge' : 'store';
+  if (world.lightArea !== lightArea) {
+    world.lightArea = lightArea;
     if (preview) world.portraitAngle = preview.angle;
-    renderer.lights(preview ? [...world.sceneLights.slice(0,-3),...portraitLights] : world.sceneLights);
+    renderer.lights(preview ? [...world.sceneLights.slice(0,15),...portraitLights] : lightArea==='lounge' ? loungeLights : world.sceneLights);
   }
   const { eye, aim, fov, hideAvatar } = cameraFor(dt, aspect, preview);
   const matrix = viewProjection(eye,aim,fov,aspect);

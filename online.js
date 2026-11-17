@@ -240,7 +240,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy, onHu
     const start = performance.now();
     const epoch=tableEpoch;
     try {
-      const state = await request({op:'sync',room:current.room,token:current.token,...position(),chat:true,hunt:true,lounge:true});
+      const state = await request({op:'sync',room:current.room,token:current.token,...position(),chat:true,hunt:true,lounge:2});
       if (session !== current) return;
       if (state.expired) {
         clearSession('Your room connection expired. Create or join a room again.');
@@ -274,7 +274,7 @@ export function createOnline({ clearMovement, position, onEnter, canOccupy, onHu
     showState(op === 'create' ? 'Creating your room…' : 'Joining room…');
     const started = performance.now();
     try {
-      const state = await request({op,room,profileToken:profileToken(),...roomEntry,chat:true,hunt:true,lounge:true});
+      const state = await request({op,room,profileToken:profileToken(),...roomEntry,chat:true,hunt:true,lounge:2});
       const current = {room:state.room,token:state.token,slot:state.slot};
       if (!dialog.open) {
         await request({op:'leave',...current},true).catch(() => {});

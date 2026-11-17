@@ -112,7 +112,7 @@ function car(mesh,x,z,yaw,color) {
   });
 }
 
-export function buildNeighborhood(mesh, porchFront, porchHalfWidth) {
+export function buildNeighborhood(mesh, porchFront, porchHalfWidth, loungeBack) {
   const random=seeded(720813);
   const streetZ=porchFront+6.10;
   const edgeX=porchHalfWidth+2.30, lotX=edgeX+10.10;
@@ -145,7 +145,7 @@ export function buildNeighborhood(mesh, porchFront, porchHalfWidth) {
   }
   for (let i=-3;i<=3;i++) {
     house(mesh,i*11+2.5,streetZ+21.5,Math.PI,i+4,random);
-    house(mesh,i*12-1.7,-32.7,0,i+6,random);
+    house(mesh,i*12-1.7,loungeBack-12,0,i+6,random);
   }
   car(mesh,-6.8,streetZ+.65,Math.PI/2,'#795248');
   car(mesh,8.6,streetZ+2.05,-Math.PI/2,'#607885');
