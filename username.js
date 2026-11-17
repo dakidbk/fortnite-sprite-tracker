@@ -22,10 +22,24 @@ export function profileUsername() {
   }
 }
 
-export function createUsernameEditor({prefix='username',onSave}={}) {
+export function ensureProfileToken() {
+  try {
+    const existing=profileToken();
+    if (existing) return existing;
+    const token=crypto.randomUUID();
+    localStorage.setItem(tokenKey,token);
+    return token;
+  } catch {
+    return undefined;
+  }
+}
+
+export function createUsernameEditor({form, onSave}={}) {
   const $ = id => document.getElementById(id);
-  const form = $(prefix+'-form'), field = $(prefix+'-field');
-  const status = $(prefix+'-status'), submit = $(prefix+'-save');
+  const field = form ? form.querySelector('input') : $('username-field');
+  const status = form ? form.querySelector('[role="status"]') : $('username-status');
+  const submit = form ? form.querySelector('[type="submit"]') : $('username-save');
+  form ||= $('username-form');
   const refresh = () => { $('menu-current-name').textContent = profileUsername() || 'Set username'; };
   refresh();
 
@@ -41,12 +55,8 @@ export function createUsernameEditor({prefix='username',onSave}={}) {
     submit.disabled = true;
     status.textContent = 'Checking username…';
     try {
-      const token = profileToken() || crypto.randomUUID();
-      try {
-        localStorage.setItem(tokenKey,token);
-      } catch {
-        throw Error('Enable browser storage to save your username.');
-      }
+      const token = ensureProfileToken();
+      if (!token) throw Error('Enable browser storage to save your username.');
       const response = await fetch(endpoint,{
         method:'POST',
         headers:{'Content-Type':'application/json'},

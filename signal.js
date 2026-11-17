@@ -6,7 +6,7 @@ const labels = ['diamond','circle','triangle','square'];
 const notes = [330,440,554,659];
 const {levels:lastLevel,firstLength,watchDelay,litFor,darkFor} = signalRules;
 
-export function createSignalRelay({ tone, best, award, rankings }) {
+export function createSignalRelay({ tone, best, award, ranking }) {
   const dialog = $('signal-dialog'), start = $('signal-start'), close = $('signal-close');
   const message = $('signal-message'), status = $('signal-status');
   let phase = 'ready', sequence = [], completed = 0, playbackAt = 0, inputAt = 0, lit = -1, next = 0, ranked;
@@ -38,7 +38,7 @@ export function createSignalRelay({ tone, best, award, rankings }) {
   }
 
   function show() {
-    rankings?.reset('signal');
+    ranking?.show();
     phase = 'ready';
     completed = 0;
     light(-1);
@@ -89,7 +89,7 @@ export function createSignalRelay({ tone, best, award, rankings }) {
     light(-1);
     enablePads(false);
     const reward = award(completed);
-    rankings?.finish('signal',ranked,performance.now(),completed);
+    ranking?.finish(ranked,performance.now(),completed);
     $('signal-best').textContent = String(best());
     message.textContent = completed === lastLevel
       ? 'All eight levels cleared!'
@@ -129,7 +129,7 @@ export function createSignalRelay({ tone, best, award, rankings }) {
   start.addEventListener('click',() => {
     if (phase==='watch' || phase==='repeat') return;
     const now=performance.now();
-    ranked=rankings?.begin('signal',now);
+    ranked=ranking?.begin(now);
     completed = 0;
     sequence = Array.from({length:firstLength},randomPad);
     $('signal-level').textContent = '0';
@@ -141,7 +141,7 @@ export function createSignalRelay({ tone, best, award, rankings }) {
   dialog.addEventListener('close',() => {
     phase = 'ready';
     ranked=undefined;
-    rankings?.reset('signal');
+    ranking?.close();
     light(-1);
     enablePads(false);
   });

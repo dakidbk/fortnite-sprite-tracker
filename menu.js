@@ -2,7 +2,7 @@ import { accessories, outfits, listings, listingQuote, shopBundles, shopItems, s
 
 import { createCreatorInbox } from './creator.js?v=creator-inbox-8';
 
-import { createUsernameEditor } from './username.js?v=arcade-rankings-24';
+import { createUsernameEditor } from './username.js?v=cabinet-25';
 
 const storageKey = 'after-hours-character';
 const $ = id => document.getElementById(id);

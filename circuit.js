@@ -6,7 +6,7 @@ const symbols = ['←','↑','↓','→'];
 const names = ['Left','Up','Down','Right'];
 const notes = [392,494,587,698];
 
-export function createCircuit({tone,best,award,rankings}) {
+export function createCircuit({tone,best,award,ranking}) {
   const dialog = $('circuit-dialog'), start = $('circuit-start'), close = $('circuit-close');
   const message = $('circuit-message'), track = $('circuit-track');
   const count = $('circuit-score'), time = $('circuit-time'), health = $('circuit-health');
@@ -46,7 +46,7 @@ export function createCircuit({tone,best,award,rankings}) {
   }
 
   function show() {
-    rankings?.reset('circuit');
+    ranking?.show();
     count.textContent = '0 / '+goal;
     health.textContent = String(lives);
     $('circuit-best').textContent = best()+' / '+goal;
@@ -67,7 +67,7 @@ export function createCircuit({tone,best,award,rankings}) {
     setEnabled(false);
     showQueue();
     const reward = award(hits);
-    rankings?.finish('circuit',ranked,performance.now(),hits);
+    ranking?.finish(ranked,performance.now(),hits);
     $('circuit-best').textContent = best()+' / '+goal;
     message.textContent = reason;
     $('circuit-reward').textContent = reward ? '+'+reward+' CR earned' : 'Match a direction to earn credits.';
@@ -121,7 +121,7 @@ export function createCircuit({tone,best,award,rankings}) {
     if (run) return;
     last = -1;
     const now = performance.now();
-    const ranked=rankings?.begin('circuit',now);
+    const ranked=ranking?.begin(now);
     const random=ranked?.random || Math.random;
     const queue=Array.from({length:queueLength},()=>newDirection(random));
     run = {ends:now+duration,cueEnds:now+circuitDwell(0),hits:0,lives,queue,ranked,random};
@@ -138,7 +138,7 @@ export function createCircuit({tone,best,award,rankings}) {
   close.addEventListener('click',() => dialog.close());
   dialog.addEventListener('close',() => {
     run = null;
-    rankings?.reset('circuit');
+    ranking?.close();
   });
 
   return {

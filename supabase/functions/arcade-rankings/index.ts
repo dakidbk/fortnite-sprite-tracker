@@ -44,21 +44,23 @@ Deno.serve(async request=>{
   try {
     if (op==='list') return respond(await rpc('after_hours_arcade_rankings',{cabinet:game,player_id}));
     if (op!=='start' && op!=='finish') return respond({error:'Choose an arcade action.'},400);
-    if (!player_id) return respond({error:'Set a username to post arcade scores.'},401);
+    if (!player_id) return respond({error:'This arcade run needs a device profile.'},401);
     if (!validToken(ticket)) return respond({error:'Invalid arcade run.'},400);
     const run={cabinet:game,player_id,ticket};
     if (op==='start') {
       if (!Number.isInteger(seed) || seed<0 || seed>0xffffffff) return respond({error:'Invalid arcade run.'},400);
       const started=await rpc('after_hours_arcade_start',{...run,cue_seed:seed});
-      return started ? respond({started:true}) : respond({error:'Set a username to post arcade scores.'},409);
+      return started ? respond({started:true}) : respond({error:'This arcade run couldn’t start online.'},409);
     }
 
     const runSeed=await rpc('after_hours_arcade_seed',run);
-    if (runSeed===null) return respond({error:'Play another round to post your score.'},409);
+    const expired={error:'This run is saved on this device.',code:'run_expired'};
+    if (runSeed===null) return respond(expired,409);
     const score=scoreArcadeRun(game,runSeed,events,elapsed);
-    if (score===null) return respond({error:'This run couldn’t be posted.'},422);
+    if (score===null) return respond({error:'This run couldn’t be posted.',code:'run_invalid'},422);
     const result=await rpc('after_hours_arcade_finish',{...run,run_score:score,elapsed_ms:elapsed});
-    if (result.expired) return respond({error:'Play another round to post your score.'},409);
+    if (result.expired) return respond(expired,409);
+    if (result.name_required) return respond({error:'Choose a username to post this score.',code:'username_required'},401);
     return respond(result,result.error ? 409 : 200);
   } catch {
     return respond({error:'Arcade rankings are temporarily unavailable.'},503);

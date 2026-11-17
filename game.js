@@ -2,21 +2,21 @@ import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './
 import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, WORK_DESK, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=lounge-23';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js?v=store-economy-19';
 import { createShop } from './shop.js?v=collector-21';
-import { createSignalRelay } from './signal.js?v=arcade-rankings-24';
+import { createSignalRelay } from './signal.js?v=cabinet-25';
 import { createOnline } from './online.js?v=lounge-23';
 import { createShift } from './shift.js?v=store-economy-19';
 import { createDex } from './dex.js?v=collector-21';
-import { createMenu } from './menu.js?v=arcade-rankings-24';
+import { createMenu } from './menu.js?v=cabinet-25';
 import { createMusic } from './music.js?v=neighborhood-15';
 import { createReveal } from './reveal.js?v=neighborhood-15';
 import { createHunt, hasStamp, stampHeight, stamps } from './hunt.js?v=lounge-23';
-import { createCircuit } from './circuit.js?v=arcade-rankings-24';
+import { createCircuit } from './circuit.js?v=cabinet-25';
 import { stockDestination, stockRunState } from './economy.js?v=store-economy-19';
 import { createWork } from './work.js?v=store-economy-19';
 import { cashier, createStaff, staffLooks } from './staff.js?v=store-economy-19';
 import { createLounge } from './lounge.js?v=lounge-23';
 import { LOUNGE, loungeLights, loungeReach, loungeSeats, loungeSofaSeats, loungeTables } from './lounge-world.js?v=lounge-23';
-import { createLeaderboards } from './leaderboard.js?v=arcade-rankings-24';
+import { createLeaderboards } from './leaderboard.js?v=cabinet-25';
 import { neonDwell, neonRules, nextArcadeCue } from './supabase/functions/arcade-rankings/arcade-rules.js?v=arcade-rankings-24';
 
 const $ = id => document.getElementById(id);
@@ -97,9 +97,9 @@ const dex = createDex({
   ready: () => !!world && !modalOpen()
 });
 const shift = createShift({shop,clearMovement,ready:() => !!world && !modalOpen()});
-const rankings = createLeaderboards({clearMovement,best:game=>game==='neon' ? best : shop.state[game+'Best']});
-const signal = createSignalRelay({ tone, rankings, best: () => shop.state.signalBest, award: score => shop.recordArcade('signal',score) });
-const circuit = createCircuit({ tone, rankings, best: () => shop.state.circuitBest, award: score => shop.recordArcade('circuit',score) });
+const rankings = createLeaderboards({best:game=>game==='neon' ? best : shop.state[game+'Best']});
+const signal = createSignalRelay({ tone, ranking:rankings.signal, best: () => shop.state.signalBest, award: score => shop.recordArcade('signal',score) });
+const circuit = createCircuit({ tone, ranking:rankings.circuit, best: () => shop.state.circuitBest, award: score => shop.recordArcade('circuit',score) });
 const hunt = createHunt({
   shop, clearMovement, ready:() => !!world && !modalOpen(),
   getPosition:() => player, getFriends:() => online.friends,
@@ -161,7 +161,6 @@ function revealSound(rarity) {
 
 function showLoading(message, stage) {
   $('load-message').textContent = message;
-  $('load-rankings').hidden = stage !== 'error';
   loading.dataset.stage = stage;
   loading.hidden = false;
   canvas.setAttribute('aria-busy','true');
@@ -253,7 +252,7 @@ function clearMovement() {
 }
 
 function modalOpen() {
-  return entering || reveal.open || shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || circuit.open || hunt.isOpen || work.isOpen || staff.isOpen || lounge.isOpen || shop.open || rankings.open;
+  return entering || reveal.open || shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || circuit.open || hunt.isOpen || work.isOpen || staff.isOpen || lounge.isOpen || shop.open;
 }
 
 function loungeAction() {
@@ -447,7 +446,7 @@ function updateRoundDisplay(ms, score) {
 
 function openArcade() {
   clearMovement();
-  rankings.reset('neon');
+  rankings.neon.show();
   round = null;
   setTarget(-1);
   tiles.forEach(tile => { tile.disabled = true; tile.classList.remove('miss'); });
@@ -466,7 +465,7 @@ function openArcade() {
 function startRound() {
   if (round) return;
   const now = performance.now();
-  round = { ends: now + duration, score: 0, previousBest: best, ranked: rankings.begin('neon',now) };
+  round = { ends: now + duration, score: 0, previousBest: best, ranked: rankings.neon.begin(now) };
   targetUntil = 0;
   nextAt = now + firstDelay;
   lastTarget = -1;
@@ -485,7 +484,7 @@ function finishRound() {
   const { score, previousBest, ranked } = round;
   round = null;
   const reward = shop.recordArcade('neon',score);
-  rankings.finish('neon',ranked,performance.now(),score);
+  rankings.neon.finish(ranked,performance.now(),score);
   setTarget(-1);
   tiles.forEach(tile => { tile.disabled = true; });
   updateRoundDisplay(0, score);
@@ -975,7 +974,7 @@ $('arcade-close').addEventListener('click', () => arcade.close());
 $('arcade-start').addEventListener('click', startRound);
 arcade.addEventListener('close', () => {
   round = null;
-  rankings.reset('neon');
+  rankings.neon.close();
   setTarget(-1);
   clearMovement();
 });
@@ -1019,7 +1018,7 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 document.addEventListener('keydown', event => {
-  if (event.ctrlKey || event.metaKey || event.altKey || rankings.open) return;
+  if (event.ctrlKey || event.metaKey || event.altKey || event.target?.matches?.('input, textarea, select, [contenteditable]')) return;
   if (arcade.open && round && /^[1-9]$/.test(event.key)) {
     event.preventDefault();
     if (!event.repeat) hit(Number(event.key)-1);
