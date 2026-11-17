@@ -1321,7 +1321,7 @@ export function drawAvatar(renderer, world, player, phase, stride, time, look, p
   const sitting=player.sitting === true;
   const idle=Math.sin(time*2.7)*.010;
   const swing=Math.sin(phase) * stride;
-  const body=model(player.x,(sitting ? -.338 : .029)+Math.abs(Math.sin(phase))*.044*stride+idle,player.z,player.yaw,.060*stride,1.035);
+  const body=model(player.x,(player.y || 0)+(sitting ? -.338 : .029)+Math.abs(Math.sin(phase))*.044*stride+idle,player.z,player.yaw,.060*stride,1.035);
   const {torso,back,leftLeg,rightLeg,leftArm,rightArm,seatedLeft,seatedRight}=meshes;
   renderer.draw(torso,body);
   renderer.draw(back,body);

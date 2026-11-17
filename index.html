@@ -9,7 +9,8 @@
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css?v=cabinet-25">
   <link rel="stylesheet" href="lounge.css?v=lounge-23">
-  <script type="module" src="game.js?v=cabinet-25"></script>
+  <link rel="stylesheet" href="lot.css?v=property-26">
+  <script type="module" src="game.js?v=property-26"></script>
 </head>
 <body>
   <svg class="symbol-sheet" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
@@ -61,6 +62,7 @@
     <button class="icon-button chat-button" id="chat-button" type="button" title="Room chat (T)" aria-keyshortcuts="T" aria-haspopup="dialog" hidden><svg aria-hidden="true"><use href="#i-chat"></use></svg>Chat</button>
     <button class="icon-button hunt-button" id="hunt-button" type="button" title="Map and stamp hunt (M)" aria-keyshortcuts="M" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-map"></use></svg>Map</button>
     <button class="icon-button earn-button" id="earn-button" type="button" title="Earn Credits (B)" aria-keyshortcuts="B" aria-haspopup="dialog"><svg aria-hidden="true"><use href="#i-credits"></use></svg>Earn Credits</button>
+    <button class="icon-button lot-launch" id="lot-launch" type="button">My Lot</button>
     <div class="room-chat-log" id="room-chat-log" role="log" aria-label="Room messages"></div>
 
     <button type="button" class="waypoint" id="waypoint" hidden><span class="waypoint-gem"></span><span class="waypoint-label"><kbd>E</kbd><span id="waypoint-text">Open doors</span></span></button>
@@ -94,6 +96,55 @@
       <span class="look-hint" aria-hidden="true"><svg><use href="#i-look"></use></svg> Drag to look</span>
       <button type="button" id="touch-action" class="touch-action" aria-label="Interact" disabled><svg><use href="#i-arrow"></use></svg><span>Interact</span></button>
     </div>
+
+    <section class="lot-ui" id="lot-ui" aria-label="Your personal lot" hidden>
+      <header class="lot-header">
+        <div class="lot-identity">
+          <label class="micro" for="lot-name">LOT NAME</label>
+          <input id="lot-name" type="text" value="My Lot" maxlength="28" autocomplete="off" spellcheck="false">
+        </div>
+        <span class="lot-saved" id="lot-saved" role="status">Saved on this device</span>
+        <div class="lot-header-actions">
+          <div class="lot-switch" role="group" aria-label="Lot mode">
+            <button id="lot-build-mode" type="button" aria-pressed="true">Build</button>
+            <button id="lot-walk-mode" type="button" aria-pressed="false">Walk</button>
+          </div>
+          <button class="lot-store" id="lot-exit" type="button" aria-label="Back to Game Store">Store</button>
+        </div>
+      </header>
+      <div id="lot-builder" hidden>
+        <nav class="lot-camera" aria-label="Build camera">
+          <button class="lot-tool" id="lot-turn-view" type="button">Turn view</button>
+          <button class="lot-tool lot-zoom" id="lot-zoom-out" type="button" aria-label="Zoom out">−</button>
+          <button class="lot-tool lot-zoom" id="lot-zoom-in" type="button" aria-label="Zoom in">+</button>
+        </nav>
+        <aside class="lot-tools" aria-label="Build tools">
+          <div class="lot-tool-row">
+            <div class="lot-floor-row"><span class="micro">FLOOR</span><div id="lot-floors" role="group" aria-label="Select floor"></div></div>
+            <button class="lot-tool" id="lot-starters" type="button" aria-haspopup="dialog">Starter plans</button>
+          </div>
+          <div class="lot-categories" id="lot-categories" role="group" aria-label="Piece category"></div>
+          <div class="lot-pieces" id="lot-pieces" role="group" aria-label="Pieces"></div>
+          <div class="lot-palette"><span class="micro">FINISH</span><div id="lot-colors" role="group" aria-label="Finish"></div></div>
+          <div class="lot-edits" role="group" aria-label="Edit tools">
+            <button class="lot-tool" id="lot-place" type="button" aria-pressed="true">Place</button>
+            <button class="lot-tool" id="lot-paint" type="button" aria-pressed="false">Paint</button>
+            <button class="lot-tool" id="lot-erase" type="button" aria-pressed="false">Erase</button>
+            <button class="lot-tool" id="lot-rotate" type="button" title="Rotate (R)">Rotate</button>
+            <button class="lot-tool" id="lot-undo" type="button" title="Undo (Ctrl+Z)">Undo</button>
+            <button class="lot-tool" id="lot-redo" type="button" title="Redo (Ctrl+Shift+Z)">Redo</button>
+          </div>
+          <p id="lot-status" class="lot-status" role="status"></p>
+        </aside>
+      </div>
+    </section>
+
+    <dialog class="dialog lot-plans" id="lot-plans" aria-labelledby="lot-plans-title">
+      <div class="dialog-head"><span class="micro">MY LOT</span><button class="icon-button" id="lot-plan-close" type="button" aria-label="Close starter plans"><svg aria-hidden="true"><use href="#i-cross"></use></svg></button></div>
+      <h2 id="lot-plans-title">Starter plans</h2>
+      <p id="lot-plan-copy"></p>
+      <div class="lot-plan-list" id="lot-plan-list"></div>
+    </dialog>
 
     <div class="room-captions" id="room-tags" aria-hidden="true"></div>
     <dialog class="dialog online-dialog" id="online-dialog" aria-labelledby="online-title">
@@ -152,6 +203,7 @@
         <div><dt>Room chat</dt><dd><kbd>T</kbd> <span>or tap Chat while online</span></dd></div>
         <div><dt>Map and stamp hunt</dt><dd><kbd>M</kbd> <span>or tap Map</span></dd></div>
         <div><dt>Earn Credits</dt><dd><kbd>B</kbd> <span>or tap Earn Credits</span></dd></div>
+        <div><dt>My Lot</dt><dd><span>Open My Lot to build your own place. In Build, tap to place pieces and drag to pan. Switch to Walk to explore.</span></dd></div>
         <div><dt>Game lounge</dt><dd><span>Go through the doorway beside checkout. Use Interact at any of the 10 game tables or at a sofa.</span></dd></div>
         <div><dt>Collection</dt><dd><kbd>C</kbd> <span>or tap your wallet</span></dd></div>
       </dl>

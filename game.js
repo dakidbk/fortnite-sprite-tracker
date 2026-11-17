@@ -1,5 +1,5 @@
 import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=lighting-22';
-import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, WORK_DESK, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=lounge-23';
+import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, WORK_DESK, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=property-26';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js?v=store-economy-19';
 import { createShop } from './shop.js?v=collector-21';
 import { createSignalRelay } from './signal.js?v=cabinet-25';
@@ -18,6 +18,8 @@ import { createLounge } from './lounge.js?v=lounge-23';
 import { LOUNGE, loungeLights, loungeReach, loungeSeats, loungeSofaSeats, loungeTables } from './lounge-world.js?v=lounge-23';
 import { createLeaderboards } from './leaderboard.js?v=cabinet-25';
 import { neonDwell, neonRules, nextArcadeCue } from './supabase/functions/arcade-rankings/arcade-rules.js?v=arcade-rankings-24';
+import { createLot } from './lot.js?v=property-26';
+import { lotSpawn } from './lot-layout.js?v=property-26';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');
@@ -27,7 +29,7 @@ const stick = $('move-stick');
 const help = $('help-dialog'), arcade = $('arcade-dialog');
 const caseDialog = $('case-dialog');
 const coverAtlases = [...document.querySelectorAll('[data-cover-atlas]')];
-const player = { x: 0, z: 4.55, yaw: 0 };
+const player = { x: 0, y: 0, z: 4.55, yaw: 0 };
 const keys = new Set();
 const analog = { x: 0, z: 0 };
 const orbit = { active: false, yaw: 0, pitch: .31, distance: 0 };
@@ -50,6 +52,7 @@ let toastTimeout, audio, camera = null, action = null;
 let moveGesture = null, lookGesture = null;
 let selectedGame = -1;
 let occupiedSeat, locationLabel = 'Storefront';
+let storeReturn;
 let sound = read('after-hours-sound') === 'on';
 let musicEnabled = read('after-hours-music') !== 'off', musicStarted = false;
 let best = Math.max(0, Number(read('after-hours-best')) || 0);
@@ -66,7 +69,9 @@ const online = createOnline({
     camera = null;
     enterStore('Entering the online store…', 'Online room ready. Open Online to invite friends.');
   },
-  position: () => ({x:player.x,z:player.z,yaw:Math.atan2(Math.sin(player.yaw),Math.cos(player.yaw)),stride,sitting:player.sitting===true}),
+  // The personal lot is outside the shared store's walkable area.
+  position: () => storeReturn ? {x:11,z:10,yaw:0,stride:0,sitting:false}
+    : {x:player.x,z:player.z,yaw:Math.atan2(Math.sin(player.yaw),Math.cos(player.yaw)),stride,sitting:player.sitting===true},
   onHunt: (room,mask,day) => hunt.setRoom(room,mask,day)
 });
 const music = createMusic(audioContext);
@@ -116,6 +121,7 @@ const staff = createStaff({
   openCase: inspectShelfCase, announce:showToast
 });
 const lounge = createLounge({online,clearMovement,seat:seatAtTable,announce:showToast,tone});
+const lot = createLot({canvas,clearMovement,onMode:changeLotMode,onExit:leaveLot});
 hunt.refresh();
 
 const tiles = Array.from({length: tileCount}, (_, i) => {
@@ -252,7 +258,7 @@ function clearMovement() {
 }
 
 function modalOpen() {
-  return entering || reveal.open || shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || circuit.open || hunt.isOpen || work.isOpen || staff.isOpen || lounge.isOpen || shop.open;
+  return entering || reveal.open || shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || circuit.open || hunt.isOpen || work.isOpen || staff.isOpen || lounge.isOpen || shop.open || lot.dialogOpen;
 }
 
 function loungeAction() {
@@ -317,6 +323,38 @@ function stand() {
   occupiedSeat=null;
 }
 
+function resetLotCamera() {
+  Object.assign(orbit,{active:true,yaw:player.yaw,pitch:.23,distance:0});
+  camera=null;
+}
+
+function changeLotMode(building) {
+  if (!building && lot.step(player.x,player.z,player.y)===null) Object.assign(player,lotSpawn);
+  stride=0;
+  resetLotCamera();
+}
+
+function enterLot() {
+  if (!world || modalOpen() || lot.active) return;
+  stand();
+  storeReturn={player:{...player},orbit:{...orbit}};
+  Object.assign(player,lotSpawn);
+  lot.enter();
+  enterStore('Opening your lot…');
+}
+
+function leaveLot() {
+  if (!lot.active || modalOpen()) return;
+  lot.leave();
+  Object.assign(player,storeReturn.player);
+  Object.assign(orbit,storeReturn.orbit,{distance:0});
+  $('reset-camera').hidden=!orbit.active;
+  camera=null;
+  stride=0;
+  storeReturn=undefined;
+  enterStore('Heading back to the store…');
+}
+
 function currentAction() {
   if (player.z<STORE.back-.38) return loungeAction();
   const stamp = hunt.nearby();
@@ -336,7 +374,7 @@ function currentAction() {
 }
 
 function interact() {
-  if (!world || modalOpen()) return;
+  if (!world || modalOpen() || lot.active) return;
   const item = currentAction();
   if (Number.isInteger(item)) { hunt.collect(item); return; }
   if (item === 'doors') {
@@ -395,7 +433,7 @@ function syncCaseVisibility() {
 }
 
 function inspectCase(clientX,clientY) {
-  if (!world || modalOpen()) return;
+  if (!world || modalOpen() || lot.active) return;
   const {left,top,width,height} = canvas.getBoundingClientRect();
   if (!width || !height) return;
   const hit = renderer.pickCase(world.cases,(clientX-left)/width,(clientY-top)/height);
@@ -570,8 +608,15 @@ function allow(x, z) {
   });
 }
 
+function walkTo(x,z) {
+  const y=lot.active ? lot.step(x,z,player.y) : allow(x,z) ? 0 : null;
+  if (y===null) return false;
+  Object.assign(player,{x,y,z});
+  return true;
+}
+
 function move(dt) {
-  if (modalOpen()) return;
+  if (modalOpen() || lot.building) return;
   const on = (...codes) => codes.some(key => keys.has(key));
   const x = Number(on('KeyD','ArrowRight')) - Number(on('KeyA','ArrowLeft')) + analog.x;
   const z = Number(on('KeyS','ArrowDown')) - Number(on('KeyW','ArrowUp')) + analog.z;
@@ -590,8 +635,8 @@ function move(dt) {
     const steps = Math.max(1, Math.ceil(Math.hypot(dx,dz)/.22));
     const stepX = dx/steps, stepZ = dz/steps;
     for (let i=0;i<steps;i++) {
-      if (allow(player.x + stepX, player.z)) { player.x += stepX; traveled += Math.abs(stepX); }
-      if (allow(player.x, player.z + stepZ)) { player.z += stepZ; traveled += Math.abs(stepZ); }
+      if (stepX && walkTo(player.x+stepX,player.z)) traveled+=Math.abs(stepX);
+      if (stepZ && walkTo(player.x,player.z+stepZ)) traveled+=Math.abs(stepZ);
     }
     const want = Math.atan2(-dx,-dz);
     const arc = Math.atan2(Math.sin(want - player.yaw), Math.cos(want - player.yaw));
@@ -599,6 +644,7 @@ function move(dt) {
   }
   stride = mix(stride, traveled > 0 ? (sprint ? 1.10 : .83) * Math.sqrt(effort) : 0, 1 - Math.exp(-dt * 14));
   walkPhase += dt * (sprint ? 18.2 : 13.6) * (.53 + .47*effort);
+  if (lot.active) return;
   const newInside = player.z < -.52;
   const label=player.z<STORE.back-.40 ? 'Game lounge' : newInside ? 'Inside the store' : 'Storefront';
   inside=newInside;
@@ -614,6 +660,7 @@ function move(dt) {
 }
 
 function cameraBlocked(x,y,z) {
+  if (lot.active) return lot.cameraBlocked(x,y,z);
   if (z < -.15) {
     const ceiling = z < STORE.taperStart ? 4.08 : 3.53;
     if (z<STORE.back+.30) {
@@ -628,9 +675,9 @@ function cameraBlocked(x,y,z) {
 }
 
 function orbitCamera(dt,aspect) {
-  const y = 1.32, sin = Math.sin(orbit.yaw), cos = Math.cos(orbit.yaw);
+  const y = player.y+1.32, sin = Math.sin(orbit.yaw), cos = Math.cos(orbit.yaw);
   const level = Math.cos(orbit.pitch), up = Math.sin(orbit.pitch);
-  const desired = inside ? 4.92 : 5.90;
+  const desired = lot.active ? 4.45 : inside ? 4.92 : 5.90;
   let safe = desired;
   for (let d=.16; d<desired+.16; d+=.16) {
     const sample = Math.min(d,desired);
@@ -644,7 +691,7 @@ function orbitCamera(dt,aspect) {
   const ahead = mix(.49,1.04,smooth(.8,3.2,distance));
   camera = {
     eye: [player.x + sin*level*distance, y + up*distance, player.z + cos*level*distance],
-    aim: [player.x - sin*ahead, 1.34, player.z - cos*ahead],
+    aim: [player.x - sin*ahead, y+.02, player.z - cos*ahead],
     fov: Math.max(1.01,2*Math.atan(.35 / Math.max(aspect,.43))),
     hideAvatar: distance < 1.10
   };
@@ -756,6 +803,17 @@ function waypoint(matrix) {
 function draw(dt, now) {
   renderer.resize();
   const aspect = canvas.width / canvas.height;
+  if (lot.active) {
+    world.lightArea='lot';
+    const view=lot.building ? lot.view(aspect) : {...orbitCamera(dt,aspect),aspect};
+    lot.draw(renderer,view,()=>{
+      renderer.blend(true);
+      renderer.draw(world.avatarShadow,model(player.x,player.y,player.z));
+      renderer.blend(false);
+      drawAvatar(renderer,world,player,walkPhase,stride,reduced.matches ? 0 : now/1000,menu.look);
+    });
+    return;
+  }
   const preview = menu.preview;
   const lightArea = preview ? 'portrait' : player.z<STORE.back-.38 && !menu.open ? 'lounge' : 'store';
   if (world.lightArea !== lightArea) {
@@ -824,7 +882,7 @@ function frame(now) {
   const dt = Math.min((now - lastFrame) / 1000, .20);
   lastFrame = now;
   move(dt);
-  if (inside && player.z>=STORE.back && !modalOpen()) staff.tick(dt);
+  if (!lot.active && inside && player.z>=STORE.back && !modalOpen()) staff.tick(dt);
   if (doorOpened && door < 1) door = Math.min(1,door + dt * 1.91);
   tickRound(now);
   signal.tick(now);
@@ -872,6 +930,11 @@ async function startup() {
 }
 
 function resetCamera() {
+  if (lot.active) {
+    if (lot.building) lot.resetView();
+    else resetLotCamera();
+    return;
+  }
   if (!orbit.active) return;
   stopLook();
   orbit.active = false;
@@ -888,6 +951,7 @@ function openCollection() {
 
 canvas.addEventListener('pointerdown', event => {
   if (modalOpen() || (event.pointerType === 'mouse' && event.button !== 0)) return;
+  if (lot.building) { lot.pointerDown(event); return; }
   const rect = canvas.getBoundingClientRect();
   const {clientX:x,clientY:y,pointerId:id} = event;
   const useStick = (event.pointerType === 'touch' || touchLayout.matches) && x < rect.left + rect.width/2;
@@ -906,6 +970,10 @@ canvas.addEventListener('pointerdown', event => {
 });
 
 canvas.addEventListener('pointermove', event => {
+  if (lot.building) {
+    if (!modalOpen()) lot.pointerMove(event);
+    return;
+  }
   const {clientX:x,clientY:y,pointerId:id} = event;
   if (moveGesture?.id === id) {
     const dx = x-moveGesture.x, dy = y-moveGesture.y;
@@ -937,6 +1005,7 @@ canvas.addEventListener('pointermove', event => {
 
 for (const type of ['pointerup','pointercancel','lostpointercapture']) {
   canvas.addEventListener(type, event => {
+    if (lot.building) { lot.pointerEnd(event); return; }
     const move = moveGesture?.id === event.pointerId;
     const look = lookGesture?.id === event.pointerId;
     const gesture = move ? moveGesture : look ? lookGesture : null;
@@ -953,6 +1022,7 @@ $('main-menu-button').addEventListener('click', () => {
   clearMovement();
   menu.show();
 });
+$('lot-launch').addEventListener('click',enterLot);
 $('waypoint').addEventListener('click', interact);
 $('touch-action').addEventListener('click', interact);
 $('collection-button').addEventListener('click',openCollection);
@@ -1018,7 +1088,12 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 document.addEventListener('keydown', event => {
-  if (event.ctrlKey || event.metaKey || event.altKey || event.target?.matches?.('input, textarea, select, [contenteditable]')) return;
+  if (event.target?.matches?.('input, textarea, select, [contenteditable]')) return;
+  if (lot.building) {
+    if (!modalOpen()) lot.keydown(event);
+    return;
+  }
+  if (event.ctrlKey || event.metaKey || event.altKey) return;
   if (arcade.open && round && /^[1-9]$/.test(event.key)) {
     event.preventDefault();
     if (!event.repeat) hit(Number(event.key)-1);
@@ -1034,6 +1109,10 @@ document.addEventListener('keydown', event => {
   if (movement.has(event.code)) {
     event.preventDefault();
     keys.add(event.code);
+  }
+  if (lot.active) {
+    if (!event.repeat && event.code==='KeyR') resetLotCamera();
+    return;
   }
   if (!event.repeat && event.code === 'KeyE') {
     event.preventDefault();
