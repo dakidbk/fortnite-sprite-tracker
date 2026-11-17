@@ -1,2 +1,5 @@
 [functions.game-rooms]
 verify_jwt = false
+
+[functions.arcade-rankings]
+verify_jwt = false

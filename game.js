@@ -2,20 +2,22 @@ import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './
 import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, WORK_DESK, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=lounge-23';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js?v=store-economy-19';
 import { createShop } from './shop.js?v=collector-21';
-import { createSignalRelay } from './signal.js';
+import { createSignalRelay } from './signal.js?v=arcade-rankings-24';
 import { createOnline } from './online.js?v=lounge-23';
 import { createShift } from './shift.js?v=store-economy-19';
 import { createDex } from './dex.js?v=collector-21';
-import { createMenu } from './menu.js?v=neighborhood-15';
+import { createMenu } from './menu.js?v=arcade-rankings-24';
 import { createMusic } from './music.js?v=neighborhood-15';
 import { createReveal } from './reveal.js?v=neighborhood-15';
 import { createHunt, hasStamp, stampHeight, stamps } from './hunt.js?v=lounge-23';
-import { createCircuit } from './circuit.js?v=store-hunt-18';
+import { createCircuit } from './circuit.js?v=arcade-rankings-24';
 import { stockDestination, stockRunState } from './economy.js?v=store-economy-19';
 import { createWork } from './work.js?v=store-economy-19';
 import { cashier, createStaff, staffLooks } from './staff.js?v=store-economy-19';
 import { createLounge } from './lounge.js?v=lounge-23';
 import { LOUNGE, loungeLights, loungeReach, loungeSeats, loungeSofaSeats, loungeTables } from './lounge-world.js?v=lounge-23';
+import { createLeaderboards } from './leaderboard.js?v=arcade-rankings-24';
+import { neonDwell, neonRules, nextArcadeCue } from './supabase/functions/arcade-rankings/arcade-rules.js?v=arcade-rankings-24';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world');
@@ -32,7 +34,8 @@ const orbit = { active: false, yaw: 0, pitch: .31, distance: 0 };
 const movement = new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowLeft','ArrowDown','ArrowRight','ShiftLeft','ShiftRight']);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const touchLayout = matchMedia('(max-width: 550px), (any-pointer: coarse)');
-const duration = 20000, goal = 800;
+const {duration,tileCount,points,firstDelay,hitDelay,missDelay} = neonRules;
+const goal = 800;
 const stations = {
   work: { spot: WORK_DESK, title: 'Stock Runs', prompt: 'Stock runs', radius: 1.30, y: 1.86 },
   checkout: { spot: CHECKOUT, title: 'Checkout', prompt: 'Check out', radius: 1.43, y: 1.84 },
@@ -94,8 +97,9 @@ const dex = createDex({
   ready: () => !!world && !modalOpen()
 });
 const shift = createShift({shop,clearMovement,ready:() => !!world && !modalOpen()});
-const signal = createSignalRelay({ tone, best: () => shop.state.signalBest, award: score => shop.recordArcade('signal',score) });
-const circuit = createCircuit({ tone, best: () => shop.state.circuitBest, award: score => shop.recordArcade('circuit',score) });
+const rankings = createLeaderboards({clearMovement,best:game=>game==='neon' ? best : shop.state[game+'Best']});
+const signal = createSignalRelay({ tone, rankings, best: () => shop.state.signalBest, award: score => shop.recordArcade('signal',score) });
+const circuit = createCircuit({ tone, rankings, best: () => shop.state.circuitBest, award: score => shop.recordArcade('circuit',score) });
 const hunt = createHunt({
   shop, clearMovement, ready:() => !!world && !modalOpen(),
   getPosition:() => player, getFriends:() => online.friends,
@@ -114,7 +118,7 @@ const staff = createStaff({
 const lounge = createLounge({online,clearMovement,seat:seatAtTable,announce:showToast,tone});
 hunt.refresh();
 
-const tiles = Array.from({length: 9}, (_, i) => {
+const tiles = Array.from({length: tileCount}, (_, i) => {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'tile';
@@ -157,6 +161,7 @@ function revealSound(rarity) {
 
 function showLoading(message, stage) {
   $('load-message').textContent = message;
+  $('load-rankings').hidden = stage !== 'error';
   loading.dataset.stage = stage;
   loading.hidden = false;
   canvas.setAttribute('aria-busy','true');
@@ -248,7 +253,7 @@ function clearMovement() {
 }
 
 function modalOpen() {
-  return entering || reveal.open || shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || circuit.open || hunt.isOpen || work.isOpen || staff.isOpen || lounge.isOpen || shop.open;
+  return entering || reveal.open || shift.isOpen || dex.isOpen || menu.open || online.open || help.open || arcade.open || caseDialog.open || signal.open || circuit.open || hunt.isOpen || work.isOpen || staff.isOpen || lounge.isOpen || shop.open || rankings.open;
 }
 
 function loungeAction() {
@@ -442,6 +447,7 @@ function updateRoundDisplay(ms, score) {
 
 function openArcade() {
   clearMovement();
+  rankings.reset('neon');
   round = null;
   setTarget(-1);
   tiles.forEach(tile => { tile.disabled = true; tile.classList.remove('miss'); });
@@ -458,10 +464,11 @@ function openArcade() {
 }
 
 function startRound() {
+  if (round) return;
   const now = performance.now();
-  round = { ends: now + duration, score: 0, previousBest: best };
+  round = { ends: now + duration, score: 0, previousBest: best, ranked: rankings.begin('neon',now) };
   targetUntil = 0;
-  nextAt = now + 180;
+  nextAt = now + firstDelay;
   lastTarget = -1;
   setTarget(-1);
   tiles.forEach(tile => { tile.disabled = false; tile.classList.remove('miss'); });
@@ -475,9 +482,10 @@ function startRound() {
 }
 
 function finishRound() {
-  const { score, previousBest } = round;
+  const { score, previousBest, ranked } = round;
   round = null;
   const reward = shop.recordArcade('neon',score);
+  rankings.finish('neon',ranked,performance.now(),score);
   setTarget(-1);
   tiles.forEach(tile => { tile.disabled = true; });
   updateRoundDisplay(0, score);
@@ -506,15 +514,15 @@ function tickRound(now) {
   updateRoundDisplay(remaining, round.score);
   if (target !== -1 && now >= targetUntil) {
     setTarget(-1);
-    nextAt = now + 130;
+    nextAt = now + missDelay;
   }
   if (target === -1 && now >= nextAt) {
-    const count = lastTarget === -1 ? 9 : 8;
-    let choice = Math.floor(Math.random() * count);
-    if (lastTarget !== -1 && choice >= lastTarget) choice++;
+    const {ranked}=round;
+    const choice=nextArcadeCue(ranked?.random || Math.random,tileCount,lastTarget);
+    if (ranked) ranked.events.push([ranked.stamp(now),choice]);
     lastTarget = choice;
     setTarget(choice);
-    targetUntil = now + Math.max(490, 1280 - round.score * .29);
+    targetUntil = now + neonDwell(round.score);
   }
 }
 
@@ -523,9 +531,11 @@ function hit(i) {
   const now = performance.now();
   if (now >= round.ends) { finishRound(); return; }
   if (i === target && now < targetUntil) {
-    round.score += 100;
+    round.score += points;
+    const {ranked}=round;
+    if (ranked) ranked.events.at(-1).push(ranked.stamp(now));
     setTarget(-1);
-    nextAt = now + 150;
+    nextAt = now + hitDelay;
     if (round.score > best) {
       best = round.score;
       save('after-hours-best', String(best));
@@ -965,6 +975,7 @@ $('arcade-close').addEventListener('click', () => arcade.close());
 $('arcade-start').addEventListener('click', startRound);
 arcade.addEventListener('close', () => {
   round = null;
+  rankings.reset('neon');
   setTarget(-1);
   clearMovement();
 });
@@ -1008,7 +1019,7 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 document.addEventListener('keydown', event => {
-  if (event.ctrlKey || event.metaKey || event.altKey) return;
+  if (event.ctrlKey || event.metaKey || event.altKey || rankings.open) return;
   if (arcade.open && round && /^[1-9]$/.test(event.key)) {
     event.preventDefault();
     if (!event.repeat) hit(Number(event.key)-1);

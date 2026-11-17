@@ -13,16 +13,21 @@ export function profileToken() {
   }
 }
 
-export function createUsernameEditor() {
-  const $ = id => document.getElementById(id);
-  const form = $('username-form'), field = $('username-field');
-  const status = $('username-status'), submit = $('username-save'), label = $('menu-current-name');
-  let current = '';
+export function profileUsername() {
   try {
     const saved = localStorage.getItem(nameKey);
-    if (profileToken() && format.test(saved || '')) current = saved;
-  } catch {}
-  label.textContent = current || 'Set username';
+    return profileToken() && format.test(saved || '') ? saved : '';
+  } catch {
+    return '';
+  }
+}
+
+export function createUsernameEditor({prefix='username',onSave}={}) {
+  const $ = id => document.getElementById(id);
+  const form = $(prefix+'-form'), field = $(prefix+'-field');
+  const status = $(prefix+'-status'), submit = $(prefix+'-save');
+  const refresh = () => { $('menu-current-name').textContent = profileUsername() || 'Set username'; };
+  refresh();
 
   form.addEventListener('submit',async event => {
     event.preventDefault();
@@ -51,10 +56,10 @@ export function createUsernameEditor() {
       const result = await response.json();
       if (!response.ok) throw Error(result.error || 'Could not save your username. Try again.');
       localStorage.setItem(nameKey,result.username);
-      current = result.username;
-      field.value = current;
-      label.textContent = current;
-      status.textContent = 'Username saved. Friends will see it in online rooms.';
+      field.value = result.username;
+      refresh();
+      status.textContent = 'Username saved.';
+      onSave?.();
     } catch (error) {
       status.textContent = error.name === 'Error' ? error.message : 'Could not reach the username server. Try again.';
     } finally {
@@ -64,7 +69,7 @@ export function createUsernameEditor() {
 
   return {
     open() {
-      field.value = current;
+      field.value = profileUsername();
       if (!submit.disabled) status.textContent = '';
       field.focus({preventScroll:true});
     }
