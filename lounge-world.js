@@ -1,4 +1,4 @@
-import { material as m } from './webgl.js?v=lighting-22';
+import { material as m } from './webgl.js?v=visual-28';
 import { boardGames, tableLayout } from './supabase/functions/game-rooms/lounge-rules.js?v=lounge-23';
 
 export const LOUNGE = {doorX:8.82,doorHalf:1.08,left:-10.49,right:10.50,back:-39.10};
@@ -24,12 +24,12 @@ export function loungeSeats(index) {
   return [{x,z:z+1.02,yaw:0},{x,z:z-1.02,yaw:Math.PI}];
 }
 
-const walnut=m('#72523c',0,1,.28), oak=m('#b68b60',0,1,.28);
-const iron=m('#303736',0,1,.46), brass=m('#c4a371',.13,1,.46);
-const paint=m('#69887d',.22), linen=m('#d1bdaa',.20);
-const wall=m('#a9aaa0',.14), plum=m('#795d65',.14);
-const cushion=m('#708d7e',.11), deep=m('#49695d',.11);
-const panel=m('#718376',.17), awning=m('#3e5961',.19);
+const walnut=m('#725039',0,1,.25,1), oak=m('#b78a59',0,1,.25,1);
+const iron=m('#303736',0,1,.46,5), brass=m('#c4a371',.08,1,.62,5);
+const paint=m('#69887d',.03,1,.12,3), linen=m('#d1bdaa',.03,1,.10,4);
+const wall=m('#c6c3b6',.02,1,.08,3), plum=m('#88636d',.03,1,.12,4);
+const cushion=m('#7a9987',.02,1,.10,4), deep=m('#49695d',.02,1,.12,4);
+const panel=m('#718376',.03,1,.19,1), awning=m('#3e5961',.05,1,.20,5);
 const lit=m('#ffe4b6',1.04), white=m('#fff4e2',.85);
 const script = 'Arial, "DejaVu Sans", sans-serif';
 
@@ -158,7 +158,7 @@ function table(mesh,art,table) {
   mesh.box(x,.705,z,w-.16,.047,d-.16,walnut);
   mesh.block(x,.341,z,.20,.65,.22,.032,iron);
   mesh.block(x,.047,z,1.15,.09,.71,.034,iron);
-  const fabric=m(color,.16,1,.18);
+  const fabric=m(color,.03,1,.10,4);
   mesh.block(x,.851,z,1.39,.034,.94,.03,walnut);
   art.ground(x,.871,z,1.32,.88,white,atlasUV(index,.252,.982));
   if (table.kind==='four') {
@@ -190,11 +190,18 @@ export function buildLounge(mesh,sign,art,front) {
   const obstacles=[];
   mesh.box(mid,-.13,center,width,.255,depth+.03,iron);
   mesh.ground(mid,.006,center,width-.04,depth+.03,m('#938573',.19));
-  const boards=[m('#a28b72',.18),m('#96816e',.18),m('#ac947a',.18)];
+  const boards=[m('#b79c7d',.03,1,.22,1),m('#ae9376',.03,1,.22,1),m('#bea486',.03,1,.22,1)];
   for (let i=0;i<Math.floor(width/.34);i++) {
     mesh.ground(left+.18+i*.34,.012,center,.324,depth-.04,boards[i%boards.length]);
   }
-  mesh.box(mid,3.85,center,width+.20,.23,depth+.08,m('#737a70',.19));
+  for(let i=0;i<Math.floor(width/.34);i++) {
+    for(let z=back+1.2+(i%3)*.81;z<front;z+=2.43) mesh.ground(left+.18+i*.34,.013,z,.324,.012,walnut);
+  }
+  for(const z of [-21.3,-27.5,-34.1,-38.2]) {
+    mesh.box(mid,3.70,z,width-.20,.14,.13,walnut);
+    mesh.box(mid,3.62,z,width-.20,.027,.14,oak);
+  }
+  mesh.box(mid,3.85,center,width+.20,.23,depth+.08,m('#b7b6a9',.03,1,.08,3));
   for (const side of [left,right]) {
     const inset=side<0 ? 1 : -1;
     obstacles.push(box(mesh,{x:side,z:center,w:.28,d:depth},3.79,wall));
@@ -222,9 +229,9 @@ export function buildLounge(mesh,sign,art,front) {
     mesh.box(x,3.635,z,1.87,.047,.34,lit);
   }
   for (const [x,z,w,d] of [[-.60,-24.05,17.25,6.02],[-.60,-31.40,17.25,6.72],[4.03,-37.27,11.6,2.50]]) {
-    mesh.ground(x,.019,z,w,d,m('#425a4d',.18));
-    mesh.ground(x,.024,z,w-.18,d-.18,m('#96a088',.16));
-    mesh.ground(x,.029,z,w-.28,d-.28,m('#536f60',.16));
+    mesh.ground(x,.019,z,w,d,m('#425a4d',.03,1,.09,4));
+    mesh.ground(x,.024,z,w-.18,d-.18,m('#b3b194',.03,1,.09,4));
+    mesh.ground(x,.029,z,w-.28,d-.28,m('#536f60',.03,1,.09,4));
   }
   for (const prop of sofas) obstacles.push(sofa(mesh,prop));
   for (const spot of loungeTables) obstacles.push(...table(mesh,art,spot));

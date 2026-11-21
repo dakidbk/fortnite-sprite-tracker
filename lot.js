@@ -1,9 +1,9 @@
-import { clamp, model, viewProjection } from './webgl.js?v=lighting-22';
+import { clamp, model, viewProjection } from './webgl.js?v=visual-28';
 import {
   candidate, categories, existingAt, finishes, floorCount, floorHeight, lotHalf, lotName, lotPlans,
   lotSize, lotStorage, normalizePiece, pieces, placePiece, readLot, sampleTile, starterLot
 } from './lot-layout.js?v=property-26';
-import { createBuildGrid, createLotGround, makeMarker, makeProperty, propertyPhysics } from './lot-world.js?v=property-26';
+import { createBuildGrid, createLotGround, makeMarker, makeProperty, propertyPhysics } from './lot-world.js?v=visual-28';
 
 const $ = id => document.getElementById(id);
 const keys = {ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]};
@@ -366,16 +366,22 @@ export function createLot({canvas,clearMovement,onMode,onExit}) {
       dirty=true;
     }
     if (dirty) {
-      for (const mesh of [property?.solid,property?.glass]) if (mesh) renderer.release(mesh);
+      for (const mesh of [property?.solid,property?.glass,property?.shadow]) if (mesh) renderer.release(mesh);
       property=makeProperty(renderer,layout.items,building ? level : null,selected==='roof');
       renderer.lights(property.lights);
       dirty=false;
     }
     lastView=building ? view : undefined;
     const matrix=viewProjection(view.eye,view.aim,view.fov,view.aspect);
+    renderer.propertyMode=true;
     renderer.begin(matrix,view.eye);
     renderer.draw(meshes.ground);
     if (property.solid) renderer.draw(property.solid);
+    if (property.shadow) {
+      renderer.blend(true);
+      renderer.draw(property.shadow);
+      renderer.blend(false);
+    }
     if (building) {
       renderer.draw(meshes.grid,model(0,level*floorHeight+.040,0));
       const target=mode==='place' ? candidate(selected,level,finish,rotation,cursor) : existingAt(layout.items,level,cursor,selected);

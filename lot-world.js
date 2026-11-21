@@ -1,14 +1,15 @@
-import { Mesh, clamp, material, seeded } from './webgl.js?v=lighting-22';
+import { Mesh, clamp, material, seeded } from './webgl.js?v=visual-28';
+import { autumnTree, contactShadow, shrub } from './scenery.js?v=visual-28';
 import {
   borderOf, cellKey, centerOf, finishes, floorCount, floorHeight, footprint,
   frontPath, indexAt, lotHalf, lotSize, lotSpawn, onGrid, pieceCenter, pieces, stairCells, tileSize
 } from './lot-layout.js?v=property-26';
 
-const color = (hex,glow=0,alpha=1) => material(hex,glow,alpha,.22);
+const color = (hex,glow=0,alpha=1,surface=0,sheen=.22) => material(hex,glow,alpha,sheen,surface);
 const finishes3d = finishes.map(([,hex])=>color(hex,.08));
-const cream=color('#ede5d0',.09), oak=color('#af8861',.07), dark=color('#38403d',.06);
-const brass=color('#b89b70',.18), basin=color('#718686',.10);
-const glassColor=color('#85b2ba',.23,.48), warm=color('#ffdd9d',.98);
+const cream=color('#ede5d0',.035,1,4,.12), oak=color('#af8861',.025,1,1), dark=color('#38403d',.02,1,5,.45);
+const brass=color('#b89b70',.05,1,5,.64), basin=color('#718686',.04,1,5,.62);
+const glassColor=color('#9dc3c5',.35,.24,0,.76), warm=color('#ffdd9d',.98);
 const fitSizes={
   bed:[1.25,2.35], sofa:[2.66,1.07], table:[1.26,1.30], kitchen:[2.68,.70],
   counter:[2.70,.87], shelf:[2.72,.57], display:[1.10,1.05], sign:[.79,.55],
@@ -21,16 +22,12 @@ const lobbyLights=[
 ];
 
 function tree(mesh,x,z,scale,ink) {
-  const material=color(ink,.19), wood=color('#795a45',.11);
-  mesh.rod([x,.03,z],[x,2.4*scale,z],.17*scale,.08*scale,7,wood);
-  for (const [a,b,c,w] of [[-.23,2.65,0,1.13],[.68,2.47,.08,.90],[-.66,2.43,.23,.86],[.15,3.12,-.15,.83]]) {
-    mesh.block(x+a*scale,b*scale,z+c*scale,w*scale,1.51*scale,w*scale,.20*scale,material);
-  }
+  autumnTree(mesh,x,z,4*scale,Math.round(Math.abs(x+z))%4,0);
 }
 
 function house(mesh,x,z,facade) {
   const w=5.3,d=4.25,h=3.25;
-  mesh.block(x,h/2,z,w,h,d,.04,color(facade,.13));
+  mesh.block(x,h/2,z,w,h,d,.04,color(facade,.035,1,3,.12));
   mesh.box(x,.14,z,w+.19,.28,d+.21,dark);
   mesh.box(x,3.30,z,w+.47,.20,d+.48,dark);
   mesh.box(x,3.59,z-.33,w*.54,.36,d*.65,dark);
@@ -44,13 +41,13 @@ function house(mesh,x,z,facade) {
 
 export function createLotGround(renderer) {
   const ground=new Mesh();
-  const lawn=color('#637557',.18), earth=color('#53674e',.12), curb=color('#aaa49a',.12);
+  const lawn=color('#6b8056',.04,1,6,.08), earth=color('#596e4e',.05,1,6,.08), curb=color('#b4afa1',.03,1,2);
   const random=seeded(47281);
   ground.ground(0,-.16,0,100,100,earth);
   ground.ground(0,-.01,0,lotHalf*2+2.55,lotHalf*2+4.02,lawn);
   ground.ground(0,-.006,frontPath+.62,68,2.3,curb);
   for (let z=lotHalf+.39;z<frontPath;z+=.81) ground.ground(lotSpawn.x,.004,z,tileSize-.055,.78,color('#ac9b82',.12));
-  ground.ground(0,-.047,frontPath+5.30,74,7.10,color('#49545b',.15));
+  ground.ground(0,-.047,frontPath+5.30,74,7.10,color('#49545b',.025,1,2));
   ground.box(0,-.034,frontPath+1.77,69,.15,.19,curb);
   for (let x=-33;x<35;x+=3.4) ground.ground(x,-.041,frontPath+5.04,1.38,.12,color('#b9a989',.22));
 
@@ -68,6 +65,7 @@ export function createLotGround(renderer) {
   }
   for (const side of [-1,1]) {
     tree(ground,side*14.1,7.2,1.24,side<0 ? '#b17c4e' : '#a78e52');
+    for(let z=-10;z<10;z+=1.3) shrub(ground,side*(lotHalf+1.65),0,z,.91,'#637453');
     tree(ground,side*15.0,-5.7,1.35,side<0 ? '#8f704e' : '#b36d4d');
     ground.box(side*1.65,.055,frontPath-.38,.36,.11,.32,dark);
     ground.box(side*1.65,.55,frontPath-.38,.11,1.02,.11,dark);
@@ -113,6 +111,9 @@ function edgeParts(mesh,pane,type,h,paint) {
   mesh.box(0,bottom,0,width,.045,.24,oak);
   mesh.box(0,h-top,0,width,.042,.21,oak);
   pane.box(0,bottom+middle/2,0,1.44,middle,.019,glassColor);
+  for(const side of [-1,1]) pane.inFrame(0,0,side*.011,side<0 ? Math.PI : 0,part=>{
+    part.quad([-.65,bottom+middle*.77,0],[-.65,bottom+middle*.92,0],[.45,bottom+.04,0],[.27,bottom+.04,0],color('#e4ece0',.85,.09));
+  });
 }
 
 const stairRun=tileSize*3;
@@ -147,14 +148,19 @@ function furniture(mesh,type,paint) {
     mesh.block(0,.29,0,w,.19,d,.06,oak);
     mesh.block(0,.45,-.02,w-.07,.19,d-.09,.055,cream);
     mesh.block(0,.56,.38,w-.09,.088,1.42,.046,paint);
-    for (const x of [-.28,.28]) mesh.block(x,.58,-.81,.49,.13,.39,.05,cream);
+    for (const x of [-.28,.28]) mesh.ellipsoid(x,.57,-.81,.255,.105,.205,12,7,cream);
     mesh.block(0,.45,-d/2+.02,w,.89,.12,.036,paint);
+    mesh.box(0,.612,.88,w-.16,.026,.18,cream);
   } else if (type==='sofa' || type==='bench') {
     legs(mesh,w,d,.25);
     mesh.block(0,.36,0,w,.29,d,.055,type==='bench' ? oak : paint);
     mesh.block(0,.65,-d/2+.13,w,.55,.24,.055,paint);
     for (const side of [-1,1]) mesh.block(side*(w/2-.12),.49,0,.24,.32,d,.06,paint);
-    for (const x of [-w*.23,w*.23]) mesh.block(x,.52,.086,w*.431,.15,d*.66,.053,cream);
+    for (const x of [-w*.23,w*.23]) {
+      mesh.block(x,.52,.086,w*.431,.15,d*.66,.069,cream);
+      if(type==='sofa')mesh.block(x,.77,-.30,w*.41,.33,.19,.065,cream);
+    }
+    if(type==='sofa')mesh.ellipsoid(-w*.32,.72,-.13,.18,.20,.11,12,8,paint);
   } else if (type==='table' || type==='display') {
     const depth=type==='table' ? .90 : d;
     legs(mesh,w,depth,.68);
@@ -178,6 +184,10 @@ function furniture(mesh,type,paint) {
     if (type==='kitchen') {
       mesh.box(.72,1.006,0,.59,.030,.42,basin);
       mesh.rod([.72,1.0,-.16],[.72,1.22,-.16],.025,.025,8,brass);
+      for(let i=0;i<8;i++){
+        const p=a=>[.72,1.22+Math.sin(a)*.08,-.08-Math.cos(a)*.08];
+        mesh.rod(p(i*Math.PI/8),p((i+1)*Math.PI/8),.025,.025,8,brass);
+      }
       for (const x of [-.84,-.51]) mesh.box(x,1.007,0,.22,.026,.23,dark);
     } else {
       mesh.box(.67,1.06,-.13,.51,.10,.32,dark);
@@ -236,18 +246,26 @@ function upload(renderer,mesh) {
 }
 
 export function makeProperty(renderer,items,buildLevel,showRoof=false) {
-  const solid=new Mesh(), glass=new Mesh();
+  const solid=new Mesh(), glass=new Mesh(), shadow=new Mesh();
   const openings=stairCells(items);
   for (const item of items) {
     const {type,level,col,row,turn,color:ink}=item;
     if (buildLevel!==null && level>buildLevel) continue;
-    const layer=pieces[type].layer, paint=finishes3d[ink];
+    const layer=pieces[type].layer;
+    const surfaceId=type==='timber' || type==='stairs' || type==='bench' || type==='shelf' || type==='table' ? 1
+      : type==='rug' || type==='bed' || type==='sofa' ? 4
+      : layer==='edge' ? 3 : type==='lamp' ? 5 : 2;
+    const paint=color(finishes[ink][1],.025,1,surfaceId,surfaceId===5 ? .55 : .19);
     const [x,z]=pieceCenter(item), y=level*floorHeight, yaw=turn*Math.PI/2;
     if (layer==='edge') {
       const h=level===buildLevel ? 1.03 : floorHeight;
       solid.inFrame(x,y,z,yaw,part=>glass.inFrame(x,y,z,yaw,pane=>edgeParts(part,pane,type,h,paint)));
     } else if (layer==='fit') {
       solid.inFrame(x,y+.020,z,yaw,part=>furniture(part,type,paint));
+      if(type!=='stairs'){
+        const [w,d]=fitSizes[type];
+        shadow.inFrame(x,y,z,yaw,part=>contactShadow(part,0,.025,0,w+.24,d+.22));
+      }
     } else if (layer==='roof' && buildLevel!==null) {
       if (level===buildLevel && showRoof) {
         solid.ground(x-.65,y+.033,z,.051,1.26,paint);
@@ -263,7 +281,7 @@ export function makeProperty(renderer,items,buildLevel,showRoof=false) {
     const [x,z]=pieceCenter(item);
     lights.push([[x,item.level*floorHeight+1.84,z],'#ffc794',5.9,1.04]);
   }
-  return {solid:upload(renderer,solid),glass:upload(renderer,glass),lights};
+  return {solid:upload(renderer,solid),glass:upload(renderer,glass),shadow:upload(renderer,shadow),lights};
 }
 
 export function makeMarker(renderer,piece,valid,level,tile) {

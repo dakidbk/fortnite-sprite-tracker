@@ -1,20 +1,21 @@
-import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webgl.js?v=lighting-22';
+import { Mesh, clamp, material as m, mix, model, multiply, seeded } from './webgl.js?v=visual-28';
 import { GAMES, LATEST_RELEASE, RARITIES, coverUV, coversPerAtlas } from './catalog.js?v=store-economy-19';
 import { accessories, avatarPalette } from './cosmetics.js?v=character-11';
-import { buildNeighborhood } from './neighborhood.js?v=lounge-23';
+import { galleryArt, hangingPlant, pendant, shrub } from './scenery.js?v=visual-28';
+import { buildNeighborhood } from './neighborhood.js?v=visual-28';
 import { stamps } from './hunt.js?v=lounge-23';
 import { staffLooks } from './staff.js?v=store-economy-19';
-import { buildLounge, LOUNGE, paintTableAtlas } from './lounge-world.js?v=lounge-23';
+import { buildLounge, LOUNGE, loungeTables, paintTableAtlas } from './lounge-world.js?v=visual-28';
 
 const M = {
   lamp: m('#fff0d8', 1.05), white: m('#ffffff', 1),
-  steel: m('#454c47', 0, 1, .53), dark: m('#2b322e', 0, 1, .39), trim: m('#59615b', 0, 1, .48),
-  plaster: m('#929386'), stone: m('#b7b3a3', 0, 1, .27), ceramic: m('#d4d1c2', 0, 1, .3),
-  oak: m('#a7835e', 0, 1, .25), walnut: m('#76583e', 0, 1, .25), copper: m('#ad8660', 0, 1, .41),
-  sage: m('#728f80', 0, 1, .26), arcade: m('#98c8b3', .34), black: m('#1b221f'), chrome: m('#9da59b', 0, 1, .72)
+  steel: m('#454c47',0,1,.53,5), dark: m('#2b322e',0,1,.39,5), trim: m('#59615b',0,1,.48,5),
+  plaster: m('#b3b0a3',0,1,.10,3), stone: m('#c5bfae',0,1,.30,2), ceramic: m('#e0dbcd',0,1,.40,2),
+  oak: m('#ae8356',0,1,.23,1), walnut: m('#775237',0,1,.22,1), copper: m('#ba9769',0,1,.61,5),
+  sage: m('#728f80',0,1,.20,3), arcade: m('#98c8b3',.34), black: m('#1b221f'), chrome: m('#9da59b',0,1,.72,5)
 };
-const neon = m('#ff6051', 1.35);
-const aisleLight = m('#ffb078', 1.05);
+const neon = m('#d7b185',.48,1,.52,5);
+const aisleLight = m('#ffe2b9',.85);
 const random = seeded(9541);
 const pick = array => array[Math.floor(random() * array.length)];
 const rectangle = (x, z, w, d, height) => [x - w / 2, x + w / 2, z - d / 2, z + d / 2, height];
@@ -113,21 +114,21 @@ function controller(ctx, x, y, w, color, filled = false) {
 function storeSign() {
   return surface(1440, 220, (ctx, w, h) => {
     const face = ctx.createLinearGradient(0,0,0,h);
-    face.addColorStop(0,'#301b2a'); face.addColorStop(1,'#181520');
+    face.addColorStop(0,'#293c34'); face.addColorStop(1,'#15251f');
     ctx.fillStyle = face; ctx.fillRect(0,0,w,h);
-    ctx.strokeStyle = '#743843'; ctx.lineWidth = 3;
+    ctx.strokeStyle = '#a48b66'; ctx.lineWidth = 3;
     ctx.strokeRect(17,17,w-34,h-34);
-    ctx.fillStyle = '#f56c58'; ctx.fillRect(31,42,6,136);
+    ctx.fillStyle = '#bd9e71'; ctx.fillRect(31,42,6,136);
     ctx.fillRect(w-37,42,6,136);
     ctx.save();
-    ctx.shadowColor = '#ff533d'; ctx.shadowBlur = 26;
-    controller(ctx,132,57,135,'#ffab8d');
+    ctx.shadowColor = '#dfba8a'; ctx.shadowBlur = 10;
+    controller(ctx,132,57,135,'#e8d1ae');
     ctx.font = `900 116px ${SIGN_FONT}`;
     ctx.fillStyle = '#fff0da';
     ctx.fillText('GAME STORE',309,128,1010);
     ctx.restore();
     ctx.font = `700 31px ${SIGN_FONT}`;
-    ctx.fillStyle = '#ffc6a1';
+    ctx.fillStyle = '#c3d1bf';
     ctx.fillText('A F T E R   H O U R S',319,178);
   });
 }
@@ -342,19 +343,19 @@ function materialTexture() {
   return surface(256, 256, (ctx, w, h) => {
     const rand = seeded(32);
     const base = ctx.createLinearGradient(0,0,w,h);
-    base.addColorStop(0,'#f3f2eb'); base.addColorStop(1,'#cdd0c6');
+    base.addColorStop(0,'#f4f3ee'); base.addColorStop(1,'#e1e2d9');
     ctx.fillStyle = base; ctx.fillRect(0,0,w,h);
     const map = ctx.getImageData(0,0,w,h);
     for (let i = 0; i < map.data.length; i += 4) {
       const x = (i/4)%w, y = Math.floor(i/4/w);
       const grain = Math.sin(x*.063+y*.081+Math.sin(y*.056)*1.5)*3
         + Math.sin(x*.122-y*.068)*2;
-      const v = grain + (rand() - .49)*13;
+      const v = grain*.58 + (rand() - .49)*5;
       for (let k = 0; k < 3; k++) map.data[i+k] += v;
     }
     ctx.putImageData(map,0,0);
     ctx.fillStyle = '#ffffff25'; ctx.fillRect(0,0,w,2); ctx.fillRect(0,0,2,h);
-    ctx.fillStyle = '#2e332b45'; ctx.fillRect(0,h-2,w,2); ctx.fillRect(w-2,0,2,h);
+    ctx.fillStyle = '#2e332b27'; ctx.fillRect(0,h-2,w,2); ctx.fillRect(w-2,0,2,h);
   });
 }
 
@@ -378,9 +379,9 @@ function clip(points, distance) {
 }
 
 function floorTiles(mesh) {
-  const outer = ['#747686','#7a788a','#666b80','#77778a','#6c7285','#83808e','#6c7082','#7e7d8c'].map(c=>m(c,0,1,.24));
-  const inner = ['#b1a18c','#a39483','#b0a391','#bdac96','#aa9b8d','#9e9284'].map(c=>m(c,0,1,.27));
-  const runner = [m('#6c484d',0,1,.24),m('#795157',0,1,.24)];
+  const outer = ['#93958e','#8e918c','#999b93','#8d928d','#99998e','#9d9e94','#91958f','#a0a197'].map(c=>m(c,0,1,.31,2));
+  const inner = ['#c0b6a2','#b9b09e','#c3b9a5','#c8beac','#bdb4a2','#b8af9f'].map(c=>m(c,0,1,.37,2));
+  const runner = [m('#526b5c',0,1,.10,4),m('#587060',0,1,.10,4)];
   const width = .715, depth = .718, gap = .017;
   const bands = [[DECK.back+.02, STORE.taperEnd], [STORE.taperEnd, STORE.taperStart], [STORE.taperStart, DECK.front-.02]];
   const edge = z => widthAt(z, DECK.frontHalf-.02, DECK.rearHalf-.02);
@@ -531,13 +532,13 @@ function storeShell(mesh, cladding, upper) {
   const roof=[[-rearHalf-.29,back-.25],[-rearHalf-.29,taperEnd],[-entryHalf-.29,taperStart+.04],
     [entryHalf+.29,taperStart+.04],[rearHalf+.29,taperEnd],[rearHalf+.29,back-.25]];
   mesh.polygonXZ(roof,4.53,upper,4.22);
-  mesh.polygonXZ([...roof].reverse(),4.218,m('#74756a'));
+  mesh.polygonXZ([...roof].reverse(),4.218,m('#b6b5a9',0,1,.08,3));
   mesh.box(0,3.735,taperStart/2,entryHalf*2-.12,.148,-taperStart+.10,M.trim);
 }
 
 function storefront(mesh, glass, posters) {
-  const cladding = m('#565d55',0,1,.37);
-  const upper = m('#363d39',0,1,.4);
+  const cladding = m('#6c776b',0,1,.25,3);
+  const upper = m('#303c35',0,1,.48,5);
   const frame = m('#222a26',0,1,.52);
   storeShell(mesh,cladding,upper);
   for (const s of [-1,1]) {
@@ -787,6 +788,7 @@ function shelf(geo, cases, x, z, yaw, w, stock) {
     for (let i=0; i<=SHELF_ROWS; i++) {
       const y=.39+i*(2.37/SHELF_ROWS);
       mesh.block(0,y,.067,w,.075,.565,.019,M.oak);
+      if (i>0) mesh.box(0,y-.044,.065,w-.16,.012,.28,m('#ead1a6',.58));
       if (i===SHELF_ROWS || i===0) mesh.front(0,y,.356,w-.11,.018,M.copper);
     }
   });
@@ -997,8 +999,8 @@ function avatar(renderer, palette, look = {}) {
   const jaw = gender === 1 ? .276 : gender === 2 ? .222 : .250;
   const torso=new Mesh(), leftLeg=new Mesh(), rightLeg=new Mesh(), leftArm=new Mesh(), rightArm=new Mesh();
   const sittingLegs=[new Mesh(),new Mesh()];
-  const coat=m(palette.coat,0,1,.26), hood=m(palette.hood,0,1,.23);
-  const denim=m('#282934',0,1,.16), seam=m('#474759'), welt=m('#191824');
+  const coat=m(palette.coat,0,1,.18,4), hood=m(palette.hood,0,1,.17,4);
+  const denim=m('#282934',0,1,.13,4), seam=m('#474759'), welt=m('#191824');
   const accent=m(palette.accent,.055), lining=m('#ded2c4'), skin=m(palette.skin,0,1,.11), lightSkin=m(palette.lightSkin,0,1,.12);
   const hair=m(palette.hair,0,1,.28), hairLight=m(palette.hairLight,0,1,.33), sole=m('#ded9dc');
   const eyeInk=m('#211924'), sclera=m('#eee3da'), iris=m('#604742'), lips=m('#683e43');
@@ -1211,6 +1213,7 @@ export function createWorld(renderer, coverAtlases) {
     ctx.fillStyle='#f2e2be'; ctx.font='800 52px '+SIGN_FONT; ctx.textAlign='center';
     ctx.fillText('GAME LOUNGE',w/2,69,w-48);
   })));
+  const gallery=new Mesh(renderer.texture(surface(1536,640,galleryArt)));
   const loungeArt=new Mesh(renderer.texture(surface(1024,1600,paintTableAtlas)));
   const shadowTex=renderer.texture(radial('#171b15d6'));
   const shadow=new Mesh(shadowTex), avatarShadow=new Mesh(shadowTex);
@@ -1283,20 +1286,44 @@ export function createWorld(renderer, coverAtlases) {
   }
   const sceneLights = [
     [[-4.4,3.65,.95],'#ffd6a4',5.5,1.23],[[4.55,3.65,.97],'#ffe0b6',5.7,1.22],
-    [[0,3.68,1.19],'#ff9b86',6.9,1.16],[[0,3.31,-2.90],'#fff1db',7.0,1.16],
+    [[0,3.68,1.19],'#ffe1b7',6.9,.98],[[0,3.31,-2.90],'#fff1db',7.0,1.16],
     [[-4.48,3.20,-3.3],'#fff0d6',6.0,1.13],[[4.0,3.23,-4.7],'#fff1db',6.3,1.14],
-    [[CABINET.x,2.49,CABINET.z+.54],'#b4d8c5',4.6,.78],[[0,2.34,6.00],'#a9b8ff',8.0,.81],
+    [[CABINET.x,2.49,CABINET.z+.54],'#b4d8c5',4.6,.78],[[0,2.34,6.00],'#c2cfdf',8.0,.61],
     [[-porchRailX,1.42,porchRailFront-.13],'#ffd6a2',4.8,.94],[[porchRailX,1.42,porchRailFront-.13],'#ffd6a2',4.8,.94],
     [[-3.53,3.23,-.53],'#ffebd3',5.05,1.12],[[4.3,3.21,-.60],'#ffedd3',5.05,1.13],
     [[0,3.77,-7.30],'#fff0d9',6.4,1.20],[[0,3.85,-11.24],'#fff1d9',6.2,1.16],
     [[-6.74,3.73,-9.21],'#fff0d9',6.05,1.23],[[-7.31,3.56,-16.09],'#ffedd2',6.1,1.20],
-    [[6.15,3.76,-8.23],'#fff1da',6.0,1.15],[[6.16,3.63,-16.44],'#ffcdb3',6.38,1.30],
+    [[6.15,3.76,-8.23],'#fff1da',6.0,1.15],[[6.16,3.63,-16.44],'#ffe4c4',6.38,1.21],
     [[8.46,3.38,-21.1],'#ffdb9b',5.65,1.30]
   ];
+  for (const z of [-6.4,-10.2,-14.1,-17.7]) {
+    const span=storeHalfWidth(z)-.48;
+    for (const offset of [-.27,0,.27]) mesh.box(0,4.16,z+offset,span*2,.10,.085,M.oak);
+  }
+  for (const [index,z] of [-23.4,-29.7,-35.8].entries()) {
+    const x=LOUNGE.left+.28;
+    mesh.inFrame(x,2.36,z,Math.PI/2,part=>{
+      part.block(0,0,0,3.83,1.49,.08,.025,M.walnut);
+      part.front(0,0,.043,3.65,1.31,M.ceramic);
+    });
+    gallery.inFrame(x,2.36,z,Math.PI/2,part=>part.front(0,0,.049,3.51,1.17,M.white,
+      [[index/3,0],[(index+1)/3,0],[(index+1)/3,1],[index/3,1]]));
+  }
+  for (const {x,z} of loungeTables) {
+    pendant(mesh,x,z);
+    shadow.ground(x,.034,z,2.37,1.74,M.white);
+    for(const dz of [-1.02,1.02]) shadow.ground(x,.035,z+dz,.91,.97,M.white);
+  }
+  for(const x of [-.63,2.47,5.57,8.67]) shadow.ground(x,.037,-37.97,2.98,1.48,M.white);
+  for(const x of [-8.8,8.8]) for(const z of [-24.4,-31.1,-37.1]) hangingPlant(mesh,x,2.85,z);
+  for(const side of [-1,1]) {
+    mesh.box(side*10.65,.16,4.21,.46,.50,7.62,M.walnut);
+    for(let z=.8;z<8;z+=.56) shrub(mesh,side*10.65,.35,z,.62,z>4 ? '#8c7750' : '#5e7254');
+  }
   renderer.lights(sceneLights);
   const upload=meshes=>meshes.map(part=>renderer.upload(part));
   return {
-    opaque:upload([distant,mesh,tile,sign,...cases,display,harvest,labels,marquee,screen,relayMarquee,relayScreen,circuitMarquee,circuitScreen,logo,mat,workSign,loungeSign,loungeArt,guide]),
+    opaque:upload([distant,mesh,tile,sign,...cases,display,harvest,labels,marquee,screen,relayMarquee,relayScreen,circuitMarquee,circuitScreen,logo,mat,workSign,loungeSign,loungeArt,gallery,guide]),
     stamps:stamps.map(({color}) => renderer.upload(stampModel(color))),
     stockCrate:renderer.upload(stockCrate()),
     releasePosters, sceneLights,

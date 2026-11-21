@@ -1,5 +1,5 @@
-import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=lighting-22';
-import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, WORK_DESK, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=property-26';
+import { Renderer, clamp, mix, model, project, smooth, viewProjection } from './webgl.js?v=visual-28';
+import { CABINET, CHECKOUT, CIRCUIT_CABINET, SIGNAL_CABINET, STORE, WORK_DESK, canWalkOnPorch, createWorld, drawAvatar, storeHalfWidth } from './world.js?v=visual-28';
 import { GAMES, LATEST_RELEASE, RARITIES, atlasWidth, atlasHeight, coversPerAtlas, coverRegion } from './catalog.js?v=store-economy-19';
 import { createShop } from './shop.js?v=collector-21';
 import { createSignalRelay } from './signal.js?v=cabinet-25';
@@ -15,10 +15,10 @@ import { stockDestination, stockRunState } from './economy.js?v=store-economy-19
 import { createWork } from './work.js?v=store-economy-19';
 import { cashier, createStaff, staffLooks } from './staff.js?v=store-economy-19';
 import { createLounge } from './lounge.js?v=lounge-23';
-import { LOUNGE, loungeLights, loungeReach, loungeSeats, loungeSofaSeats, loungeTables } from './lounge-world.js?v=lounge-23';
+import { LOUNGE, loungeLights, loungeReach, loungeSeats, loungeSofaSeats, loungeTables } from './lounge-world.js?v=visual-28';
 import { createLeaderboards } from './leaderboard.js?v=cabinet-25';
 import { neonDwell, neonRules, nextArcadeCue } from './supabase/functions/arcade-rankings/arcade-rules.js?v=arcade-rankings-24';
-import { createLot } from './lot.js?v=lot-zoom-27';
+import { createLot } from './lot.js?v=visual-28';
 import { lotSpawn } from './lot-layout.js?v=property-26';
 
 const $ = id => document.getElementById(id);
@@ -825,6 +825,7 @@ function draw(dt, now) {
   const matrix = viewProjection(eye,aim,fov,aspect);
   const offset = smooth(0,1,door) * 1.515;
   const doors = [model(-offset,0,0),model(offset,0,0)];
+  renderer.propertyMode=false;
   renderer.begin(matrix,eye);
   world.opaque.forEach(mesh => renderer.draw(mesh));
   if (!menu.open) {

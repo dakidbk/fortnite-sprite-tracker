@@ -24,8 +24,9 @@ export function rgb(hex) {
   return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
 }
 
-export function material(hex, emission = 0, alpha = 1, sheen = .14) {
-  return { rgba: [...rgb(hex), alpha], emission, sheen };
+// Surface IDs: 0 plain/printed, 1 wood, 2 stone, 3 plaster, 4 fabric, 5 metal, 6 lawn.
+export function material(hex, emission = 0, alpha = 1, sheen = .14, surface = 0) {
+  return { rgba: [...rgb(hex), alpha], emission, sheen: surface + clamp(sheen,0,.99) };
 }
 
 export function seeded(seed) {
@@ -257,43 +258,68 @@ in vec3 vWorld, vNormal;
 in vec4 vColor;
 in vec2 vUV, vSurface;
 uniform vec3 uEye;
+uniform float uProperty;
 uniform vec4 uLightPos[${LIGHTS}], uLightColor[${LIGHTS}];
 uniform sampler2D uTex;
 out vec4 pixel;
+float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}
 void main() {
   vec4 texel = texture(uTex, vUV) * vColor;
   if (texel.a < .012) discard;
-  vec3 N = normalize(vNormal);
-  vec3 V = normalize(uEye - vWorld);
-  float outside = smoothstep(-.38,.67,vWorld.z);
-  vec3 key = normalize(mix(vec3(-.35,.86,.55),vec3(-.79,.35,.34),outside));
-  float diffuse = max(0.,dot(N,key));
-  vec3 base = texel.rgb;
-  float skyExposure = N.y * .5 + .5;
-  vec3 indoorAmbient = mix(vec3(.49,.45,.46),vec3(.70,.73,.76),skyExposure);
-  vec3 outdoorAmbient = mix(vec3(.31,.29,.35),vec3(.46,.52,.68),skyExposure);
-  vec3 ambient = mix(indoorAmbient,outdoorAmbient,outside);
-  vec3 direct = mix(vec3(.36,.32,.27),vec3(.29,.20,.16),outside);
-  vec3 c = base * (ambient + diffuse * direct);
-  float reflectance = pow(max(0.,dot(N,normalize(key+V))),18.);
-  c += vec3(.40,.43,.41) * reflectance * vSurface.y * .33;
-  for (int i=0; i<${LIGHTS}; i++) {
-    vec3 ray = uLightPos[i].xyz - vWorld;
-    float squaredDistance = dot(ray,ray);
-    float reach = uLightPos[i].w;
-    if (squaredDistance >= reach * reach) continue;
-    float d = sqrt(max(.000001,squaredDistance));
-    float falloff = 1. - d / reach;
-    float amp = falloff * falloff * uLightColor[i].w;
-    vec3 L = ray / d;
-    float angle = max(0.,dot(N,L));
-    float spec = pow(max(0.,dot(N,normalize(L+V))),22.) * vSurface.y;
-    c += uLightColor[i].rgb * amp * (base * (.14 + .87 * angle) + .08 * angle + .54 * spec * angle);
+  vec3 N = normalize(vNormal), V = normalize(uEye-vWorld);
+  float kind=floor(vSurface.y), sheen=fract(vSurface.y);
+  vec3 base=texel.rgb;
+  // World-sized detail stays consistent across large walls and small furniture.
+  vec2 p=abs(N.y)>.65 ? vWorld.xz : abs(N.x)>.65 ? vWorld.zy : vWorld.xy;
+  if (kind>.5) {
+    float variation=1.;
+    if (kind<1.5) {
+      float grain=sin(p.x*48.+noise(p*vec2(2.,.65))*9.+sin(p.y*3.1)*1.6);
+      float fine=1.-smoothstep(.012,.065,length(fwidth(p)));
+      variation=.95+.055*noise(p*vec2(4.,.7))+.043*grain*fine;
+    } else if (kind<2.5) {
+      variation=.93+.10*noise(p*15.)+.025*noise(p*67.);
+    } else if (kind<3.5) {
+      variation=.97+.045*noise(p*23.);
+    } else if (kind<4.5) {
+      float weave=sin(p.x*210.)*sin(p.y*210.);
+      variation=.97+.025*noise(p*38.)+.024*weave*(1.-smoothstep(.005,.018,length(fwidth(p))));
+    } else if (kind<5.5) {
+      variation=.98+.025*noise(p*vec2(2.,90.));
+    } else {
+      variation=.86+.21*noise(p*3.)+.07*noise(p*23.);
+    }
+    base*=variation;
   }
-  c = mix(c, base * (1. + max(0.,vSurface.x - 1.) * .25), min(vSurface.x,1.));
-  float haze = smoothstep(28.,79.,distance(uEye,vWorld));
-  c = mix(c,vec3(.27,.28,.37),haze*.60);
-  pixel = vec4(c,texel.a);
+  float outside=max(uProperty,smoothstep(-.38,.67,vWorld.z));
+  vec3 key=normalize(mix(vec3(-.35,.86,.55),vec3(-.65,.31,.69),outside));
+  float diffuse=max(0.,dot(N,key)), skyExposure=N.y*.5+.5;
+  vec3 ambient=mix(mix(vec3(.34,.36,.39),vec3(.64,.69,.72),skyExposure),
+    mix(vec3(.25,.28,.34),vec3(.48,.57,.72),skyExposure),outside);
+  vec3 direct=mix(vec3(.37,.33,.26),vec3(.47,.29,.17),outside);
+  vec3 c=base*(ambient+diffuse*direct);
+  float fresnel=pow(1.-max(0.,dot(N,V)),4.);
+  float reflectance=pow(max(0.,dot(N,normalize(key+V))),mix(12.,68.,sheen));
+  c+=mix(vec3(.34,.43,.50),vec3(.80,.64,.45),diffuse)*reflectance*sheen*.35;
+  c+=vec3(.16,.23,.29)*fresnel*sheen*.16;
+  for(int i=0;i<${LIGHTS};i++) {
+    vec3 ray=uLightPos[i].xyz-vWorld;
+    float squaredDistance=dot(ray,ray), reach=uLightPos[i].w;
+    if(squaredDistance>=reach*reach) continue;
+    float d=sqrt(max(.000001,squaredDistance));
+    float falloff=1.-d/reach, amp=falloff*falloff*uLightColor[i].w;
+    vec3 L=ray/d;
+    float angle=max(0.,dot(N,L));
+    float spec=pow(max(0.,dot(N,normalize(L+V))),mix(14.,72.,sheen))*sheen;
+    c+=uLightColor[i].rgb*amp*(base*(.095+.78*angle)+.035*angle+.36*spec*angle);
+  }
+  c=mix(c,base*(1.+max(0.,vSurface.x-1.)*.25),min(vSurface.x,1.));
+  // A gentle shoulder keeps ivory lights and pale surfaces from washing out.
+  c=c/(1.+max(c-.72,0.)*.23);
+  float haze=smoothstep(32.,98.,distance(uEye,vWorld));
+  c=mix(c,vec3(.38,.37,.44),haze*.59);
+  pixel=vec4(c,texel.a);
 }`;
 
 const screenVertex = `#version 300 es
@@ -308,30 +334,34 @@ precision highp float;
 in vec2 uv;
 uniform mat4 uView;
 out vec4 pixel;
-float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),f.x),mix(hash(i+vec2(0.,1.)),hash(i+1.),f.x),f.y);}
+float cloud(vec2 p){return noise(p)*.54+noise(p*2.07)*.28+noise(p*4.11)*.13+noise(p*8.13)*.05;}
 void main(){
-  vec3 right = vec3(uView[0][0],uView[1][0],uView[2][0]);
-  vec3 up = vec3(uView[0][1],uView[1][1],uView[2][1]);
-  vec3 forward = vec3(uView[0][3],uView[1][3],uView[2][3]);
-  vec2 ndc = uv * 2. - 1.;
-  vec3 ray = normalize(forward + ndc.x * right / dot(right,right) + ndc.y * up / dot(up,up));
-
-  float west = pow(max(0.,dot(ray,vec3(-.43,0.,-.90))),12.);
-  float band = (ray.y + .017) * 14.;
-  vec3 horizon = mix(vec3(.45,.31,.53),vec3(.95,.46,.37),west);
-  vec3 c = mix(vec3(.115,.161,.27),horizon,.86 * exp(-band * band));
-  c = mix(c,vec3(.082,.128,.235),smoothstep(.035,.155,ray.y));
-  c = mix(vec3(.105,.137,.202),c,smoothstep(-.29,-.075,ray.y));
-
-  float cloud = (ray.y - .039 - sin(ray.x * 8. + ray.z * 3.) * .009) * 132.;
-  float wisps = exp(-cloud * cloud) * (.46 + .46 * sin(ray.x * 12. - ray.z));
-  vec3 cloudColor = mix(vec3(.48,.40,.55),vec3(.83,.57,.48),west);
-  c = mix(c,cloudColor,wisps * .33);
-  vec2 starGrid = vec2(atan(ray.x,-ray.z),ray.y) * vec2(205.,215.);
-  float star = step(.989,hash(floor(starGrid))) * (1. - smoothstep(.04,.26,length(fract(starGrid)-.5)));
-  c += vec3(.58,.68,.94) * star * smoothstep(.09,.26,ray.y);
-  float noise = hash(floor(gl_FragCoord.xy)) - .5;
-  pixel = vec4(c + noise*.011,1.);
+  vec3 right=vec3(uView[0][0],uView[1][0],uView[2][0]);
+  vec3 up=vec3(uView[0][1],uView[1][1],uView[2][1]);
+  vec3 forward=vec3(uView[0][3],uView[1][3],uView[2][3]);
+  vec2 ndc=uv*2.-1.;
+  vec3 ray=normalize(forward+ndc.x*right/dot(right,right)+ndc.y*up/dot(up,up));
+  float west=pow(max(0.,dot(ray,normalize(vec3(-.43,.035,-.90)))),3.);
+  float horizon=exp(-pow((ray.y+.035)*5.5,2.));
+  vec3 c=mix(vec3(.12,.21,.34),vec3(.055,.11,.23),smoothstep(.08,.80,ray.y));
+  c=mix(c,mix(vec3(.55,.43,.50),vec3(.95,.57,.36),west),horizon*.91);
+  c=mix(vec3(.18,.22,.29),c,smoothstep(-.28,-.07,ray.y));
+  float angle=atan(ray.x,-ray.z);
+  vec2 p=ray.xz*4.8+vec2(ray.y*2.3,ray.y*12.);
+  float density=cloud(p+vec2(1.6,-.7));
+  float mask=smoothstep(.49,.72,density)*smoothstep(.01,.09,ray.y)*(1.-smoothstep(.35,.65,ray.y));
+  vec3 cloudColor=mix(vec3(.29,.34,.45),vec3(.83,.56,.46),west*exp(-ray.y*3.));
+  c=mix(c,cloudColor,mask*.67);
+  vec3 moon=normalize(vec3(.52,.40,.72));
+  float disc=1.-smoothstep(.000075,.00011,1.-dot(ray,moon));
+  float cut=1.-smoothstep(.000075,.00011,1.-dot(ray,normalize(moon+vec3(.008,.002,-.004))));
+  c+=vec3(.88,.89,.80)*disc*(1.-cut)*.64;
+  vec2 grid=vec2(angle,ray.y)*vec2(190.,210.);
+  float star=step(.995,hash(floor(grid)))*(1.-smoothstep(.035,.20,length(fract(grid)-.5)));
+  c+=vec3(.48,.57,.72)*star*smoothstep(.22,.47,ray.y)*(1.-mask);
+  pixel=vec4(c+(hash(floor(gl_FragCoord.xy))-.5)/255.,1.);
 }`;
 
 const blurFragment = `#version 300 es
@@ -359,13 +389,33 @@ precision highp float;
 in vec2 uv;
 uniform sampler2D uTex, uGlow;
 out vec4 pixel;
+float luma(vec3 c){return dot(c,vec3(.299,.587,.114));}
 void main(){
-  vec3 c = texture(uTex,uv).rgb;
-  vec3 glow = texture(uGlow,uv).rgb;
-  c += glow * .14 * (1. - c * .66);
-  vec2 q = (uv-.5)*vec2(1.12,.93);
-  c *= 1. - .18 * dot(q,q);
-  pixel = vec4(c,1.);
+  // Edge-aware antialiasing preserves cover lettering and softens geometry edges.
+  vec2 px=1./vec2(textureSize(uTex,0));
+  vec3 center=texture(uTex,uv).rgb;
+  float nw=luma(texture(uTex,uv+px*vec2(-1.,-1.)).rgb);
+  float ne=luma(texture(uTex,uv+px*vec2(1.,-1.)).rgb);
+  float sw=luma(texture(uTex,uv+px*vec2(-1.,1.)).rgb);
+  float se=luma(texture(uTex,uv+px*vec2(1.,1.)).rgb);
+  float middle=luma(center), low=min(middle,min(min(nw,ne),min(sw,se))), high=max(middle,max(max(nw,ne),max(sw,se)));
+  vec3 c=center;
+  if(high-low>max(.035,high*.10)) {
+    vec2 direction=vec2(-((nw+ne)-(sw+se)),(nw+sw)-(ne+se));
+    float reduce=max((nw+ne+sw+se)*.03125,.0078125);
+    float inverse=1./(min(abs(direction.x),abs(direction.y))+reduce);
+    direction=clamp(direction*inverse,vec2(-6.),vec2(6.))*px;
+    vec3 a=.5*(texture(uTex,uv-direction/6.).rgb+texture(uTex,uv+direction/6.).rgb);
+    vec3 b=a*.5+.25*(texture(uTex,uv-direction*.5).rgb+texture(uTex,uv+direction*.5).rgb);
+    float value=luma(b);
+    c=mix(center,value<low || value>high ? a : b,.72);
+  }
+  c+=texture(uGlow,uv).rgb*.11*(1.-c*.70);
+  c=mix(vec3(luma(c)),c,1.055);
+  c=(c-.5)*1.035+.5;
+  vec2 q=(uv-.5)*vec2(1.12,.93);
+  c*=1.-.13*dot(q,q);
+  pixel=vec4(clamp(c,0.,1.),1.);
 }`;
 
 const caseFragment = `#version 300 es
@@ -400,9 +450,10 @@ export class Renderer {
   constructor(canvas) {
     const gl = canvas.getContext('webgl2', { antialias: false, alpha: false, powerPreference: 'high-performance' });
     if (!gl) throw new Error('WebGL 2 is unavailable');
+    this.anisotropy = gl.getExtension('EXT_texture_filter_anisotropic');
     this.canvas = canvas;
     this.gl = gl;
-    this.scene = program(gl, sceneVertex, sceneFragment, ['uView','uModel','uEye','uLightPos[0]','uLightColor[0]','uTex','uHiddenSlots']);
+    this.scene = program(gl, sceneVertex, sceneFragment, ['uView','uModel','uEye','uLightPos[0]','uLightColor[0]','uTex','uHiddenSlots','uProperty']);
     this.sky = program(gl, screenVertex, skyFragment, ['uView']);
     this.blur = program(gl, screenVertex, blurFragment, ['uTex','uStep','uExtract']);
     this.final = program(gl, screenVertex, finalFragment, ['uTex','uGlow']);
@@ -423,6 +474,10 @@ export class Renderer {
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
       gl.generateMipmap(gl.TEXTURE_2D);
+      if (this.anisotropy) {
+        const ext=this.anisotropy;
+        gl.texParameterf(gl.TEXTURE_2D,ext.TEXTURE_MAX_ANISOTROPY_EXT,Math.min(4,gl.getParameter(ext.MAX_TEXTURE_MAX_ANISOTROPY_EXT)));
+      }
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
     } else {
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255,255,255,255]));
@@ -533,6 +588,7 @@ export class Renderer {
     gl.useProgram(scene.p);
     gl.uniformMatrix4fv(scene.u.uView, false, view);
     gl.uniform3fv(scene.u.uEye, eye);
+    gl.uniform1f(scene.u.uProperty, this.propertyMode ? 1 : 0);
     gl.uniform4fv(scene.u['uLightPos[0]'], this.lightPos);
     gl.uniform4fv(scene.u['uLightColor[0]'], this.lightColor);
     gl.activeTexture(gl.TEXTURE0);

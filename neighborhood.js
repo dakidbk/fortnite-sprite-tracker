@@ -1,14 +1,14 @@
-import { material as m, seeded } from './webgl.js';
+import { material as m, seeded } from './webgl.js?v=visual-28';
+import { autumnTree } from './scenery.js?v=visual-28';
 
 const groundY = -.22;
-const grass = m('#414c43', .44);
+const grass = m('#58664b',.09,1,.08,6);
 const curb = m('#999185', .37);
-const sidewalk = m('#7c7876', .40);
-const road = m('#353c48', .49);
+const sidewalk = m('#a49f90',.04,1,.17,2);
+const road = m('#434952',.06,1,.20,2);
 const paint = m('#beaa82', .53);
 const asphaltMark = m('#a39d93', .43);
-const trunk = m('#5d483d', .37);
-const roof = m('#41444f', .47);
+const roof = m('#465057',.04,1,.24,2);
 const eaves = m('#373940', .40);
 const stone = m('#786d64', .41);
 const frame = m('#463d3c', .45);
@@ -18,8 +18,7 @@ const door = m('#5c4a42', .49);
 const trim = m('#b5a48e', .51);
 const tire = m('#272a30', .45);
 const glass = m('#536175', .50);
-const houseColors = ['#967568','#777d76','#8c8573','#776c80','#9e8873'].map(color=>m(color,.58));
-const foliage = ['#b77c43','#945c3d','#936948','#a06a50','#77734e'].map(color=>m(color,.48));
+const houseColors = ['#967568','#777d76','#8c8573','#776c80','#9e8873'].map(color=>m(color,.07,1,.12,3));
 
 function window(mesh, x, y, z, w, h, light) {
   mesh.box(x,y,z,w+.13,h+.14,.11,frame);
@@ -68,22 +67,23 @@ function house(mesh, x, z, yaw, style, random) {
         window(facade,depth*.22,height-.74,0,.83,.88,warm);
       });
     }
+    for(let y=.52;y<height-.15;y+=.28) {
+      part.front(0,y,front+.008,width-.05,.014,m('#554e46',.10));
+      for(const side of [-1,1]) part.inFrame(side*(half+.008),0,0,side*Math.PI/2,p=>p.front(0,y,0,depth-.05,.014,m('#554e46',.10)));
+    }
+    for(let zz=far+.45;zz<near;zz+=.66) {
+      part.rod([left,height+.013,zz],[0,peak+.013,zz],.012,.012,4,eaves);
+      part.rod([0,peak+.013,zz],[right,height+.013,zz],.012,.012,4,eaves);
+    }
+    part.box(entry,1.89,front+.28,1.46,.12,.65,eaves);
+    for(const side of [-1,1]) part.box(entry+side*.65,.98,front+.46,.07,1.76,.07,trim);
     part.box(entry+.65,1.65,front+.10,.14,.28,.18,warm);
     part.box(entry+.65,1.82,front+.10,.22,.055,.23,eaves);
   });
 }
 
 function tree(mesh,x,z,height,style) {
-  const color=foliage[style%foliage.length];
-  const next=foliage[(style+1)%foliage.length];
-  const crown=groundY+height*.70;
-  mesh.rod([x,groundY,z],[x+.09,crown,z],.16,.09,6,trunk);
-  for (const side of [-1,1]) {
-    const branch=[x+side*.59,crown+.22,z+side*.31];
-    mesh.rod([x,crown-.65,z],branch,.09,.035,5,trunk);
-    mesh.ellipsoid(...branch,height*.285,height*.29,height*.25,8,5,color,true);
-  }
-  mesh.ellipsoid(x+.14,crown+.66,z-.10,height*.29,height*.28,height*.26,9,5,next,true);
+  autumnTree(mesh,x,z,height,style,groundY);
 }
 
 function streetlight(mesh,x,z) {
@@ -97,7 +97,7 @@ function streetlight(mesh,x,z) {
 }
 
 function car(mesh,x,z,yaw,color) {
-  const body=m(color,.52,1,.32);
+  const body=m(color,.07,1,.71,5);
   mesh.inFrame(x,groundY,z,yaw,part => {
     part.block(0,.47,0,1.62,.55,3.33,.13,body);
     part.block(0,.89,-.12,1.40,.50,1.70,.19,glass);
